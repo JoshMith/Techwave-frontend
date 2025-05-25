@@ -1,0 +1,214 @@
+<!-- Header Navigation (same as before) -->
+<header class="header">
+    <nav class="nav-container">
+        <div class="nav-items">
+            <a href="#" class="nav-link">Home</a>
+            <a href="#" class="nav-link">Shop</a>
+            <div class="dropdown">
+                <a href="#" class="nav-link dropdown-trigger">
+                    Categories
+                    <svg class="dropdown-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </a>
+                <div class="dropdown-menu">
+                    <a href="#" class="dropdown-link" (click)="onCategoryClick('phones')">
+                        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2" stroke="currentColor"
+                                stroke-width="2" />
+                            <line x1="12" y1="18" x2="12.01" y2="18" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Phones
+                    </a>
+                    <a href="#" class="dropdown-link" (click)="onCategoryClick('laptops')">
+                        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <rect x="2" y="4" width="20" height="12" rx="2" ry="2" stroke="currentColor"
+                                stroke-width="2" />
+                            <line x1="2" y1="20" x2="22" y2="20" stroke="currentColor" stroke-width="2" />
+                        </svg>
+                        Laptops
+                    </a>
+                    <a href="#" class="dropdown-link" (click)="onCategoryClick('accessories')">
+                        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 18V15C3 13.3431 4.34315 12 6 12C7.65686 12 9 13.3431 9 15V18"
+                                stroke="currentColor" stroke-width="2" />
+                            <path d="M21 18V15C21 13.3431 19.6569 12 18 12C16.3431 12 15 13.3431 15 15V18"
+                                stroke="currentColor" stroke-width="2" />
+                        </svg>
+                        Accessories
+                    </a>
+                </div>
+            </div>
+            <a href="#" class="nav-link">Deals</a>
+            <a href="#" class="nav-link">Contact</a>
+        </div>
+        <div class="search-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                    d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z"
+                    stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </div>
+    </nav>
+</header>
+
+<!-- Main Content -->
+<main class="main-content">
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">Smartphones</h1>
+            <span class="product-count">({{ totalProducts }} products)</span>
+        </div>
+
+        <div class="content-grid">
+            <!-- Filters Sidebar -->
+            <aside class="filters-sidebar">
+                <div class="filters-container">
+                    <h2 class="filters-title">Filters</h2>
+
+                    <!-- Price Range Filter -->
+                    <div class="filter-section">
+                        <h3 class="filter-heading">Price Range</h3>
+                        <div class="price-range">
+                            <label for="price-min" class="visually-hidden">Minimum Price</label>
+                            <input id="price-min" type="range" min="5000" max="200000" [(ngModel)]="filters.priceRange.min"
+                                class="price-slider" (input)="onPriceChange()" title="Minimum Price">
+                            <label for="price-max" class="visually-hidden">Maximum Price</label>
+                            <input id="price-max" type="range" min="5000" max="200000" [(ngModel)]="filters.priceRange.max"
+                                class="price-slider" (input)="onPriceChange()" title="Maximum Price">
+                            <div class="price-display">
+                                KSh {{ filters.priceRange.min | number:'1.0-0' }} - KSh {{ filters.priceRange.max |
+                                number:'1.0-0' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Brand Filter -->
+                    <div class="filter-section">
+                        <h3 class="filter-heading">Brand</h3>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item" *ngFor="let brand of availableBrands">
+                                <input type="checkbox" [checked]="filters.brands.includes(brand)"
+                                    (change)="onBrandChange(brand, $event)">
+                                <span class="checkmark"></span>
+                                {{ brand }}
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Features Filter -->
+                    <div class="filter-section">
+                        <h3 class="filter-heading">Features</h3>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" [(ngModel)]="filters.features.has5G" (change)="applyFilters()">
+                                <span class="checkmark"></span>
+                                5G
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" [(ngModel)]="filters.features.has128GB"
+                                    (change)="applyFilters()">
+                                <span class="checkmark"></span>
+                                128GB+
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" [(ngModel)]="filters.features.has8GBRAM"
+                                    (change)="applyFilters()">
+                                <span class="checkmark"></span>
+                                8GB RAM+
+                            </label>
+                        </div>
+                    </div>
+
+                    <button class="reset-filters-btn" (click)="resetFilters()">Reset Filters</button>
+                </div>
+            </aside>
+
+            <!-- Products Section -->
+            <section class="products-section">
+                <!-- Sort Controls -->
+                <div class="sort-controls">
+                    <div class="sort-dropdown">
+                        <label for="sort-select" class="visually-hidden">Sort products</label>
+                        <select id="sort-select" [(ngModel)]="sortBy" (change)="onSortChange()" class="sort-select" title="Sort products">
+                            <option value="popularity">Sort By: Popularity</option>
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="price-high">Price: High to Low</option>
+                            <option value="rating">Highest Rated</option>
+                            <option value="newest">Newest First</option>
+                        </select>
+                        <svg class="sort-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Products Grid -->
+                <div class="products-grid" *ngIf="!loading; else loadingTemplate">
+                    <div class="product-card" *ngFor="let product of paginatedProducts">
+                        <div class="product-image">
+                            <img [src]="product.imageUrl" alt="${product.name}" [alt]="product.name" (error)="onImageError($event)"
+                                loading="lazy">
+                        </div>
+                        <div class="product-info">
+                            <h3 class="product-name">{{ product.name }}</h3>
+                            <p class="product-specs">{{ product.specs }}</p>
+                            <div class="product-rating">
+                                <div class="stars">
+                                    <span *ngFor="let star of [1,2,3,4,5]" class="star"
+                                        [class.filled]="star <= product.rating"
+                                        [class.half]="star === Math.ceil(product.rating) && product.rating % 1 !== 0">
+                                        ★
+                                    </span>
+                                </div>
+                                <span class="rating-count">({{ product.reviewCount }})</span>
+                            </div>
+                            <div class="product-footer">
+                                <span class="product-price">KSh {{ product.price | number:'1.0-0' }}</span>
+                                <button class="add-to-cart-btn" (click)="addToCart(product)">
+                                    Add to Cart
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading Template -->
+                <ng-template #loadingTemplate>
+                    <div class="loading-container">
+                        <div class="loading-spinner"></div>
+                        <p>Loading products...</p>
+                    </div>
+                </ng-template>
+
+                <!-- Empty State -->
+                <div class="empty-state" *ngIf="!loading && paginatedProducts.length === 0">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="10" stroke="#9ca3af" stroke-width="2" />
+                        <path d="M8 12L12 16L16 12" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    <h3>No products found</h3>
+                    <p>Try adjusting your filters or search criteria</p>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination" *ngIf="totalPages > 1">
+                    <button class="page-btn" [class.active]="currentPage === page" *ngFor="let page of getPageNumbers()"
+                        (click)="goToPage(page)" [disabled]="page === '...'">
+                        {{ page }}
+                    </button>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
