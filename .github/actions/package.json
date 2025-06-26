@@ -7,7 +7,6 @@
     "build": "ng build",
     "lint": "ng lint",
     "e2e": "ng e2e"
-
   },
   "keywords": [],
   "author": "",
@@ -17,5 +16,7 @@
     "@actions/core": "^1.11.1",
     "@actions/exec": "^1.1.1",
     "@actions/github": "^6.0.0"
+  },
+  "devDependencies": {
   }
 }
