@@ -1,0 +1,18 @@
+name: 'Deploy the site to Vercel'
+description: 'Deploy a static website to Vercel'
+inputs:
+  vercel-token:
+    description: 'The Vercel token for authentication'
+    required: true
+
+  dist-folder:
+    description: 'The folder containing the deployable files'
+    required: true
+
+outputs:
+  deploy-url:
+    description: 'The URL of the deployed site'
+
+runs:
+  using: 'node16'
+  main: 'main.js'
