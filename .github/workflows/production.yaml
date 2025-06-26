@@ -11,29 +11,30 @@ env:
   MyPAss: 1234
 
 jobs:
-  # test:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout Code
-  #       uses: actions/checkout@v4
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-  #     - name: Install Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 18 # or your project's Node version
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18 # or your project's Node version
 
-  #     - name: Install Angular CLI
-  #       run: npm install -g @angular/cli
+      - name: Install Angular CLI
+        run: npm install -g @angular/cli
 
-  #     - name: Install Dependencies
-  #       run: npm install
+      - name: Install Dependencies
+        run: npm install
 
-  #     - name: Run Tests
-  #       run: npm test
+      - name: Run Tests
+        run: npm test
 
   build:
     runs-on: ubuntu-latest
     environment: testing
+    needs: test
     steps:
       - name: Get Code
         uses: actions/checkout@v4
