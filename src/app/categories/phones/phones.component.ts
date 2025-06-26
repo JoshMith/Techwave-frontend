@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 // Interface for Product data
 interface Product {
@@ -42,6 +43,7 @@ interface Filters {
 })
 export class PhonesComponent implements OnInit {
 
+  constructor( private router: Router ) { }
   // Sample data - In real app, this would come from a service
   allProducts: Product[] = [
     {
@@ -390,6 +392,7 @@ export class PhonesComponent implements OnInit {
     console.log('Adding to cart:', product.name);
     // In a real app, you would dispatch an action to add to cart state/service
     alert(`${product.name} added to cart!`);
+    this.router.navigate(['/cart']);
   }
 
 }
