@@ -43,7 +43,7 @@ interface Filters {
 })
 export class PhonesComponent implements OnInit {
 
-  constructor( private router: Router ) { }
+  constructor(private router: Router) { }
   // Sample data - In real app, this would come from a service
   allProducts: Product[] = [
     {
@@ -376,9 +376,9 @@ export class PhonesComponent implements OnInit {
     return pages;
   }
 
- onSearch(): void {
-  alert('Search functionality is not implemented yet.');
-  console.log('Search button clicked');
+  onSearch(): void {
+    alert('Search functionality is not implemented yet.');
+    console.log('Search button clicked');
   }
 
   /**
@@ -388,8 +388,8 @@ export class PhonesComponent implements OnInit {
   onCategoryClick(category: string): void {
     console.log(`Category clicked: ${category}`);
     // Example: this.router.navigate(['/categories', category]);
-    
-    switch(category) {
+
+    switch (category) {
       case 'phones':
         this.router.navigate(['/phones']);
         break;
@@ -425,5 +425,8 @@ export class PhonesComponent implements OnInit {
     alert(`${product.name} added to cart!`);
     this.router.navigate(['/cart']);
   }
-
+  cartCount = 3;
+  goToCart() {
+    this.router.navigate(['/cart']);
+  }
 }

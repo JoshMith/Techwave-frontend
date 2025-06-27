@@ -124,4 +124,8 @@ export class ProfileComponent {
         console.warn('Unknown category:', category);
     }
   }
+  cartCount = 3;
+  goToCart() {
+    this.router.navigate(['/cart']);
+  }
 }

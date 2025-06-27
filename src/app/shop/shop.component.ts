@@ -326,9 +326,9 @@ export class ShopComponent implements OnInit {
   }
 
   onSearch(): void {
-  alert('Search functionality is not implemented yet.');
-  console.log('Search button clicked');
-}
+    alert('Search functionality is not implemented yet.');
+    console.log('Search button clicked');
+  }
 
   /**
    * Handle category card clicks
@@ -337,8 +337,8 @@ export class ShopComponent implements OnInit {
   onCategoryClick(category: string): void {
     console.log(`Category clicked: ${category}`);
     // Example: this.router.navigate(['/categories', category]);
-    
-    switch(category) {
+
+    switch (category) {
       case 'phones':
         this.router.navigate(['/phones']);
         break;
@@ -361,5 +361,8 @@ export class ShopComponent implements OnInit {
         console.warn('Unknown category:', category);
     }
   }
-
+  cartCount = 3;
+  goToCart() {
+    this.router.navigate(['/cart']);
+  }
 }

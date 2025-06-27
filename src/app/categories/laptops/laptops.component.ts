@@ -19,19 +19,19 @@ interface Product {
   styleUrl: './laptops.component.css'
 })
 
-export class LaptopsComponent  implements OnInit {
-constructor(private router: Router) { }
+export class LaptopsComponent implements OnInit {
+  constructor(private router: Router) { }
 
-products: Product[] = [];
+  products: Product[] = [];
   filteredProducts: Product[] = [];
-  
+
   // Filters
   priceRange = { min: 20000, max: 100000 };
   brands: string[] = ['HP', 'Dell', 'Lenovo', 'Apple'];
   selectedBrands: string[] = [];
   features: string[] = ['Core i5', 'SSD', '8GB RAM+'];
   selectedFeatures: string[] = [];
-  
+
   // Sorting
   sortOptions = [
     { value: 'popularity', label: 'Popularity' },
@@ -106,20 +106,20 @@ products: Product[] = [];
       if (product.price < this.priceRange.min || product.price > this.priceRange.max) {
         return false;
       }
-      
+
       // Brand filter
       if (this.selectedBrands.length > 0 && !this.selectedBrands.includes(product.brand)) {
         return false;
       }
-      
+
       // Feature filter
       if (this.selectedFeatures.length > 0) {
         return this.selectedFeatures.every(feature => product.features.includes(feature));
       }
-      
+
       return true;
     });
-    
+
     this.sortProducts();
   }
 
@@ -145,8 +145,8 @@ products: Product[] = [];
   }
 
   onSearch(): void {
-  alert('Search functionality is not implemented yet.');
-  console.log('Search button clicked');
+    alert('Search functionality is not implemented yet.');
+    console.log('Search button clicked');
   }
 
   /**
@@ -156,8 +156,8 @@ products: Product[] = [];
   onCategoryClick(category: string): void {
     console.log(`Category clicked: ${category}`);
     // Example: this.router.navigate(['/categories', category]);
-    
-    switch(category) {
+
+    switch (category) {
       case 'phones':
         this.router.navigate(['/phones']);
         break;
@@ -179,5 +179,9 @@ products: Product[] = [];
       default:
         console.warn('Unknown category:', category);
     }
+  }
+  cartCount = 3;
+  goToCart() {
+    this.router.navigate(['/cart']);
   }
 }

@@ -157,4 +157,8 @@ export class CartComponent {
         console.warn('Unknown category:', category);
     }
   }
+  cartCount = 3;
+  goToCart() {
+    this.router.navigate(['/cart']);
+  }
 }
