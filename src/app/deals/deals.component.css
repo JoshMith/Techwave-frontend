@@ -687,7 +687,6 @@
     justify-content: center;
     flex-wrap: wrap;
   }
-
   .cart-icon-container {
     margin-left: 1.5rem;
     position: relative;
@@ -727,7 +726,6 @@
     font-size: 0.75rem;
     font-weight: bold;
   }
-
   .search-bar-container {
     margin-left: 0;
     max-width: 100%;
