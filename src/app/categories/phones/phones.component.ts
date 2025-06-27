@@ -376,10 +376,41 @@ export class PhonesComponent implements OnInit {
     return pages;
   }
 
-  // Event handlers
+ onSearch(): void {
+  alert('Search functionality is not implemented yet.');
+  console.log('Search button clicked');
+  }
+
+  /**
+   * Handle category card clicks
+   * @param category - The category that was clicked
+   */
   onCategoryClick(category: string): void {
-    // Handle category navigation
-    console.log('Category clicked:', category);
+    console.log(`Category clicked: ${category}`);
+    // Example: this.router.navigate(['/categories', category]);
+    
+    switch(category) {
+      case 'phones':
+        this.router.navigate(['/phones']);
+        break;
+      case 'laptops':
+        this.router.navigate(['/laptops']);
+        break;
+      case 'accessories':
+        this.router.navigate(['/accessories']);
+        break;
+      case 'appliances':
+        this.router.navigate(['/home-appliances']);
+        break;
+      case 'gaming':
+        this.router.navigate(['/gaming']);
+        break;
+      case 'audio':
+        this.router.navigate(['/audio-sound']);
+        break;
+      default:
+        console.warn('Unknown category:', category);
+    }
   }
 
   onImageError(event: any): void {

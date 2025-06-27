@@ -1,1 +1,179 @@
-<p>laptops works!</p>
+<header class="header">
+    <nav class="nav-container">
+        <div class="nav-items">
+            <a href="#" class="nav-link">Home</a>
+            <a href="/shop" class="nav-link">Shop</a>
+            <div class="dropdown">
+                <a href="#" class="nav-link dropdown-trigger">
+                    Categories
+                    <svg class="dropdown-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </a>
+                <div class="dropdown-menu">
+                    <a href="/phones" class="dropdown-link" (click)="onCategoryClick('phones')">
+                        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2" stroke="currentColor"
+                                stroke-width="2" />
+                            <line x1="12" y1="18" x2="12.01" y2="18" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Phones
+                    </a>
+                    <a href="/laptops" class="dropdown-link" (click)="onCategoryClick('laptops')">
+                        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <rect x="2" y="4" width="20" height="12" rx="2" ry="2" stroke="currentColor"
+                                stroke-width="2" />
+                            <line x1="2" y1="20" x2="22" y2="20" stroke="currentColor" stroke-width="2" />
+                        </svg>
+                        Laptops
+                    </a>
+                    <a href="/accessories" class="dropdown-link" (click)="onCategoryClick('accessories')">
+                        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 18V15C3 13.3431 4.34315 12 6 12C7.65686 12 9 13.3431 9 15V18"
+                                stroke="currentColor" stroke-width="2" />
+                            <path d="M21 18V15C21 13.3431 19.6569 12 18 12C16.3431 12 15 13.3431 15 15V18"
+                                stroke="currentColor" stroke-width="2" />
+                            <path
+                                d="M9 9C9 6.79086 10.7909 5 13 5H11C8.79086 5 7 6.79086 7 9V12H15V9C15 6.79086 16.2091 5 18.5 5H16.5C14.2909 5 12.5 6.79086 12.5 9"
+                                stroke="currentColor" stroke-width="2" />
+                        </svg>
+                        Accessories
+                    </a>
+                    <a href="/home-appliances" class="dropdown-link" (click)="onCategoryClick('appliances')">
+                        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke="currentColor"
+                                stroke-width="2" />
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
+                            <path d="M12 1V3" stroke="currentColor" stroke-width="2" />
+                            <path d="M21 12H23" stroke="currentColor" stroke-width="2" />
+                            <path d="M12 21V23" stroke="currentColor" stroke-width="2" />
+                            <path d="M1 12H3" stroke="currentColor" stroke-width="2" />
+                        </svg>
+                        Home Appliances
+                    </a>
+                    <a href="/gaming" class="dropdown-link" (click)="onCategoryClick('gaming')">
+                        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <rect x="2" y="6" width="20" height="12" rx="4" ry="4" stroke="currentColor"
+                                stroke-width="2" />
+                            <circle cx="8" cy="12" r="2" stroke="currentColor" stroke-width="2" />
+                            <path d="M16 10L18 12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                        Gaming
+                    </a>
+                    <a href="/audio-sound" class="dropdown-link" (click)="onCategoryClick('audio')">
+                        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" stroke="currentColor"
+                                stroke-width="2" />
+                            <path
+                                d="M19.07 4.93C20.98 6.84 20.98 10.16 19.07 12.07M15.54 8.46C16.17 9.09 16.17 10.09 15.54 10.72"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Audio & Sound
+                    </a>
+                </div>
+            </div>
+            <a href="/deals" class="nav-link">Deals</a>
+            <a href="/contact" class="nav-link">Contact</a>
+        </div>
+        <div class="search-bar-container">
+            <input type="text" class="search-input" placeholder="Search products, brands, or categories..." />
+            <button class="search-btn" aria-label="Search" (click)="onSearch()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z"
+                        stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </button>
+        </div>
+    </nav>
+</header>
+
+<h1>Laptops ({{ filteredProducts.length }} products)</h1>
+
+<div class="content">
+    <!-- Filters Section -->
+    <aside class="filters">
+        <section class="filter-section">
+            <h2>Filters</h2>
+
+            <div class="filter-group">
+                <h3>Price Range</h3>
+                <div class="price-range">
+                    <div class="price-inputs">
+                        <input type="number" [(ngModel)]="priceRange.min" (change)="applyFilters()"
+                            aria-label="Minimum price">
+                        <span>-</span>
+                        <input type="number" [(ngModel)]="priceRange.max" (change)="applyFilters()"
+                            aria-label="Maximum price">
+                    </div>
+                    <button class="apply-btn" (click)="applyFilters()">Apply</button>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <h3>Brand</h3>
+                <ul class="filter-list">
+                    <li *ngFor="let brand of brands">
+                        <label>
+                            <input type="checkbox" [checked]="selectedBrands.includes(brand)"
+                                (change)="toggleBrand(brand)">
+                            {{ brand }}
+                        </label>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="filter-group">
+                <h3>Features</h3>
+                <ul class="filter-list">
+                    <li *ngFor="let feature of features">
+                        <label>
+                            <input type="checkbox" [checked]="selectedFeatures.includes(feature)"
+                                (change)="toggleFeature(feature)">
+                            {{ feature }}
+                        </label>
+                    </li>
+                </ul>
+            </div>
+
+            <button class="reset-btn" (click)="resetFilters()">Reset Filters</button>
+        </section>
+    </aside>
+
+    <!-- Products Section -->
+    <main class="products">
+        <div class="sorting">
+            <label for="sort-select">Sort by:</label>
+            <select id="sort-select" [(ngModel)]="selectedSort" (change)="applyFilters()">
+                <option *ngFor="let option of sortOptions" [value]="option.value">
+                    {{ option.label }}
+                </option>
+            </select>
+        </div>
+
+        <div class="product-grid">
+            <div *ngFor="let product of filteredProducts" class="product-card">
+                <div class="product-image">
+                    <!-- Image would go here -->
+                    <div class="image-placeholder">Laptop Image</div>
+                </div>
+                <div class="product-details">
+                    <h3>{{ product.name }}</h3>
+                    <p class="specs">{{ product.specs }}</p>
+                    <p class="price">KSh {{ product.price | number }}</p>
+                    <button class="add-to-cart">Add to Cart</button>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
