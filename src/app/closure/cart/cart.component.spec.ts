@@ -9,8 +9,7 @@ describe('CartComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [],
-      declarations: [CartComponent],
+      imports: [CartComponent],
       providers: [
         {
           provide: ActivatedRoute,
