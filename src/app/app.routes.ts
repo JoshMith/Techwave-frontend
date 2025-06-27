@@ -15,6 +15,7 @@ import { CartComponent } from './closure/cart/cart.component';
 import { DetailsComponent } from './closure/details/details.component';
 import { PaymentComponent } from './closure/payment/payment.component';
 import { SignupComponent } from './closure/signup/signup.component';
+import { ProfileComponent } from './profile/profile.component';
 
 export const routes: Routes = [
     { path: '', redirectTo: 'homepage', pathMatch: 'full' },//the default page
@@ -32,5 +33,6 @@ export const routes: Routes = [
     { path: 'signup', component: SignupComponent },
     { path: 'cart', component: CartComponent },
     { path: 'details', component: DetailsComponent },
-    { path: 'payment', component: PaymentComponent }
+    { path: 'payment', component: PaymentComponent },
+    { path: 'profile', component: ProfileComponent },
 ];
