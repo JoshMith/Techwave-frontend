@@ -543,4 +543,24 @@
   .coupon-section {
     flex-direction: column;
   }
+  .nav-items {
+    gap: 0.5rem;
+  }
+
+  .nav-link {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.6rem;
+  }
+  .categories-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .category-card {
+    padding: 1rem;
+  }
+  
+  .footer-content {
+    grid-template-columns: 1fr;
+  }
 }
+
