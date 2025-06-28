@@ -3,7 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
-// Interface for Product data
+// Interface for Product data (Phones)
 interface Product {
   id: number;
   name: string;

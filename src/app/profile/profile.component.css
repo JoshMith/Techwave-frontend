@@ -439,8 +439,117 @@
   background: #3b82f6;
   color: white;
 }
+/* Footer */
+.footer {
+  background: #1e293b;
+  color: white;
+  padding: 3rem 0 1.5rem;
+  margin-top: 3rem;
+}
+
+.footer-content {
+  display: flex;
+  /* grid-template-columns: repeat(4, 1fr); */
+  gap: 2rem;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.footer-section h3,
+.footer-section h4 {
+  color: white;
+  margin-top: 0;
+}
+
+.footer-section p {
+  color: #cbd5e1;
+  font-size: 0.95rem;
+}
+
+.contact-info p {
+  margin: 0.5rem 0;
+}
+
+.footer-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-section li {
+  margin-bottom: 0.75rem;
+  color: #cbd5e1;
+  font-size: 0.95rem;
+}
+
+.footer-section a {
+  color: #cbd5e1;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-section a:hover {
+  color: white;
+}
+
+.subscribe-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.subscribe-form input {
+  flex: 1;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 6px;
+}
+
+.subscribe-form button {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.payment-methods {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.payment-method {
+  background: #334155;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.copyright {
+  text-align: center;
+  padding-top: 1.5rem;
+  border-top: 1px solid #334155;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem 0;
+}
 
 @media (max-width: 768px) {
+  .profile-nav{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
   .container {
     padding: 1rem;
   }
@@ -533,7 +642,16 @@
     max-width: 100%;
   }
 }
-@media (max-width: 480px) {
+
+@media (max-width: 596px) {
+  .random-image-container {
+    display: none !important;
+  }
+  .profile-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+  }
   .nav-items {
     gap: 0.5rem;
   }
@@ -554,3 +672,5 @@
     grid-template-columns: 1fr;
   }
 }
+
+
