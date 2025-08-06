@@ -14,25 +14,34 @@ import { DealsComponent } from './deals/deals.component';
 import { CartComponent } from './closure/cart/cart.component';
 import { DetailsComponent } from './closure/details/details.component';
 import { PaymentComponent } from './closure/payment/payment.component';
-import { SignupComponent } from './closure/signup/signup.component';
 import { ProfileComponent } from './profile/profile.component';
+import { SellerDashboardComponent } from './seller-dashboard/seller-dashboard.component';
+import { ProductComponent } from './product/product.component';
+import { LoginComponent } from './auth/login/login.component';
+import { ForgotPwdComponent } from './auth/forgot-pwd/forgot-pwd.component';
+import { SignupComponent } from './auth/signup/signup.component';
 
 export const routes: Routes = [
     { path: '', redirectTo: 'homepage', pathMatch: 'full' },//the default page
     { path: 'homepage', component: HomepageComponent },
     { path: 'shop', component: ShopComponent },
-    { path: 'phones', component: PhonesComponent },
-    { path: 'laptops', component: LaptopsComponent },
-    { path: 'accessories', component: AccessoriesComponent },
-    { path: 'home-appliances', component: HomeAppliancesComponent },
-    { path: 'gaming', component: GamingComponent },
-    { path: 'audio-sound', component: AudioSoundComponent },
+    { path: 'categories/Phones', component: PhonesComponent },
+    { path: 'categories/Laptops', component: LaptopsComponent },
+    { path: 'categories/Accessories', component: AccessoriesComponent },
+    { path: 'categories/Home Appliances', component: HomeAppliancesComponent },
+    { path: 'categories/Gaming', component: GamingComponent },
+    { path: 'categories/Audio & Sound', component: AudioSoundComponent },
     { path: 'about', component: AboutComponent },
     { path: 'contact', component: ContactComponent },
     { path: 'deals', component: DealsComponent },
-    { path: 'signup', component: SignupComponent },
     { path: 'cart', component: CartComponent },
     { path: 'details', component: DetailsComponent },
     { path: 'payment', component: PaymentComponent },
     { path: 'profile', component: ProfileComponent },
+    { path: 'seller', component: SellerDashboardComponent },
+    { path: 'product', component: ProductComponent },
+    { path: 'login', component: LoginComponent },
+    { path: 'signup', component: SignupComponent },
+    { path: 'forgot-pwd', component: ForgotPwdComponent },
 ];
+

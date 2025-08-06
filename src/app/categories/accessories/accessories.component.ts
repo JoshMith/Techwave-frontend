@@ -198,30 +198,26 @@ export class AccessoriesComponent implements OnInit {
     console.log('Search button clicked');
   }
 
-  onCategoryClick(category: string): void {
-    console.log(`Category clicked: ${category}`);
-    switch (category) {
-      case 'phones':
-        this.router.navigate(['/phones']);
-        break;
-      case 'laptops':
-        this.router.navigate(['/laptops']);
-        break;
-      case 'accessories':
-        this.router.navigate(['/accessories']);
-        break;
-      case 'appliances':
-        this.router.navigate(['/home-appliances']);
-        break;
-      case 'gaming':
-        this.router.navigate(['/gaming']);
-        break;
-      case 'audio':
-        this.router.navigate(['/audio-sound']);
-        break;
-      default:
-        console.warn('Unknown category:', category);
+  /**
+   * Handle category clicks from the dropdown menu
+   */
+  onCategoryClick(categoryKey: string): void {
+    const category =  categoryKey;
+    if (category) {
+      this.selectCategory(category);
+    } else {
+      console.warn('Category not found:', categoryKey);
+      setTimeout(() => {
+        this.router.navigate(['/shop']);
+      }, 2000);
     }
+  }
+
+  /**
+   * Handle category card clicks
+   */
+  selectCategory(category: any): void {
+    this.router.navigate(['/categories', category.name]);
   }
 
   // Calculate discounted price

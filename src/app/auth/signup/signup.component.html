@@ -1,0 +1,174 @@
+<!-- Header -->
+<header class="header">
+  <nav class="nav-container">
+    <a href="#" class="logo">TechWave Kenya</a>
+  </nav>
+</header>
+
+<!-- Main Content -->
+<main class="main-content">
+  <div class="signup-container">
+    <div class="signup-header">
+      <h1 class="signup-title">Join TechWave</h1>
+      <p class="signup-subtitle">Create your account to get started</p>
+    </div>
+
+    <div class="benefits-section">
+      <h3 class="benefits-title">Why Join TechWave Kenya?</h3>
+      <ul class="benefits-list">
+        <li>✅ Exclusive deals on electronics</li>
+        <li>🚚 Free delivery in Nairobi & Meru</li>
+        <li>📱 M-Pesa payment integration</li>
+        <li>🎯 Personalized recommendations</li>
+      </ul>
+    </div>
+
+    <form [formGroup]="signupForm" (ngSubmit)="onSubmit()">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="firstName" class="form-label">First Name</label>
+          <input 
+            type="text" 
+            id="firstName" 
+            formControlName="firstName" 
+            class="form-input" 
+            placeholder="John">
+        </div>
+        <div class="form-group">
+          <label for="lastName" class="form-label">Last Name</label>
+          <input 
+            type="text" 
+            id="lastName" 
+            formControlName="lastName" 
+            class="form-input" 
+            placeholder="Doe">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email" class="form-label">Email Address</label>
+        <input 
+          type="email" 
+          id="email" 
+          formControlName="email" 
+          class="form-input" 
+          placeholder="john@example.com">
+      </div>
+
+      <div class="form-group">
+        <label for="phone" class="form-label">Phone Number</label>
+        <div class="phone-input-container">
+          <div class="country-code">+254</div>
+          <input 
+            type="tel" 
+            id="phone" 
+            formControlName="phone" 
+            class="form-input" 
+            placeholder="700 123 456">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="location" class="form-label">Location</label>
+        <select 
+          id="location" 
+          formControlName="location" 
+          class="location-select">
+          <option value="">Select your location</option>
+          <option value="nairobi">Nairobi</option>
+          <option value="meru">Meru</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="password" class="form-label">Password</label>
+        <div class="password-container">
+          <input 
+            [type]="showPassword ? 'text' : 'password'" 
+            id="password" 
+            formControlName="password" 
+            class="form-input" 
+            placeholder="Create a strong password">
+          <button 
+            type="button" 
+            class="password-toggle" 
+            (click)="togglePassword('password')">
+            {{ showPassword ? '🙈' : '👁️' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword" class="form-label">Confirm Password</label>
+        <div class="password-container">
+          <input 
+            [type]="showConfirmPassword ? 'text' : 'password'" 
+            id="confirmPassword" 
+            formControlName="confirmPassword" 
+            class="form-input" 
+            placeholder="Confirm your password"
+            [style.borderColor]="signupForm.hasError('mismatch') ? '#ef4444' : '#e5e7eb'">
+          <button 
+            type="button" 
+            class="password-toggle" 
+            (click)="togglePassword('confirmPassword')">
+            {{ showConfirmPassword ? '🙈' : '👁️' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="checkbox-group">
+        <input 
+          type="checkbox" 
+          id="terms" 
+          formControlName="terms" 
+          class="checkbox-input">
+        <label for="terms" class="checkbox-label">
+          I agree to the <a href="#" (click)="showTerms()">Terms of Service</a> and 
+          <a href="#" (click)="showPrivacy()">Privacy Policy</a>
+        </label>
+      </div>
+
+      <div class="checkbox-group">
+        <input 
+          type="checkbox" 
+          id="newsletter" 
+          formControlName="newsletter" 
+          class="checkbox-input">
+        <label for="newsletter" class="checkbox-label">
+          Subscribe to our newsletter for exclusive deals and updates
+        </label>
+      </div>
+
+      <button 
+        type="submit" 
+        class="signup-btn" 
+        [disabled]="signupForm.invalid || isSubmitting">
+        {{ isSubmitting ? 'Creating Account...' : 'Create Account' }}
+      </button>
+    </form>
+
+    <div class="divider">
+      <span>or sign up with</span>
+    </div>
+
+    <div class="social-signup">
+      <a href="#" class="social-btn" (click)="signupWithGoogle()">
+        🌐 Google
+      </a>
+      <a href="#" class="social-btn" (click)="signupWithFacebook()">
+        📘 Facebook
+      </a>
+    </div>
+
+    <div class="login-link">
+      Already have an account? <a href="#" (click)="showLogin()">Sign in here</a>
+    </div>
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+  <p>&copy; 2025 TechWave Kenya. All rights reserved.</p>
+</footer>

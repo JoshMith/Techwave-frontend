@@ -1,0 +1,160 @@
+<!-- Header Navigation -->
+<header class="header">
+  <nav class="nav-container">
+    <div class="logo-section">
+      <a href="/" class="logo">TechWave</a>
+      <span class="seller-badge">Seller Portal</span>
+    </div>
+    <div class="nav-items">
+      <a href="/seller/dashboard" class="nav-link active">Dashboard</a>
+      <a href="/seller/products" class="nav-link">Products</a>
+      <a href="/seller/orders" class="nav-link">Orders</a>
+      <a href="/seller/analytics" class="nav-link">Analytics</a>
+      <a href="/seller/settings" class="nav-link">Settings</a>
+    </div>
+    <div class="profile-section">
+      <button class="notification-btn" title="Notifications" (click)="onNotificationClick()">
+        🔔
+        <span class="notification-count">{{notificationCount}}</span>
+      </button>
+      <div class="profile-avatar" title="Profile" (click)="onProfileClick()">
+        {{userName.charAt(0) + 'D'}}
+      </div>
+    </div>
+  </nav>
+</header>
+
+<!-- Main Content -->
+<main class="main-content">
+  <!-- Dashboard Header -->
+  <div class="dashboard-header">
+    <h1 class="dashboard-title">Welcome back, {{userName}}!</h1>
+    <p class="dashboard-subtitle">Here's what's happening with your store today</p>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="stats-grid">
+    <div class="stat-card" *ngFor="let stat of stats">
+      <div class="stat-header">
+        <div>
+          <div class="stat-title">{{stat.title}}</div>
+          <div class="stat-value">{{stat.value}}</div>
+          <div class="stat-change {{stat.changeClass}}">
+            <span class="change-arrow">↗</span>
+            <span>{{stat.change}}</span>
+          </div>
+        </div>
+        <div class="stat-icon {{stat.iconClass}}">{{stat.icon}}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard Grid -->
+  <div class="dashboard-grid">
+    <!-- Main Panel -->
+    <div class="main-panel">
+      <!-- Recent Orders -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Recent Orders</h2>
+          <a href="/seller/orders" class="view-all-btn">View All Orders</a>
+        </div>
+        <div class="table-container">
+          <table class="orders-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Product</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let order of orders" (click)="onOrderClick(order.id)">
+                <td><span class="order-id">{{order.id}}</span></td>
+                <td>{{order.customer}}</td>
+                <td>{{order.product}}</td>
+                <td>{{order.amount}}</td>
+                <td><span class="status-badge {{order.statusClass}}">{{order.status}}</span></td>
+                <td>{{order.date}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Sales Chart -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Sales Overview</h2>
+          <select class="view-all-btn" style="border: none; background: transparent;">
+            <option>Last 7 days</option>
+            <option>Last 30 days</option>
+            <option>Last 3 months</option>
+          </select>
+        </div>
+        <div class="chart-container">
+          📈 Sales Chart Placeholder
+          <br>
+          <small>Chart integration would show sales trends here</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar Panel -->
+    <div class="sidebar-panel">
+      <!-- Quick Actions -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Quick Actions</h3>
+        </div>
+        <div class="quick-actions">
+          <a *ngFor="let action of quickActions" 
+             href="{{action.link}}" 
+             class="quick-action-btn"
+             (click)="onQuickActionClick(action.text); $event.preventDefault()">
+            <div class="action-icon">{{action.icon}}</div>
+            <span class="action-text">{{action.text}}</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Recent Activity</h3>
+          <a href="/seller/activity" class="view-all-btn">View All</a>
+        </div>
+        <div class="activity-list">
+          <div class="activity-item" *ngFor="let activity of activities">
+            <div class="activity-icon {{activity.iconClass}}">{{activity.icon}}</div>
+            <div class="activity-content">
+              <div class="activity-text">{{activity.text}}</div>
+              <div class="activity-time">{{activity.time}}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Store Performance -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Store Performance</h3>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center;" *ngFor="let metric of performanceMetrics">
+            <span style="color: #6b7280;">{{metric.label}}</span>
+            <span style="font-weight: 600;" [class]="metric.valueClass">{{metric.value}}</span>
+          </div>
+          <div style="margin-top: 1rem;">
+            <a href="/seller/analytics" class="btn btn-primary" style="width: 100%; justify-content: center;">
+              📊 View Detailed Analytics
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
