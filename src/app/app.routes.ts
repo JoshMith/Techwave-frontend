@@ -20,6 +20,7 @@ import { ProductComponent } from './product/product.component';
 import { LoginComponent } from './auth/login/login.component';
 import { ForgotPwdComponent } from './auth/forgot-pwd/forgot-pwd.component';
 import { SignupComponent } from './auth/signup/signup.component';
+import { AddProductComponent } from './add-product/add-product.component';
 
 export const routes: Routes = [
     { path: '', redirectTo: 'homepage', pathMatch: 'full' },//the default page
@@ -43,5 +44,6 @@ export const routes: Routes = [
     { path: 'login', component: LoginComponent },
     { path: 'signup', component: SignupComponent },
     { path: 'forgot-pwd', component: ForgotPwdComponent },
+    { path: 'add-product', component: AddProductComponent },
 ];
 
