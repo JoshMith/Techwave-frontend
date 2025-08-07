@@ -5,7 +5,7 @@
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background: #f8fafc;
   min-height: 100vh;
   display: flex;
@@ -228,9 +228,15 @@ body {
   font-size: 0.8rem;
 }
 
-.strength-weak { color: #ef4444; }
-.strength-medium { color: #f59e0b; }
-.strength-strong { color: #16a34a; }
+.strength-weak {
+  color: #ef4444;
+}
+.strength-medium {
+  color: #f59e0b;
+}
+.strength-strong {
+  color: #16a34a;
+}
 
 .resend-timer {
   color: #6b7280;

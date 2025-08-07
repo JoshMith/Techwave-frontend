@@ -27,10 +27,8 @@
         <img [src]="mainImageSrc" alt="Samsung Galaxy A54">
       </div>
       <div class="thumbnail-grid">
-        <div *ngFor="let thumbnail of thumbnails" 
-             class="thumbnail" 
-             [class.active]="thumbnail.active"
-             (click)="changeImage(thumbnail)">
+        <div *ngFor="let thumbnail of thumbnails" class="thumbnail" [class.active]="thumbnail.active"
+          (click)="changeImage(thumbnail)">
           <img [src]="thumbnail.thumbnailSrc" [alt]="thumbnail.altText">
         </div>
       </div>
@@ -40,7 +38,7 @@
     <div class="product-details">
       <h1 class="product-title">Samsung Galaxy A54 5G</h1>
       <div class="product-brand">Samsung</div>
-      
+
       <div class="rating-section">
         <div class="stars">
           <span class="star" *ngFor="let star of getStars(4.2)">{{ star ? '★' : '☆' }}</span>
@@ -80,10 +78,8 @@
 
       <div class="action-buttons">
         <button class="add-to-cart-btn" (click)="addToCart()">{{cartButtonText}}</button>
-        <button class="wishlist-btn" 
-                [style.background]="isWishlisted ? '#3b82f6' : 'white'"
-                [style.color]="isWishlisted ? 'white' : '#3b82f6'"
-                (click)="toggleWishlist()">♥</button>
+        <button class="wishlist-btn" [style.background]="isWishlisted ? '#3b82f6' : 'white'"
+          [style.color]="isWishlisted ? 'white' : '#3b82f6'" (click)="toggleWishlist()">♥</button>
       </div>
 
       <div class="delivery-info">
@@ -111,8 +107,10 @@
   <!-- Product Tabs -->
   <div class="product-tabs">
     <div class="tabs-nav">
-      <button class="tab-btn" [class.active]="activeTab === 'description'" (click)="showTab('description')">Description</button>
-      <button class="tab-btn" [class.active]="activeTab === 'specifications'" (click)="showTab('specifications')">Specifications</button>
+      <button class="tab-btn" [class.active]="activeTab === 'description'"
+        (click)="showTab('description')">Description</button>
+      <button class="tab-btn" [class.active]="activeTab === 'specifications'"
+        (click)="showTab('specifications')">Specifications</button>
       <button class="tab-btn" [class.active]="activeTab === 'reviews'" (click)="showTab('reviews')">Reviews</button>
     </div>
 
@@ -120,11 +118,17 @@
     <div id="description" class="tab-content" [class.hidden]="activeTab !== 'description'">
       <div class="description">
         <h3>Product Description</h3>
-        <p>The Samsung Galaxy A54 5G delivers premium experiences at an accessible price point. With its stunning 6.4-inch Super AMOLED display, you'll enjoy vibrant colors and sharp details whether you're streaming videos, browsing photos, or playing games.</p>
-        
-        <p>Capture life's moments with the versatile triple camera system featuring a 50MP main camera, 12MP ultra-wide lens, and 5MP macro camera. The advanced image processing ensures your photos look professional in any lighting condition.</p>
-        
-        <p>Stay connected with 5G connectivity and enjoy all-day performance with the powerful Exynos 1380 processor and 8GB of RAM. The 5000mAh battery keeps you going from morning to night, and when you do need to charge, 25W fast charging gets you back up and running quickly.</p>
+        <p>The Samsung Galaxy A54 5G delivers premium experiences at an accessible price point. With its stunning
+          6.4-inch Super AMOLED display, you'll enjoy vibrant colors and sharp details whether you're streaming videos,
+          browsing photos, or playing games.</p>
+
+        <p>Capture life's moments with the versatile triple camera system featuring a 50MP main camera, 12MP ultra-wide
+          lens, and 5MP macro camera. The advanced image processing ensures your photos look professional in any
+          lighting condition.</p>
+
+        <p>Stay connected with 5G connectivity and enjoy all-day performance with the powerful Exynos 1380 processor and
+          8GB of RAM. The 5000mAh battery keeps you going from morning to night, and when you do need to charge, 25W
+          fast charging gets you back up and running quickly.</p>
       </div>
     </div>
 
@@ -156,7 +160,9 @@
         <div class="rating-breakdown">
           <div class="rating-bar" *ngFor="let rating of [5,4,3,2,1]">
             <span>{{rating}} ★</span>
-            <div class="bar"><div class="bar-fill" [style.width.%]="getRatingPercentage(rating)"></div></div>
+            <div class="bar">
+              <div class="bar-fill" [style.width.%]="getRatingPercentage(rating)"></div>
+            </div>
             <span>{{[20,13,6,2,1][rating-1]}}</span>
           </div>
         </div>

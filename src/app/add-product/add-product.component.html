@@ -32,12 +32,12 @@
         <!-- Basic Information Section -->
         <div class="form-section">
           <h3 class="section-title">Basic Information</h3>
-          
+
           <div class="form-row">
             <div class="form-group">
               <label for="productTitle" class="form-label required">Product Title</label>
-              <input type="text" id="productTitle" formControlName="title" class="form-input" 
-                     placeholder="e.g., Samsung Galaxy A54 5G">
+              <input type="text" id="productTitle" formControlName="title" class="form-input"
+                placeholder="e.g., Samsung Galaxy A54 5G">
               <span class="help-text">Make it descriptive and include key features</span>
               <div *ngIf="productForm.get('title')?.invalid && productForm.get('title')?.touched" class="error-message">
                 Product title is required (max 100 characters)
@@ -50,7 +50,8 @@
                 <option value="">Select a category</option>
                 <option *ngFor="let category of categories" [value]="category.value">{{category.label}}</option>
               </select>
-              <div *ngIf="productForm.get('category')?.invalid && productForm.get('category')?.touched" class="error-message">
+              <div *ngIf="productForm.get('category')?.invalid && productForm.get('category')?.touched"
+                class="error-message">
                 Please select a category
               </div>
             </div>
@@ -58,10 +59,11 @@
 
           <div class="form-group full-width">
             <label for="description" class="form-label required">Product Description</label>
-            <textarea id="description" formControlName="description" class="form-textarea" 
-                      placeholder="Describe your product in detail. Include features, condition, what's included in the box, etc."></textarea>
+            <textarea id="description" formControlName="description" class="form-textarea"
+              placeholder="Describe your product in detail. Include features, condition, what's included in the box, etc."></textarea>
             <span class="help-text">Provide a detailed description to help customers make informed decisions</span>
-            <div *ngIf="productForm.get('description')?.invalid && productForm.get('description')?.touched" class="error-message">
+            <div *ngIf="productForm.get('description')?.invalid && productForm.get('description')?.touched"
+              class="error-message">
               Product description is required
             </div>
           </div>
@@ -70,14 +72,14 @@
         <!-- Pricing & Inventory Section -->
         <div class="form-section">
           <h3 class="section-title">Pricing & Inventory</h3>
-          
+
           <div class="form-row">
             <div class="form-group">
               <label for="price" class="form-label required">Price</label>
               <div class="price-input-group">
                 <span class="currency-symbol">KSh</span>
-                <input type="number" id="price" formControlName="price" class="form-input price-input" 
-                       placeholder="29999" min="1" step="0.01">
+                <input type="number" id="price" formControlName="price" class="form-input price-input"
+                  placeholder="29999" min="1" step="0.01">
               </div>
               <span class="help-text">Regular selling price in Kenyan Shillings</span>
               <div *ngIf="productForm.get('price')?.invalid && productForm.get('price')?.touched" class="error-message">
@@ -89,8 +91,8 @@
               <label for="salePrice" class="form-label">Sale Price (Optional)</label>
               <div class="price-input-group">
                 <span class="currency-symbol">KSh</span>
-                <input type="number" id="salePrice" formControlName="salePrice" class="form-input price-input" 
-                       placeholder="24999" min="1" step="0.01">
+                <input type="number" id="salePrice" formControlName="salePrice" class="form-input price-input"
+                  placeholder="24999" min="1" step="0.01">
               </div>
               <span class="help-text">Discounted price if on sale</span>
             </div>
@@ -99,8 +101,8 @@
           <div class="form-row">
             <div class="form-group">
               <label for="stock" class="form-label required">Stock Quantity</label>
-              <input type="number" id="stock" formControlName="stock" class="form-input" 
-                     placeholder="10" min="0" step="1">
+              <input type="number" id="stock" formControlName="stock" class="form-input" placeholder="10" min="0"
+                step="1">
               <span class="help-text">Number of units available</span>
               <div *ngIf="productForm.get('stock')?.invalid && productForm.get('stock')?.touched" class="error-message">
                 Valid stock quantity is required (minimum 0)
@@ -113,7 +115,8 @@
                 <option value="">Select condition</option>
                 <option *ngFor="let condition of conditions" [value]="condition.value">{{condition.label}}</option>
               </select>
-              <div *ngIf="productForm.get('condition')?.invalid && productForm.get('condition')?.touched" class="error-message">
+              <div *ngIf="productForm.get('condition')?.invalid && productForm.get('condition')?.touched"
+                class="error-message">
                 Please select a condition
               </div>
             </div>
@@ -123,19 +126,16 @@
         <!-- Product Images Section -->
         <div class="form-section">
           <h3 class="section-title">Product Images</h3>
-          
+
           <div class="form-group full-width">
             <label class="form-label required">Upload Images</label>
-            <div class="image-upload-area" 
-                 (click)="fileInput.click()"
-                 (dragover)="onDragOver($event)"
-                 (dragleave)="onDragLeave($event)"
-                 (drop)="onDrop($event)">
+            <div class="image-upload-area" (click)="fileInput.click()" (dragover)="onDragOver($event)"
+              (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
               <div class="upload-icon">📷</div>
               <div class="upload-text">Click to upload or drag and drop</div>
               <div class="upload-subtext">PNG, JPG up to 5MB each. First image will be the main photo.</div>
-              <input #fileInput type="file" class="file-input" multiple accept="image/*" 
-                     (change)="onFileSelected($event)">
+              <input #fileInput type="file" class="file-input" multiple accept="image/*"
+                (change)="onFileSelected($event)">
             </div>
             <div id="imagePreview" class="image-preview">
               <div *ngFor="let image of uploadedImages; let i = index" class="image-preview-item">
@@ -153,16 +153,16 @@
         <!-- Technical Specifications Section -->
         <div class="form-section">
           <h3 class="section-title">Technical Specifications</h3>
-          
+
           <div class="form-group full-width">
             <label class="form-label">Specifications</label>
             <div class="specs-container">
               <div id="specsContainer">
                 <div *ngFor="let spec of specifications; let i = index" class="spec-row">
-                  <input type="text" class="spec-key" [(ngModel)]="spec.key" [ngModelOptions]="{standalone: true}" 
-                         placeholder="Feature name (e.g., Storage)">
-                  <input type="text" class="spec-value" [(ngModel)]="spec.value" [ngModelOptions]="{standalone: true}" 
-                         placeholder="Value (e.g., 128GB)">
+                  <input type="text" class="spec-key" [(ngModel)]="spec.key" [ngModelOptions]="{standalone: true}"
+                    placeholder="Feature name (e.g., Storage)">
+                  <input type="text" class="spec-value" [(ngModel)]="spec.value" [ngModelOptions]="{standalone: true}"
+                    placeholder="Value (e.g., 128GB)">
                   <button type="button" class="remove-spec-btn" (click)="removeSpecification(i)">×</button>
                 </div>
               </div>

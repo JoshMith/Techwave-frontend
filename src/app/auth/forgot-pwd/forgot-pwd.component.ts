@@ -68,7 +68,7 @@ export class ForgotPwdComponent {
   startCountdown(): void {
     this.timeLeft = 60;
     clearInterval(this.countdownTimer);
-    
+
     this.countdownTimer = setInterval(() => {
       this.timeLeft--;
       if (this.timeLeft <= 0) {
@@ -79,13 +79,13 @@ export class ForgotPwdComponent {
 
   checkPasswordStrength(password: string): void {
     let score = 0;
-    
+
     if (password.length >= 8) score++;
     if (/[a-z]/.test(password)) score++;
     if (/[A-Z]/.test(password)) score++;
     if (/[0-9]/.test(password)) score++;
     if (/[^a-zA-Z0-9]/.test(password)) score++;
-    
+
     if (score < 3) {
       this.passwordStrength = 'weak';
     } else if (score < 4) {
@@ -98,7 +98,7 @@ export class ForgotPwdComponent {
   onEmailSubmit(): void {
     if (this.emailForm.valid) {
       this.isSubmitting = true;
-      
+
       setTimeout(() => {
         this.showStep(2);
         this.startCountdown();
@@ -109,10 +109,10 @@ export class ForgotPwdComponent {
 
   onVerificationSubmit(): void {
     const code = this.verificationCode.join('');
-    
+
     if (code.length === 6) {
       this.isSubmitting = true;
-      
+
       setTimeout(() => {
         if (code === '123456') { // Demo code
           this.showStep(3);
@@ -127,7 +127,7 @@ export class ForgotPwdComponent {
   onPasswordSubmit(): void {
     if (this.passwordForm.valid && this.passwordStrength === 'strong') {
       this.isSubmitting = true;
-      
+
       setTimeout(() => {
         this.showStep(4);
         this.isSubmitting = false;

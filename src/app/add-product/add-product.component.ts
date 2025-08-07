@@ -87,7 +87,7 @@ export class AddProductComponent {
     event.preventDefault();
     const uploadArea = event.currentTarget as HTMLElement;
     uploadArea.classList.remove('dragover');
-    
+
     if (event.dataTransfer?.files) {
       Array.from(event.dataTransfer.files).forEach(file => {
         if (file.type.startsWith('image/')) {

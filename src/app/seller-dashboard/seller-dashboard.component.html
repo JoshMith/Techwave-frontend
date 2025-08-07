@@ -111,10 +111,8 @@
           <h3 class="card-title">Quick Actions</h3>
         </div>
         <div class="quick-actions">
-          <a *ngFor="let action of quickActions" 
-             href="{{action.link}}" 
-             class="quick-action-btn"
-             (click)="onQuickActionClick(action.text); $event.preventDefault()">
+          <a *ngFor="let action of quickActions" href="{{action.link}}" class="quick-action-btn"
+            (click)="onQuickActionClick(action.text); $event.preventDefault()">
             <div class="action-icon">{{action.icon}}</div>
             <span class="action-text">{{action.text}}</span>
           </a>
@@ -144,7 +142,8 @@
           <h3 class="card-title">Store Performance</h3>
         </div>
         <div style="display: flex; flex-direction: column; gap: 1rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center;" *ngFor="let metric of performanceMetrics">
+          <div style="display: flex; justify-content: space-between; align-items: center;"
+            *ngFor="let metric of performanceMetrics">
             <span style="color: #6b7280;">{{metric.label}}</span>
             <span style="font-weight: 600;" [class]="metric.valueClass">{{metric.value}}</span>
           </div>

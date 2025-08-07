@@ -16,29 +16,16 @@
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
       <div class="form-group">
         <label for="email" class="form-label">Email Address</label>
-        <input 
-          type="email" 
-          id="email" 
-          formControlName="email" 
-          class="form-input" 
-          placeholder="Enter your email" 
+        <input type="email" id="email" formControlName="email" class="form-input" placeholder="Enter your email"
           required>
       </div>
 
       <div class="form-group">
         <label for="password" class="form-label">Password</label>
         <div class="password-container">
-          <input 
-            [type]="passwordFieldType" 
-            id="password" 
-            formControlName="password" 
-            class="form-input" 
-            placeholder="Enter your password" 
-            required>
-          <button 
-            type="button" 
-            class="password-toggle" 
-            (click)="togglePassword()">
+          <input [type]="passwordFieldType" id="password" formControlName="password" class="form-input"
+            placeholder="Enter your password" required>
+          <button type="button" class="password-toggle" (click)="togglePassword()">
             {{ showPassword ? '🙈' : '👁️' }}
           </button>
         </div>
@@ -48,11 +35,8 @@
       </div>
 
       <button type="submit" class="login-btn">Sign In</button>
-      
-      <button 
-        type="button" 
-        class="login-btn mpesa-option" 
-        (click)="loginWithMpesa()">
+
+      <button type="button" class="login-btn mpesa-option" (click)="loginWithMpesa()">
         📱 Quick Login with M-Pesa
       </button>
     </form>

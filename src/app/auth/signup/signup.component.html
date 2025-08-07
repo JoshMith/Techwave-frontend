@@ -27,53 +27,30 @@
       <div class="form-row">
         <div class="form-group">
           <label for="firstName" class="form-label">First Name</label>
-          <input 
-            type="text" 
-            id="firstName" 
-            formControlName="firstName" 
-            class="form-input" 
-            placeholder="John">
+          <input type="text" id="firstName" formControlName="firstName" class="form-input" placeholder="John">
         </div>
         <div class="form-group">
           <label for="lastName" class="form-label">Last Name</label>
-          <input 
-            type="text" 
-            id="lastName" 
-            formControlName="lastName" 
-            class="form-input" 
-            placeholder="Doe">
+          <input type="text" id="lastName" formControlName="lastName" class="form-input" placeholder="Doe">
         </div>
       </div>
 
       <div class="form-group">
         <label for="email" class="form-label">Email Address</label>
-        <input 
-          type="email" 
-          id="email" 
-          formControlName="email" 
-          class="form-input" 
-          placeholder="john@example.com">
+        <input type="email" id="email" formControlName="email" class="form-input" placeholder="john@example.com">
       </div>
 
       <div class="form-group">
         <label for="phone" class="form-label">Phone Number</label>
         <div class="phone-input-container">
           <div class="country-code">+254</div>
-          <input 
-            type="tel" 
-            id="phone" 
-            formControlName="phone" 
-            class="form-input" 
-            placeholder="700 123 456">
+          <input type="tel" id="phone" formControlName="phone" class="form-input" placeholder="700 123 456">
         </div>
       </div>
 
       <div class="form-group">
         <label for="location" class="form-label">Location</label>
-        <select 
-          id="location" 
-          formControlName="location" 
-          class="location-select">
+        <select id="location" formControlName="location" class="location-select">
           <option value="">Select your location</option>
           <option value="nairobi">Nairobi</option>
           <option value="meru">Meru</option>
@@ -84,16 +61,9 @@
       <div class="form-group">
         <label for="password" class="form-label">Password</label>
         <div class="password-container">
-          <input 
-            [type]="showPassword ? 'text' : 'password'" 
-            id="password" 
-            formControlName="password" 
-            class="form-input" 
+          <input [type]="showPassword ? 'text' : 'password'" id="password" formControlName="password" class="form-input"
             placeholder="Create a strong password">
-          <button 
-            type="button" 
-            class="password-toggle" 
-            (click)="togglePassword('password')">
+          <button type="button" class="password-toggle" (click)="togglePassword('password')">
             {{ showPassword ? '🙈' : '👁️' }}
           </button>
         </div>
@@ -102,49 +72,31 @@
       <div class="form-group">
         <label for="confirmPassword" class="form-label">Confirm Password</label>
         <div class="password-container">
-          <input 
-            [type]="showConfirmPassword ? 'text' : 'password'" 
-            id="confirmPassword" 
-            formControlName="confirmPassword" 
-            class="form-input" 
-            placeholder="Confirm your password"
+          <input [type]="showConfirmPassword ? 'text' : 'password'" id="confirmPassword"
+            formControlName="confirmPassword" class="form-input" placeholder="Confirm your password"
             [style.borderColor]="signupForm.hasError('mismatch') ? '#ef4444' : '#e5e7eb'">
-          <button 
-            type="button" 
-            class="password-toggle" 
-            (click)="togglePassword('confirmPassword')">
+          <button type="button" class="password-toggle" (click)="togglePassword('confirmPassword')">
             {{ showConfirmPassword ? '🙈' : '👁️' }}
           </button>
         </div>
       </div>
 
       <div class="checkbox-group">
-        <input 
-          type="checkbox" 
-          id="terms" 
-          formControlName="terms" 
-          class="checkbox-input">
+        <input type="checkbox" id="terms" formControlName="terms" class="checkbox-input">
         <label for="terms" class="checkbox-label">
-          I agree to the <a href="#" (click)="showTerms()">Terms of Service</a> and 
+          I agree to the <a href="#" (click)="showTerms()">Terms of Service</a> and
           <a href="#" (click)="showPrivacy()">Privacy Policy</a>
         </label>
       </div>
 
       <div class="checkbox-group">
-        <input 
-          type="checkbox" 
-          id="newsletter" 
-          formControlName="newsletter" 
-          class="checkbox-input">
+        <input type="checkbox" id="newsletter" formControlName="newsletter" class="checkbox-input">
         <label for="newsletter" class="checkbox-label">
           Subscribe to our newsletter for exclusive deals and updates
         </label>
       </div>
 
-      <button 
-        type="submit" 
-        class="signup-btn" 
-        [disabled]="signupForm.invalid || isSubmitting">
+      <button type="submit" class="signup-btn" [disabled]="signupForm.invalid || isSubmitting">
         {{ isSubmitting ? 'Creating Account...' : 'Create Account' }}
       </button>
     </form>

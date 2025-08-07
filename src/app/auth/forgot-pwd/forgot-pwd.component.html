@@ -29,18 +29,11 @@
       <form [formGroup]="emailForm" (ngSubmit)="onEmailSubmit()">
         <div class="form-group">
           <label for="email" class="form-label">Email Address</label>
-          <input 
-            type="email" 
-            id="email" 
-            formControlName="email" 
-            class="form-input" 
+          <input type="email" id="email" formControlName="email" class="form-input"
             placeholder="Enter your registered email">
         </div>
 
-        <button 
-          type="submit" 
-          class="reset-btn" 
-          [disabled]="emailForm.invalid || isSubmitting">
+        <button type="submit" class="reset-btn" [disabled]="emailForm.invalid || isSubmitting">
           {{ isSubmitting ? 'Sending...' : 'Send Verification Code' }}
         </button>
       </form>
@@ -77,15 +70,9 @@
         <div class="form-group">
           <label class="form-label">Enter Verification Code</label>
           <div class="verification-inputs">
-            <input 
-              *ngFor="let code of verificationCode; let i = index"
-              type="text" 
-              class="verification-input" 
-              maxlength="1" 
-              [attr.data-index]="i"
-              [(ngModel)]="verificationCode[i]"
-              [ngModelOptions]="{standalone: true}"
-              (input)="onVerificationInput(i, $event)"
+            <input *ngFor="let code of verificationCode; let i = index" type="text" class="verification-input"
+              maxlength="1" [attr.data-index]="i" [(ngModel)]="verificationCode[i]"
+              [ngModelOptions]="{standalone: true}" (input)="onVerificationInput(i, $event)"
               (keydown)="onVerificationKeydown(i, $event)">
           </div>
         </div>
@@ -94,20 +81,13 @@
           <span id="timerText" [class.hidden]="timeLeft <= 0">
             Resend code in <span id="countdown">{{ timeLeft }}</span> seconds
           </span>
-          <button 
-            type="button" 
-            class="resend-btn" 
-            [class.hidden]="timeLeft > 0"
-            (click)="resendCode()"
+          <button type="button" class="resend-btn" [class.hidden]="timeLeft > 0" (click)="resendCode()"
             [disabled]="timeLeft > 0">
             Resend Code
           </button>
         </div>
 
-        <button 
-          type="submit" 
-          class="reset-btn" 
-          [disabled]="verificationCode.join('').length !== 6 || isSubmitting">
+        <button type="submit" class="reset-btn" [disabled]="verificationCode.join('').length !== 6 || isSubmitting">
           {{ isSubmitting ? 'Verifying...' : 'Verify Code' }}
         </button>
       </form>
@@ -135,24 +115,18 @@
         <div class="form-group">
           <label for="newPassword" class="form-label">New Password</label>
           <div class="password-container">
-            <input 
-              [type]="showPassword ? 'text' : 'password'" 
-              id="newPassword" 
-              formControlName="newPassword" 
-              class="form-input" 
-              placeholder="Enter new password"
+            <input [type]="showPassword ? 'text' : 'password'" id="newPassword" formControlName="newPassword"
+              class="form-input" placeholder="Enter new password"
               (input)="checkPasswordStrength(passwordForm.get('newPassword')?.value)">
-            <button 
-              type="button" 
-              class="password-toggle" 
-              (click)="togglePassword('newPassword')">
+            <button type="button" class="password-toggle" (click)="togglePassword('newPassword')">
               {{ showPassword ? '🙈' : '👁️' }}
             </button>
           </div>
           <div class="password-strength" [class.strength-weak]="passwordStrength === 'weak'"
-               [class.strength-medium]="passwordStrength === 'medium'"
-               [class.strength-strong]="passwordStrength === 'strong'">
-            <span *ngIf="passwordStrength === 'weak'">Weak - Use at least 8 characters with mixed case, numbers, and symbols</span>
+            [class.strength-medium]="passwordStrength === 'medium'"
+            [class.strength-strong]="passwordStrength === 'strong'">
+            <span *ngIf="passwordStrength === 'weak'">Weak - Use at least 8 characters with mixed case, numbers, and
+              symbols</span>
             <span *ngIf="passwordStrength === 'medium'">Medium - Consider adding more variety</span>
             <span *ngIf="passwordStrength === 'strong'">Strong - Great password!</span>
           </div>
@@ -161,25 +135,16 @@
         <div class="form-group">
           <label for="confirmNewPassword" class="form-label">Confirm New Password</label>
           <div class="password-container">
-            <input 
-              [type]="showConfirmPassword ? 'text' : 'password'" 
-              id="confirmNewPassword" 
-              formControlName="confirmNewPassword" 
-              class="form-input" 
-              placeholder="Confirm new password"
+            <input [type]="showConfirmPassword ? 'text' : 'password'" id="confirmNewPassword"
+              formControlName="confirmNewPassword" class="form-input" placeholder="Confirm new password"
               [style.borderColor]="passwordForm.hasError('mismatch') ? '#ef4444' : '#e5e7eb'">
-            <button 
-              type="button" 
-              class="password-toggle" 
-              (click)="togglePassword('confirmNewPassword')">
+            <button type="button" class="password-toggle" (click)="togglePassword('confirmNewPassword')">
               {{ showConfirmPassword ? '🙈' : '👁️' }}
             </button>
           </div>
         </div>
 
-        <button 
-          type="submit" 
-          class="reset-btn" 
+        <button type="submit" class="reset-btn"
           [disabled]="passwordForm.invalid || passwordStrength !== 'strong' || isSubmitting">
           {{ isSubmitting ? 'Resetting Password...' : 'Reset Password' }}
         </button>

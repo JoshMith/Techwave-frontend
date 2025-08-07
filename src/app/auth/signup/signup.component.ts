@@ -29,7 +29,7 @@ export class SignupComponent {
   }
 
   passwordMatchValidator(form: FormGroup) {
-    return form.get('password')?.value === form.get('confirmPassword')?.value 
+    return form.get('password')?.value === form.get('confirmPassword')?.value
       ? null : { mismatch: true };
   }
 
