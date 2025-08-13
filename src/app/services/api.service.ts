@@ -6,7 +6,8 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class ApiService {
-  private apiUrl = 'http://localhost:3000'; // Update with your production URL
+  // public apiUrl = 'http://localhost:3000'; // Development URL
+  public apiUrl = 'https://techwave-backend-lepy.onrender.com'; // Production URL
   private httpOptions = {
     headers: new HttpHeaders({
       'Content-Type': 'application/json'
@@ -28,6 +29,16 @@ export class ApiService {
   logout(): Observable<any> {
     return this.http.post(`${this.apiUrl}/auth/logout`, {}, this.httpOptions);
   }
+
+  verifyEmail(token: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/auth/verifyEmail?token=${token}`, this.httpOptions);
+  }
+
+  // Add this to handle the Google callback
+  handleGoogleCallback(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/auth/google/callback`, { withCredentials: true });
+  }
+
 
   // ========== User Routes ==========
   getUsers(): Observable<any> {
@@ -105,7 +116,7 @@ export class ApiService {
     return this.http.get(`${this.apiUrl}/categories/${id}`, this.httpOptions);
   }
 
-  getProductCountByCategory(id:string): Observable<any> {
+  getProductCountByCategory(id: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/categories/${id}/product-count`, this.httpOptions)
   }
 
@@ -131,6 +142,14 @@ export class ApiService {
     return this.http.get(`${this.apiUrl}/products/${id}`, this.httpOptions);
   }
 
+  getProductsCountByCategoryId(categoryId: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/products/count/${categoryId}`, this.httpOptions);
+  }
+
+  getProductsByCategoryName(categoryName: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/products/category/${categoryName}`, this.httpOptions);
+  }
+
   createProduct(productData: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/products`, productData, this.httpOptions);
   }
@@ -146,6 +165,10 @@ export class ApiService {
   // ========== Product Image Routes ==========
   getProductImages(productId: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/product-images/${productId}`, this.httpOptions);
+  }
+
+  getProductImageUrl(filename: string): string {
+    return `${this.apiUrl}/public/uploads/products/${filename}`;
   }
 
   uploadProductImages(images: FormData): Observable<any> {

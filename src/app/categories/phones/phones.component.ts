@@ -2,25 +2,37 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Observable, forkJoin, map, switchMap } from 'rxjs';
+import { ApiService } from '../../services/api.service';
+import { Console } from 'console';
 
-// Interface for Product data (Phones)
 interface Product {
-  id: number;
-  name: string;
-  brand: string;
+  product_id: number;
+  title: string;
+  description: string;
   price: number;
-  specs: string;
-  imageUrl: string;
-  rating: number;
-  reviewCount: number;
-  features: {
-    has5G: boolean;
-    storage: number; // in GB
-    ram: number; // in GB
+  sale_price: number | null;
+  stock: number;
+  specs: {
+    brand: string;
+    storage?: number;
+    ram?: number;
+    has5G?: boolean;
+    [key: string]: any;
   };
+  rating: number;
+  review_count: number;
+  category_id: number;
+  seller_id: number;
+  images: ProductImage[];
 }
 
-// Interface for Filters
+interface ProductImage {
+  image_url: string;
+  alt_text: string;
+  is_primary: boolean;
+}
+
 interface Filters {
   priceRange: {
     min: number;
@@ -34,161 +46,34 @@ interface Filters {
   };
 }
 
-
 @Component({
   selector: 'app-phones',
+  standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './phones.component.html',
-  styleUrl: './phones.component.css'
+  styleUrls: ['./phones.component.css']
 })
 export class PhonesComponent implements OnInit {
+  constructor(private router: Router, private apiService: ApiService) { }
 
-  constructor(private router: Router) { }
-  // Sample data - In real app, this would come from a service
-  allProducts: Product[] = [
-    {
-      id: 1,
-      name: 'Samsung Galaxy A54',
-      brand: 'Samsung',
-      price: 34900,
-      specs: '128GB, 5G, 8GB RAM',
-      imageUrl: 'https://images.samsung.com/is/image/samsung/p6pim/ke/2302/gallery/ke-galaxy-a54-5g-a546-sm-a546elgdkke-534851051',
-      rating: 4.2,
-      reviewCount: 42,
-      features: { has5G: true, storage: 128, ram: 8 }
-    },
-    {
-      id: 2,
-      name: 'iPhone 15',
-      brand: 'Apple',
-      price: 129000,
-      specs: '256GB, 5G, 8GB RAM',
-      imageUrl: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-15-finish-select-202309-6-1inch-pink_AV1',
-      rating: 4.8,
-      reviewCount: 78,
-      features: { has5G: true, storage: 256, ram: 8 }
-    },
-    {
-      id: 3,
-      name: 'Xiaomi Redmi Note 12',
-      brand: 'Xiaomi',
-      price: 17490,
-      specs: '64GB, 4G, 4GB RAM',
-      imageUrl: 'https://i01.appmifile.com/v1/MI_18455B3E4DA706226CF7535A58E875F596/pms_1677559808.52945351.png',
-      rating: 4.0,
-      reviewCount: 156,
-      features: { has5G: false, storage: 64, ram: 4 }
-    },
-    {
-      id: 4,
-      name: 'Google Pixel 8',
-      brand: 'Google',
-      price: 89900,
-      specs: '128GB, 5G, 8GB RAM',
-      imageUrl: 'https://lh3.googleusercontent.com/VlNzlW4O6WtGCF8x3FVn1I5ZNGTMWl3vgJ8XJqOuLhI8W5SZ8K6xzFEPHwY_kQ',
-      rating: 4.6,
-      reviewCount: 89,
-      features: { has5G: true, storage: 128, ram: 8 }
-    },
-    {
-      id: 5,
-      name: 'Oppo A78',
-      brand: 'Oppo',
-      price: 24900,
-      specs: '128GB, 4G, 8GB RAM',
-      imageUrl: 'https://image01.oppo.com/content/dam/oppo/common/mkt/v2-2/a78-5g/navigation/OPPO-A78-5G-Black-PC.png',
-      rating: 3.8,
-      reviewCount: 67,
-      features: { has5G: false, storage: 128, ram: 8 }
-    },
-    {
-      id: 6,
-      name: 'Huawei Nova 11',
-      brand: 'Huawei',
-      price: 45900,
-      specs: '256GB, 4G, 8GB RAM',
-      imageUrl: 'https://consumer.huawei.com/content/dam/huawei-cbg-site/common/mkt/pdp/phones/nova11/imgs/pc/nova11-kv-green.png',
-      rating: 4.1,
-      reviewCount: 34,
-      features: { has5G: false, storage: 256, ram: 8 }
-    },
-    {
-      id: 7,
-      name: 'Tecno Camon 20',
-      brand: 'Tecno',
-      price: 19900,
-      specs: '128GB, 4G, 8GB RAM',
-      imageUrl: 'https://www.tecno-mobile.com/sites/default/files/2023-04/camon20-premiere-serenity-blue-1.png',
-      rating: 3.9,
-      reviewCount: 112,
-      features: { has5G: false, storage: 128, ram: 8 }
-    },
-    {
-      id: 8,
-      name: 'OnePlus Nord 3',
-      brand: 'OnePlus',
-      price: 52900,
-      specs: '128GB, 5G, 8GB RAM',
-      imageUrl: 'https://opmobility.s3.amazonaws.com/ou-resources/nord-3-5g/images/gallery/nord-3-5g-tempest-gray-1.png',
-      rating: 4.4,
-      reviewCount: 91,
-      features: { has5G: true, storage: 128, ram: 8 }
-    },
-    {
-      id: 9,
-      name: 'Infinix Note 30',
-      brand: 'Infinix',
-      price: 16900,
-      specs: '128GB, 4G, 8GB RAM',
-      imageUrl: 'https://www.infinixmobility.com/sites/default/files/note-30-obsidian-black-1.png',
-      rating: 3.7,
-      reviewCount: 203,
-      features: { has5G: false, storage: 128, ram: 8 }
-    },
-    {
-      id: 10,
-      name: 'Realme GT Neo 5',
-      brand: 'Realme',
-      price: 39900,
-      specs: '256GB, 5G, 12GB RAM',
-      imageUrl: 'https://image01.realme.net/general/20230227/1677492341234.jpg',
-      rating: 4.3,
-      reviewCount: 156,
-      features: { has5G: true, storage: 256, ram: 12 }
-    }
-  ];
-
-  // Component state
+  allProducts: Product[] = [];
   filteredProducts: Product[] = [];
   paginatedProducts: Product[] = [];
-  loading = false;
+  loading = true;
 
-  // Pagination
   currentPage = 1;
   itemsPerPage = 6;
   totalPages = 0;
 
-  // Filters
   filters: Filters = {
-    priceRange: {
-      min: 5000,
-      max: 200000
-    },
+    priceRange: { min: 5000, max: 200000 },
     brands: [],
-    features: {
-      has5G: false,
-      has128GB: false,
-      has8GBRAM: false
-    }
+    features: { has5G: false, has128GB: false, has8GBRAM: false }
   };
 
-  // Available filter options
   availableBrands: string[] = [];
-
-  // Sorting
   sortBy = 'popularity';
 
-  // Computed properties
   get totalProducts(): number {
     return this.filteredProducts.length;
   }
@@ -198,28 +83,106 @@ export class PhonesComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.initializeComponent();
+    this.loadProducts();
   }
 
-  private initializeComponent(): void {
+  private loadProducts(): void {
     this.loading = true;
 
-    // Simulate API call delay
-    setTimeout(() => {
-      this.extractAvailableBrands();
-      this.applyFilters();
-      this.loading = false;
-    }, 500);
+    this.apiService.getProductsByCategoryName('phones').pipe(
+      switchMap((products: Product[]) => {
+        this.allProducts = products;
+        this.extractAvailableBrands();
+
+        // Fetch images for each product
+        const imageRequests = products.map(product =>
+          this.apiService.getProductImages(product.product_id.toString()).pipe(
+            map(images => ({
+              ...product,
+              images: this.processImages(images) // Process and validate images
+            }))
+          ));
+        return forkJoin(imageRequests);
+      })
+    ).subscribe({
+      next: (productsWithImages: Product[]) => {
+        this.allProducts = productsWithImages;
+        this.applyFilters();
+        this.loading = false;
+        console.log('Products loaded:', this.allProducts);
+      },
+      error: (err) => {
+        console.error('Error loading products:', err);
+        this.loading = false;
+      }
+    });
   }
 
+  private processImages(images: any[]): ProductImage[] {
+    if (!images || !Array.isArray(images)) return [];
+
+    return images.map(img => ({
+      image_url: this.ensureAbsoluteUrl(img.image_url),
+      alt_text: img.alt_text || 'Product image',
+      is_primary: img.is_primary || false
+    }));
+  }
+
+  private ensureAbsoluteUrl(url: string): string {
+    if (!url) return this.getFallbackImage();
+
+    // If URL is already absolute
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+
+    // Handle relative paths
+    if (url.startsWith('/')) {
+      return `${window.location.origin}${url}`;
+    }
+
+    // Handle filenames only
+    return this.apiService.getProductImageUrl(url);
+  }
+
+  getProductImage(product: Product): string {
+    if (!product.images || product.images.length === 0) {
+      return this.getFallbackImage();
+    }
+
+    // Find primary image or use first image
+    const image = product.images.find(img => img.is_primary) || product.images[0];
+
+    // Ensure URL is properly formatted
+    return this.ensureAbsoluteUrl(image.image_url);
+  }
+
+  // private getFallbackImage(): string {
+  //   return 'assets/images/placeholder-product.png'; // Use a local fallback
+  // }
+
+  private getFallbackImage(): string {
+    // Use a local fallback image
+    return 'https://www.pinterest.com/pin/702631979346894042/';
+  }
+
+  onImageError(event: any): void {
+    event.target.src = this.getFallbackImage();
+  }
+
+
+
   private extractAvailableBrands(): void {
-    const brands = new Set(this.allProducts.map(product => product.brand));
-    this.availableBrands = Array.from(brands).sort();
+    const brands = new Set(
+      this.allProducts
+        .map(product => product.specs.brand)
+        .filter(brand => brand) // Filter out undefined/null brands
+    );
+    this.availableBrands = Array.from(brands).sort() as string[];
   }
 
   // Filter methods
   onPriceChange(): void {
-    // Ensure min doesn't exceed max
     if (this.filters.priceRange.min > this.filters.priceRange.max) {
       this.filters.priceRange.min = this.filters.priceRange.max;
     }
@@ -242,26 +205,30 @@ export class PhonesComponent implements OnInit {
 
   applyFilters(): void {
     this.filteredProducts = this.allProducts.filter(product => {
+      // Use sale price if available, otherwise use regular price
+      const price = product.sale_price || product.price;
+
       // Price filter
-      if (product.price < this.filters.priceRange.min || product.price > this.filters.priceRange.max) {
+      if (price < this.filters.priceRange.min || price > this.filters.priceRange.max) {
         return false;
       }
 
       // Brand filter
-      if (this.filters.brands.length > 0 && !this.filters.brands.includes(product.brand)) {
+      if (this.filters.brands.length > 0 &&
+        (!product.specs.brand || !this.filters.brands.includes(product.specs.brand))) {
         return false;
       }
 
       // Feature filters
-      if (this.filters.features.has5G && !product.features.has5G) {
+      if (this.filters.features.has5G && !product.specs.has5G) {
         return false;
       }
 
-      if (this.filters.features.has128GB && product.features.storage < 128) {
+      if (this.filters.features.has128GB && (!product.specs.storage || product.specs.storage < 128)) {
         return false;
       }
 
-      if (this.filters.features.has8GBRAM && product.features.ram < 8) {
+      if (this.filters.features.has8GBRAM && (!product.specs.ram || product.specs.ram < 8)) {
         return false;
       }
 
@@ -298,25 +265,27 @@ export class PhonesComponent implements OnInit {
   private sortProducts(): void {
     switch (this.sortBy) {
       case 'price-low':
-        this.filteredProducts.sort((a, b) => a.price - b.price);
+        this.filteredProducts.sort((a, b) =>
+          (a.sale_price || a.price) - (b.sale_price || b.price));
         break;
       case 'price-high':
-        this.filteredProducts.sort((a, b) => b.price - a.price);
+        this.filteredProducts.sort((a, b) =>
+          (b.sale_price || b.price) - (a.sale_price || a.price));
         break;
       case 'rating':
         this.filteredProducts.sort((a, b) => b.rating - a.rating);
         break;
       case 'newest':
-        this.filteredProducts.sort((a, b) => b.id - a.id);
+        this.filteredProducts.sort((a, b) => b.product_id - a.product_id);
         break;
       case 'popularity':
       default:
-        this.filteredProducts.sort((a, b) => b.reviewCount - a.reviewCount);
+        this.filteredProducts.sort((a, b) => b.review_count - a.review_count);
         break;
     }
   }
 
-  // Pagination methods
+  // Pagination methods (unchanged from your original)
   private updatePagination(): void {
     this.totalPages = Math.ceil(this.filteredProducts.length / this.itemsPerPage);
     this.updatePaginatedProducts();
@@ -344,15 +313,10 @@ export class PhonesComponent implements OnInit {
         pages.push(i);
       }
     } else {
-      // Show first page
       pages.push(1);
-
-      // Show dots if current page is far from start
       if (this.currentPage > 3) {
         pages.push('...');
       }
-
-      // Show pages around current page
       const start = Math.max(2, this.currentPage - 1);
       const end = Math.min(this.totalPages - 1, this.currentPage + 1);
 
@@ -361,72 +325,49 @@ export class PhonesComponent implements OnInit {
           pages.push(i);
         }
       }
-
-      // Show dots if current page is far from end
       if (this.currentPage < this.totalPages - 2) {
         pages.push('...');
       }
-
-      // Show last page
       if (this.totalPages > 1) {
         pages.push(this.totalPages);
       }
     }
-
     return pages;
   }
 
   onSearch(): void {
     alert('Search functionality is not implemented yet.');
-    console.log('Search button clicked');
   }
 
-  /**
-   * Handle category card clicks
-   * @param category - The category that was clicked
-   */
   onCategoryClick(category: string): void {
-    console.log(`Category clicked: ${category}`);
-    // Example: this.router.navigate(['/categories', category]);
-
-    switch (category) {
-      case 'phones':
-        this.router.navigate(['/phones']);
-        break;
-      case 'laptops':
-        this.router.navigate(['/laptops']);
-        break;
-      case 'accessories':
-        this.router.navigate(['/accessories']);
-        break;
-      case 'appliances':
-        this.router.navigate(['/home-appliances']);
-        break;
-      case 'gaming':
-        this.router.navigate(['/gaming']);
-        break;
-      case 'audio':
-        this.router.navigate(['/audio-sound']);
-        break;
-      default:
-        console.warn('Unknown category:', category);
-    }
+    this.router.navigate([`/categories/${category.toLowerCase()}`]);
   }
 
-  onImageError(event: any): void {
-    // Fallback image when product image fails to load
-    event.target.src = 'https://via.placeholder.com/300x300?text=No+Image';
-  }
+
 
   addToCart(product: Product): void {
-    // Handle add to cart functionality
-    console.log('Adding to cart:', product.name);
-    // In a real app, you would dispatch an action to add to cart state/service
-    alert(`${product.name} added to cart!`);
+    console.log('Adding to cart:', product.title);
+    alert(`${product.title} added to cart!`);
     this.router.navigate(['/cart']);
   }
+
   cartCount = 3;
   goToCart() {
     this.router.navigate(['/cart']);
+  }
+
+  // Helper to get display price (shows sale price if available)
+  getDisplayPrice(product: Product): number {
+    return product.sale_price || product.price;
+  }
+
+  // Helper to get product specs string
+  getProductSpecs(product: Product): string {
+    const specs = product.specs;
+    const parts = [];
+    if (specs.storage) parts.push(`${specs.storage}GB`);
+    if (specs.has5G) parts.push('5G');
+    if (specs.ram) parts.push(`${specs.ram}GB RAM`);
+    return parts.join(', ');
   }
 }

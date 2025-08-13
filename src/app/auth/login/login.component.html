@@ -30,7 +30,7 @@
           </button>
         </div>
         <div class="forgot-password">
-          <a href="#" (click)="showForgotPassword()">Forgot your password?</a>
+          <a href="/forgot-pwd" (click)="showForgotPassword()">Forgot your password?</a>
         </div>
       </div>
 
@@ -49,6 +49,11 @@
       <a href="#" class="social-btn" (click)="loginWithGoogle()">
         🌐 Google
       </a>
+      <button type="button" (click)="loginWithGoogle()" class="google-btn">
+        <img src="https://cdn-icons-png.freepik.com/256/2991/2991148.png?semt=ais_white_label" alt="Google icon"
+          width="20">
+        Google Login
+      </button>
       <a href="#" class="social-btn" (click)="loginWithFacebook()">
         📘 Facebook
       </a>

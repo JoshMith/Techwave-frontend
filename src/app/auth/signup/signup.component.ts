@@ -62,7 +62,6 @@ export class SignupComponent {
 
   showLogin(): void {
     alert('Redirecting to login page...');
-    // Here you would typically navigate to the login page
     this.router.navigate(['/login']);
   }
 

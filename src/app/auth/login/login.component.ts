@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-login',
@@ -11,8 +12,10 @@ export class LoginComponent {
   loginForm: FormGroup;
   showPassword = false;
   passwordFieldType = 'password';
+  isLoading = false;
+  loginMessage = '';
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private login: ApiService) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required]
@@ -44,8 +47,13 @@ export class LoginComponent {
     alert('M-Pesa login functionality - Enter your phone number for quick access');
   }
 
+  // Add this new method for Google login
   loginWithGoogle(): void {
-    alert('Google OAuth login functionality');
+    this.isLoading = true;
+    this.loginMessage = 'Redirecting to Google...';
+    
+    // Redirect to backend Google auth endpoint
+    window.location.href = `${this.login.apiUrl}/auth/google`;
   }
 
   loginWithFacebook(): void {
