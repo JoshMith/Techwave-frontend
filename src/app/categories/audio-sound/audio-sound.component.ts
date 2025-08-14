@@ -200,8 +200,9 @@ export class AudioSoundComponent implements OnInit {
     return discount ? price * (1 - discount / 100) : price;
   }
 
-  onCategoryClick(category: string) {
-    this.router.navigate([`/${category}`]);
+  // Navigation methods
+  onCategoryClick(category: string): void {
+    this.router.navigate([`/categories/${category.toLowerCase().replace(' ', '-')}`]);
   }
 
   onSearch() {

@@ -18,7 +18,7 @@ export class LoginComponent {
   constructor(private fb: FormBuilder, private login: ApiService) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', Validators.required]
+      password: ['', Validators.required, Validators.minLength(6)]
     });
   }
 
@@ -47,7 +47,7 @@ export class LoginComponent {
     alert('M-Pesa login functionality - Enter your phone number for quick access');
   }
 
-  // Add this new method for Google login
+  // Google login
   loginWithGoogle(): void {
     this.isLoading = true;
     this.loginMessage = 'Redirecting to Google...';

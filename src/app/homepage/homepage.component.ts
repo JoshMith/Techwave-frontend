@@ -94,20 +94,6 @@ export class HomepageComponent implements OnInit {
     });
   }
 
-  /**
-   * Handle category clicks from the dropdown menu
-   */
-  onCategoryClick(categoryKey: string): void {
-    const category  = categoryKey;
-    if (category) {
-      this.selectCategory(category);
-    } else {
-      console.warn('Category not found:', categoryKey);
-      setTimeout(() => {
-        this.router.navigate(['/shop']);
-      }, 2000);
-    }
-  }
 
   /**
    * Handle category card clicks
@@ -161,6 +147,13 @@ export class HomepageComponent implements OnInit {
       { name: 'Gaming', icon: '🎮', count: 32, key: 'Gaming', category_id: 5, description: '', featured: true, icon_path: '', created_at: '' },
       { name: 'Audio & Sound', icon: '🔊', count: 13, key: 'Audio & Sound', category_id: 6, description: '', featured: true, icon_path: '', created_at: '' },
     ];
+  }
+
+  /**
+   * Handle category click
+   */
+  onCategoryClick(category: string): void {
+    this.router.navigate([`/categories/${category.toLowerCase()}`]);
   }
 
   /**

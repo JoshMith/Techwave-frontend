@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-signup',
@@ -13,8 +14,10 @@ export class SignupComponent {
   showPassword = false;
   showConfirmPassword = false;
   isSubmitting = false;
+  isLoading = false;
+  signupMessage = '';
 
-  constructor(private fb: FormBuilder, private router: Router) {
+  constructor(private fb: FormBuilder, private router: Router, private signup: ApiService) {
     this.signupForm = this.fb.group({
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
@@ -66,7 +69,11 @@ export class SignupComponent {
   }
 
   signupWithGoogle(): void {
-    alert('Google OAuth signup functionality');
+    this.isLoading = true;
+    this.signupMessage = 'Redirecting to Google...';
+
+    // Redirect to backend Google auth endpoint
+    window.location.href = `${this.signup.apiUrl}/auth/google`;
   }
 
   signupWithFacebook(): void {

@@ -7,10 +7,22 @@
   padding: 1rem;
 }
 
+.main-content {
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.content {
+  display: flex;
+  gap: 2rem;
+}
+
 .container {
   max-width: 1400px;
   margin: 0 auto;
 }
+
+
 
 .header {
   background: linear-gradient(135deg, #1e3a8a, #3b4f7d);

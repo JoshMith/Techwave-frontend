@@ -198,6 +198,7 @@ body {
 .social-btn:hover {
   border-color: #d1d5db;
   background: #f9fafb;
+  cursor: pointer;
 }
 
 .signup-link {

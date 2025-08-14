@@ -129,6 +129,7 @@
   transition: all 0.3s ease;
 }
 
+
 /* Dropdown Styles */
 .dropdown {
   position: relative;
@@ -201,21 +202,20 @@
   color: #3b82f6;
 }
 
-.main-content {
-  background: #f8fafc;
-  min-height: 100vh;
-}
-
 /* Main Content */
 .main-content {
   background: #f8fafc;
   min-height: 100vh;
 }
 
+.content {
+  display: flex;
+  gap: 2rem;
+}
+
 .container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 2rem;
 }
 
 .page-header {

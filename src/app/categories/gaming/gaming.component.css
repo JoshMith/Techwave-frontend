@@ -7,9 +7,20 @@
   padding: 1rem;
 }
 
+.main-content {
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
 .container {
   max-width: 1400px;
   margin: 0 auto;
+}
+
+.content {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1.5rem;
 }
 
 .header {
@@ -202,12 +213,6 @@
 
 .dropdown-link:hover .dropdown-icon {
   color: #3b82f6;
-}
-
-.content {
-  display: flex;
-  gap: 2rem;
-  margin-top: 1.5rem;
 }
 
 /* Filters */

@@ -211,30 +211,9 @@ export class HomeAppliancesComponent implements OnInit {
     console.log('Search button clicked');
   }
 
+  // Navigation methods
   onCategoryClick(category: string): void {
-    console.log(`Category clicked: ${category}`);
-    switch (category) {
-      case 'phones':
-        this.router.navigate(['/phones']);
-        break;
-      case 'laptops':
-        this.router.navigate(['/laptops']);
-        break;
-      case 'accessories':
-        this.router.navigate(['/accessories']);
-        break;
-      case 'appliances':
-        this.router.navigate(['/home-appliances']);
-        break;
-      case 'gaming':
-        this.router.navigate(['/gaming']);
-        break;
-      case 'audio':
-        this.router.navigate(['/audio-sound']);
-        break;
-      default:
-        console.warn('Unknown category:', category);
-    }
+    this.router.navigate([`/categories/${category.toLowerCase().replace(' ', '-')}`]);
   }
 
   // Calculate discounted price

@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
+import { Router } from '@angular/router';
 
 interface Thumbnail {
   imageSrc: string;
@@ -27,6 +28,11 @@ interface Specification {
   styleUrls: ['./product.component.css']
 })
 export class ProductComponent {
+  constructor(private router: Router) { }
+  cartCount: number = 0;
+  searchQuery: string = '';
+
+
   activeTab: string = 'description';
   isWishlisted: boolean = false;
   mainImageSrc: string = 'https://images.samsung.com/is/image/samsung/p6pim/ke/2302/gallery/ke-galaxy-a54-5g-a546-sm-a546elgdkke-534851051?$650_519_PNG$';
@@ -128,5 +134,20 @@ export class ProductComponent {
     const ratingCounts = [1, 2, 6, 13, 20]; // Counts for 1-5 stars
     const totalReviews = ratingCounts.reduce((a, b) => a + b, 0);
     return (ratingCounts[rating - 1] / totalReviews) * 100;
+  }
+
+
+  onSearch(query: string): void {
+    if (query) {
+      // this.router.navigate(['/search'], { queryParams: { q: query } });
+    }
+  }
+
+  goToCart(): void {
+    this.router.navigate(['/cart']);
+  }
+
+  onCategoryClick(category: string): void {
+    this.router.navigate([`/categories/${category.toLowerCase()}`]);
   }
 }
