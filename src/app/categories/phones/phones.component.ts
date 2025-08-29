@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Observable, forkJoin, map, switchMap } from 'rxjs';
 import { ApiService } from '../../services/api.service';
-import { Console } from 'console';
 
 interface Product {
   product_id: number;
