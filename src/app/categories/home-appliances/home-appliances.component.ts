@@ -1,19 +1,37 @@
-// home-appliances.component.ts
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Observable, forkJoin, map, switchMap } from 'rxjs';
+import { ApiService } from '../../services/api.service';
 
 interface Product {
-  id: number;
-  name: string;
-  brand: string;
-  specs: string;
+  product_id: number;
+  title: string;
+  description: string;
   price: number;
-  features: string[];
-  discount?: number;
-  rating?: number;
-  capacity?: string;
+  sale_price: number | null;
+  stock: number;
+  specs: {
+    os?: string;
+    screen?: string;
+    resolution?: string;
+    type?: string;
+    capacity?: string;
+    features?: string;
+    [key: string]: any;
+  };
+  rating: number;
+  review_count: number;
+  category_name: string;
+  seller_name: string;
+  images: ProductImage[];
+}
+
+interface ProductImage {
+  image_url: string;
+  alt_text: string;
+  is_primary: boolean;
 }
 
 @Component({
@@ -24,154 +42,147 @@ interface Product {
   styleUrls: ['./home-appliances.component.css']
 })
 export class HomeAppliancesComponent implements OnInit {
-  constructor(private router: Router) { }
+  constructor(private router: Router, private apiService: ApiService) { }
 
-  products: Product[] = [];
+  // Products data
+  allProducts: Product[] = [];
   filteredProducts: Product[] = [];
+  loading = true;
+  errorMessage: string | null = null;
 
   // Filters
-  priceRange = { min: 5000, max: 200000 };
-  brands: string[] = ['Samsung', 'LG', 'Hisense', 'Bosch', 'Whirlpool', 'Midea'];
+  priceRange = { min: 10000, max: 300000 };
+  brands: string[] = [];
   selectedBrands: string[] = [];
-  features: string[] = ['Energy Efficient', 'Smart Features', 'Large Capacity', 'Inverter Technology'];
-  selectedFeatures: string[] = [];
-
+  applianceTypes = ['TV', 'Refrigerator', 'Washing Machine', 'Microwave', 'Air Conditioner'];
+  selectedTypes: string[] = [];
+  
   // Sorting
   sortOptions = [
     { value: 'popularity', label: 'Popularity' },
     { value: 'price-low', label: 'Price: Low to High' },
     { value: 'price-high', label: 'Price: High to Low' },
-    { value: 'capacity', label: 'Capacity' }
+    { value: 'rating', label: 'Highest Rated' },
+    { value: 'newest', label: 'Newest First' }
   ];
   selectedSort = 'popularity';
 
-  ngOnInit() {
+  // Cart
+  cartCount = 0;
+
+  ngOnInit(): void {
     this.loadProducts();
-    this.applyFilters();
   }
 
-  loadProducts() {
-    this.products = [
-      {
-        id: 1,
-        name: 'Samsung 65" 4K Smart TV',
-        brand: 'Samsung',
-        specs: 'Crystal UHD, Smart TV with Streaming',
-        price: 89999,
-        discount: 15,
-        rating: 4.7,
-        features: ['Smart Features', 'Energy Efficient'],
-        capacity: '65 inch'
+  private loadProducts(): void {
+    this.loading = true;
+    this.errorMessage = null;
+
+    this.apiService.getProductsByCategoryName('Home Appliances').pipe(
+      switchMap((products: Product[]) => {
+        this.allProducts = products;
+        this.extractBrands();
+
+        // Fetch images for each product
+        const imageRequests = products.map(product =>
+          this.apiService.getProductImages(product.product_id.toString()).pipe(
+            map(images => ({
+              ...product,
+              images: this.processImages(images)
+            }))
+          )
+        );
+        return forkJoin(imageRequests);
+      })
+    ).subscribe({
+      next: (productsWithImages: Product[]) => {
+        this.allProducts = productsWithImages;
+        this.applyFilters();
+        this.loading = false;
       },
-      {
-        id: 2,
-        name: 'LG Inverter Refrigerator',
-        brand: 'LG',
-        specs: 'Side by Side, 623L, Smart Cooling',
-        price: 149999,
-        rating: 4.8,
-        features: ['Inverter Technology', 'Large Capacity', 'Energy Efficient'],
-        capacity: '623L'
-      },
-      {
-        id: 3,
-        name: 'Hisense Front Load Washing Machine',
-        brand: 'Hisense',
-        specs: '9kg, 1400 RPM, Steam Care',
-        price: 64999,
-        discount: 10,
-        rating: 4.5,
-        features: ['Large Capacity', 'Energy Efficient'],
-        capacity: '9kg'
-      },
-      {
-        id: 4,
-        name: 'Bosch Built-in Oven',
-        brand: 'Bosch',
-        specs: '60cm, Pyrolytic Cleaning, 8 Functions',
-        price: 79999,
-        rating: 4.6,
-        features: ['Energy Efficient', 'Smart Features'],
-        capacity: '60cm'
-      },
-      {
-        id: 5,
-        name: 'Midea Microwave Oven',
-        brand: 'Midea',
-        specs: '25L, Grill, Convection, 10 Power Levels',
-        price: 18999,
-        discount: 20,
-        rating: 4.4,
-        features: ['Energy Efficient'],
-        capacity: '25L'
-      },
-      {
-        id: 6,
-        name: 'Whirlpool Top Load Washing Machine',
-        brand: 'Whirlpool',
-        specs: '7kg, 6th Sense Technology, ZPF',
-        price: 42999,
-        rating: 4.3,
-        features: ['Inverter Technology', 'Energy Efficient'],
-        capacity: '7kg'
-      },
-      {
-        id: 7,
-        name: 'Samsung Air Conditioner',
-        brand: 'Samsung',
-        specs: '24,000 BTU, Inverter, WindFree Cooling',
-        price: 109999,
-        discount: 12,
-        rating: 4.7,
-        features: ['Inverter Technology', 'Smart Features', 'Energy Efficient'],
-        capacity: '24,000 BTU'
-      },
-      {
-        id: 8,
-        name: 'LG Cordless Vacuum Cleaner',
-        brand: 'LG',
-        specs: 'CordZero, Self-Charging, 40min Runtime',
-        price: 34999,
-        rating: 4.5,
-        features: ['Smart Features'],
-        capacity: '0.8L'
+      error: (err) => {
+        console.error('Error loading products:', err);
+        this.errorMessage = 'Failed to load products. Please try again later.';
+        this.loading = false;
       }
-    ];
+    });
   }
 
-  toggleBrand(brand: string) {
-    if (this.selectedBrands.includes(brand)) {
-      this.selectedBrands = this.selectedBrands.filter(b => b !== brand);
+  private processImages(images: any[]): ProductImage[] {
+    if (!images || !Array.isArray(images)) return [];
+
+    return images.map(img => ({
+      image_url: this.ensureAbsoluteUrl(img.image_url),
+      alt_text: img.alt_text || 'Product image',
+      is_primary: img.is_primary || false
+    }));
+  }
+
+  private ensureAbsoluteUrl(url: string): string {
+    if (!url) return this.getFallbackImage();
+
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+
+    if (url.startsWith('/')) {
+      return `${window.location.origin}${url}`;
+    }
+
+    return this.apiService.getProductImageUrl(url);
+  }
+
+  private extractBrands(): void {
+    const brands = new Set(
+      this.allProducts
+        .map(product => product.title.split(' ')[0]) // Get first word as brand
+        .filter(brand => brand)
+    );
+    this.brands = Array.from(brands).sort() as string[];
+  }
+
+  // Filter methods
+  toggleBrand(brand: string): void {
+    const index = this.selectedBrands.indexOf(brand);
+    if (index > -1) {
+      this.selectedBrands.splice(index, 1);
     } else {
       this.selectedBrands.push(brand);
     }
     this.applyFilters();
   }
 
-  toggleFeature(feature: string) {
-    if (this.selectedFeatures.includes(feature)) {
-      this.selectedFeatures = this.selectedFeatures.filter(f => f !== feature);
+  toggleType(type: string): void {
+    const index = this.selectedTypes.indexOf(type);
+    if (index > -1) {
+      this.selectedTypes.splice(index, 1);
     } else {
-      this.selectedFeatures.push(feature);
+      this.selectedTypes.push(type);
     }
     this.applyFilters();
   }
 
-  applyFilters() {
-    this.filteredProducts = this.products.filter(product => {
+  applyFilters(): void {
+    this.filteredProducts = this.allProducts.filter(product => {
+      const price = product.sale_price || product.price;
+
       // Price filter
-      if (product.price < this.priceRange.min || product.price > this.priceRange.max) {
+      if (price < this.priceRange.min || price > this.priceRange.max) {
         return false;
       }
 
       // Brand filter
-      if (this.selectedBrands.length > 0 && !this.selectedBrands.includes(product.brand)) {
+      if (this.selectedBrands.length > 0 && 
+          !this.selectedBrands.some(brand => product.title.startsWith(brand))) {
         return false;
       }
 
-      // Feature filter
-      if (this.selectedFeatures.length > 0) {
-        return this.selectedFeatures.every(feature => product.features.includes(feature));
+      // Type filter
+      if (this.selectedTypes.length > 0) {
+        const productType = product.specs.type || product.title.split(' ')[1] || '';
+        const matchesType = this.selectedTypes.some(type => 
+          productType.toLowerCase().includes(type.toLowerCase()));
+        if (!matchesType) return false;
       }
 
       return true;
@@ -180,35 +191,66 @@ export class HomeAppliancesComponent implements OnInit {
     this.sortProducts();
   }
 
-  sortProducts() {
-    this.filteredProducts.sort((a, b) => {
-      switch (this.selectedSort) {
-        case 'price-low':
-          return a.price - b.price;
-        case 'price-high':
-          return b.price - a.price;
-        case 'capacity':
-          // Extract numerical value from capacity string
-          const aCapacity = parseFloat(a.capacity?.replace(/[^\d.]/g, '') || '0');
-          const bCapacity = parseFloat(b.capacity?.replace(/[^\d.]/g, '') || '0');
-          return bCapacity - aCapacity;
-        default: // popularity
-          return a.id - b.id;
-      }
-    });
-  }
-
-  resetFilters() {
+  resetFilters(): void {
+    this.priceRange = { min: 10000, max: 300000 };
     this.selectedBrands = [];
-    this.selectedFeatures = [];
-    this.priceRange = { min: 5000, max: 200000 };
+    this.selectedTypes = [];
     this.selectedSort = 'popularity';
     this.applyFilters();
   }
 
-  onSearch(): void {
-    alert('Search functionality is not implemented yet.');
-    console.log('Search button clicked');
+  private sortProducts(): void {
+    switch (this.selectedSort) {
+      case 'price-low':
+        this.filteredProducts.sort((a, b) => (a.sale_price || a.price) - (b.sale_price || b.price));
+        break;
+      case 'price-high':
+        this.filteredProducts.sort((a, b) => (b.sale_price || b.price) - (a.sale_price || a.price));
+        break;
+      case 'rating':
+        this.filteredProducts.sort((a, b) => b.rating - a.rating);
+        break;
+      case 'newest':
+        this.filteredProducts.sort((a, b) => b.product_id - a.product_id);
+        break;
+      case 'popularity':
+      default:
+        this.filteredProducts.sort((a, b) => b.review_count - a.review_count);
+        break;
+    }
+  }
+
+  // Product display methods
+  getProductImage(product: Product): string | null {
+    if (!product.images || product.images.length === 0) {
+      return null;
+    }
+    const image = product.images.find(img => img.is_primary) || product.images[0];
+    return this.ensureAbsoluteUrl(image.image_url);
+  }
+
+  private getFallbackImage(): string {
+    return 'assets/images/appliance-placeholder.png';
+  }
+
+  onImageError(event: any): void {
+    event.target.src = this.getFallbackImage();
+  }
+
+  formatSpecs(specs: any): string {
+    const parts = [];
+    if (specs.os) parts.push(specs.os);
+    if (specs.screen) parts.push(specs.screen);
+    if (specs.resolution) parts.push(specs.resolution);
+    if (specs.type) parts.push(specs.type);
+    if (specs.capacity) parts.push(specs.capacity);
+    if (specs.features) parts.push(specs.features);
+    return parts.join(' • ');
+  }
+
+  getDiscountedPrice(price: number, discount?: number): number {
+    if (!discount) return price;
+    return price - (price * discount / 100);
   }
 
   // Navigation methods
@@ -216,13 +258,17 @@ export class HomeAppliancesComponent implements OnInit {
     this.router.navigate([`/categories/${category.toLowerCase().replace(' ', '-')}`]);
   }
 
-  // Calculate discounted price
-  getDiscountedPrice(price: number, discount?: number): number {
-    if (!discount) return price;
-    return price - (price * discount / 100);
+  onSearch(): void {
+    alert('Search functionality is not implemented yet.');
   }
-  cartCount = 3;
-  goToCart() {
+
+  addToCart(product: Product): void {
+    console.log('Adding to cart:', product.title);
+    this.cartCount++;
+    alert(`${product.title} added to cart!`);
+  }
+
+  goToCart(): void {
     this.router.navigate(['/cart']);
   }
 }

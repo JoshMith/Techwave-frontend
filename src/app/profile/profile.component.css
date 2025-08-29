@@ -474,6 +474,23 @@
   margin: 0.5rem 0;
 }
 
+.contact-info a {
+  color: #3b82f6;
+  text-decoration: none;
+  
+}
+.contact-info a:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.social-icons {
+  display: flex;
+  font-size: 1.5rem;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
 .footer-section ul {
   list-style: none;
   padding: 0;
