@@ -13,6 +13,16 @@
       <p class="signup-subtitle">Create your account to get started</p>
     </div>
 
+    <!-- Success Message -->
+    <div *ngIf="signupMessage" class="alert alert-success">
+      {{ signupMessage }}
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="errorMessage" class="alert alert-error">
+      {{ errorMessage }}
+    </div>
+
     <div class="benefits-section">
       <h3 class="benefits-title">Why Join TechWave Kenya?</h3>
       <ul class="benefits-list">
@@ -24,20 +34,20 @@
     </div>
 
     <form [formGroup]="signupForm" (ngSubmit)="onSubmit()">
-      <div class="form-row">
-        <div class="form-group">
-          <label for="firstName" class="form-label">First Name</label>
-          <input type="text" id="firstName" formControlName="firstName" class="form-input" placeholder="John">
-        </div>
-        <div class="form-group">
-          <label for="lastName" class="form-label">Last Name</label>
-          <input type="text" id="lastName" formControlName="lastName" class="form-input" placeholder="Doe">
+      <div class="form-group">
+        <label for="name" class="form-label">Full Name</label>
+        <input type="text" id="name" formControlName="name" class="form-input" placeholder="John Doe">
+        <div *ngIf="signupForm.get('name')?.invalid && signupForm.get('name')?.touched" class="error-message">
+          Full name is required
         </div>
       </div>
 
       <div class="form-group">
         <label for="email" class="form-label">Email Address</label>
         <input type="email" id="email" formControlName="email" class="form-input" placeholder="john@example.com">
+        <div *ngIf="signupForm.get('email')?.invalid && signupForm.get('email')?.touched" class="error-message">
+          Valid email is required
+        </div>
       </div>
 
       <div class="form-group">
@@ -45,6 +55,9 @@
         <div class="phone-input-container">
           <div class="country-code">+254</div>
           <input type="tel" id="phone" formControlName="phone" class="form-input" placeholder="700 123 456">
+        </div>
+        <div *ngIf="signupForm.get('phone')?.invalid && signupForm.get('phone')?.touched" class="error-message">
+          9-digit phone number is required
         </div>
       </div>
 
@@ -56,6 +69,9 @@
           <option value="meru">Meru</option>
           <option value="other">Other</option>
         </select>
+        <div *ngIf="signupForm.get('location')?.invalid && signupForm.get('location')?.touched" class="error-message">
+          Location is required
+        </div>
       </div>
 
       <div class="form-group">
@@ -67,6 +83,9 @@
             {{ showPassword ? '🙈' : '👁️' }}
           </button>
         </div>
+        <div *ngIf="signupForm.get('password')?.invalid && signupForm.get('password')?.touched" class="error-message">
+          Password must be at least 8 characters
+        </div>
       </div>
 
       <div class="form-group">
@@ -74,19 +93,25 @@
         <div class="password-container">
           <input [type]="showConfirmPassword ? 'text' : 'password'" id="confirmPassword"
             formControlName="confirmPassword" class="form-input" placeholder="Confirm your password"
-            [style.borderColor]="signupForm.hasError('mismatch') ? '#ef4444' : '#e5e7eb'">
+            [class.error]="signupForm.hasError('mismatch')">
           <button type="button" class="password-toggle" (click)="togglePassword('confirmPassword')">
             {{ showConfirmPassword ? '🙈' : '👁️' }}
           </button>
+        </div>
+        <div *ngIf="signupForm.hasError('mismatch') && signupForm.get('confirmPassword')?.touched" class="error-message">
+          Passwords do not match
         </div>
       </div>
 
       <div class="checkbox-group">
         <input type="checkbox" id="terms" formControlName="terms" class="checkbox-input">
         <label for="terms" class="checkbox-label">
-          I agree to the <a href="#" (click)="showTerms()">Terms of Service</a> and
-          <a href="#" (click)="showPrivacy()">Privacy Policy</a>
+          I agree to the <a href="#" (click)="showTerms(); $event.preventDefault()">Terms of Service</a> and
+          <a href="#" (click)="showPrivacy(); $event.preventDefault()">Privacy Policy</a>
         </label>
+        <div *ngIf="signupForm.get('terms')?.invalid && signupForm.get('terms')?.touched" class="error-message">
+          You must accept the terms and conditions
+        </div>
       </div>
 
       <div class="checkbox-group">
@@ -106,20 +131,20 @@
     </div>
 
     <div class="social-signup">
-      <a class="social-btn" type="button" (click)="signupWithGoogle()">
+      <button class="social-btn" type="button" (click)="signupWithGoogle()" [disabled]="isLoading">
         <img src="https://cdn-icons-png.freepik.com/256/2991/2991148.png?semt=ais_white_label" alt="Google icon"
           width="20">
-        Google Signup
-      </a>
-      <a href="#" class="social-btn" (click)="signupWithFacebook()">
-        <img src="https://i.pinimg.com/736x/3a/35/8d/3a358df023050199d97d4ee04ca27f00.jpg" alt="Facecbook icon"
+        {{ isLoading ? 'Redirecting...' : 'Google Signup' }}
+      </button>
+      <button class="social-btn" type="button" (click)="signupWithFacebook()">
+        <img src="https://i.pinimg.com/736x/3a/35/8d/3a358df023050199d97d4ee04ca27f00.jpg" alt="Facebook icon"
           width="20">
         Facebook
-      </a>
+      </button>
     </div>
 
     <div class="login-link">
-      Already have an account? <a href="/login" (click)="showLogin()">Sign in here</a>
+      Already have an account? <a href="/login" (click)="showLogin(); $event.preventDefault()">Sign in here</a>
     </div>
   </div>
 </main>

@@ -3,22 +3,46 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { Router } from '@angular/router';
+import { Observable, forkJoin, map, switchMap } from 'rxjs';
+import { ApiService } from '../services/api.service'; // Import the API service
 
-// Define the Product interface
+// Define the Product interface matching the API structure
 interface Product {
-  id: number;
-  name: string;
-  category: string;
-  brand: string;
+  product_id: number;
+  title: string;
+  description: string;
   price: number;
-  discount?: number;
+  sale_price: number | null;
+  stock: number;
+  specs: {
+    type?: string;
+    brand?: string;
+    connectivity?: string;
+    features?: string;
+    [key: string]: any;
+  };
   rating: number;
-  reviews: number;
-  specs: string;
-  image: string;
-  inStock: boolean;
-  colors: string[];
-  features: string[];
+  review_count: number;
+  category_name: string;
+  seller_name: string;
+  images: ProductImage[];
+  colors?: string[];
+  discount?: number;
+  reviews?: { user: string; rating: number; comment: string }[];
+  brand?: string;
+}
+
+interface ProductImage {
+  image_url: string;
+  alt_text: string;
+  is_primary: boolean;
+}
+
+interface SpecialOffer {
+  title: string;
+  description: string;
+  category: string;
+  discount: number | null;
 }
 
 @Component({
@@ -28,156 +52,13 @@ interface Product {
   styleUrl: './shop.component.css'
 })
 export class ShopComponent implements OnInit {
-  constructor(private router: Router) { }
-  // All products data
-  allProducts: Product[] = [
-    {
-      id: 1,
-      name: 'Samsung Galaxy S24',
-      category: 'Phones',
-      brand: 'Samsung',
-      price: 89999,
-      discount: 10,
-      rating: 4.8,
-      reviews: 342,
-      specs: '6.7" AMOLED, 256GB, 12GB RAM, 5G',
-      image: 'phone1',
-      inStock: true,
-      colors: ['Black', 'Silver', 'Blue'],
-      features: ['5G', '128GB+', '8GB RAM+', 'OLED Display']
-    },
-    {
-      id: 2,
-      name: 'iPhone 15 Pro',
-      category: 'Phones',
-      brand: 'Apple',
-      price: 129999,
-      rating: 4.9,
-      reviews: 487,
-      specs: '6.1" Super Retina XDR, 256GB, A17 Pro',
-      image: 'phone2',
-      inStock: true,
-      colors: ['Space Black', 'Silver', 'Gold'],
-      features: ['5G', '256GB+', 'Face ID', 'iOS']
-    },
-    {
-      id: 3,
-      name: 'Dell XPS 15',
-      category: 'Laptops',
-      brand: 'Dell',
-      price: 149999,
-      discount: 15,
-      rating: 4.7,
-      reviews: 231,
-      specs: '15.6" 4K UHD, Intel Core i9, 32GB RAM, 1TB SSD',
-      image: 'laptop1',
-      inStock: true,
-      colors: ['Platinum Silver'],
-      features: ['Core i7+', '16GB RAM+', 'SSD', 'Touchscreen']
-    },
-    {
-      id: 4,
-      name: 'MacBook Air M2',
-      category: 'Laptops',
-      brand: 'Apple',
-      price: 124999,
-      rating: 4.8,
-      reviews: 398,
-      specs: '13.6" Retina, Apple M2, 16GB RAM, 512GB SSD',
-      image: 'laptop2',
-      inStock: true,
-      colors: ['Space Gray', 'Silver', 'Gold'],
-      features: ['Apple Silicon', 'SSD', 'Retina Display', 'Lightweight']
-    },
-    {
-      id: 5,
-      name: 'Sony WH-1000XM5',
-      category: 'Accessories',
-      brand: 'Sony',
-      price: 29999,
-      discount: 20,
-      rating: 4.9,
-      reviews: 512,
-      specs: 'Wireless Noise Cancelling Headphones',
-      image: 'headphones',
-      inStock: true,
-      colors: ['Black', 'Silver'],
-      features: ['Noise Cancelling', 'Bluetooth 5.0', '30h Battery']
-    },
-    {
-      id: 6,
-      name: 'Samsung 65" QLED TV',
-      category: 'Home Appliances',
-      brand: 'Samsung',
-      price: 89999,
-      discount: 12,
-      rating: 4.6,
-      reviews: 187,
-      specs: '65" 4K QLED Smart TV with HDR',
-      image: 'tv',
-      inStock: true,
-      colors: ['Black'],
-      features: ['4K Resolution', 'Smart TV', 'HDR', 'Voice Control']
-    },
-    {
-      id: 7,
-      name: 'Xiaomi Redmi Note 13',
-      category: 'Phones',
-      brand: 'Xiaomi',
-      price: 24999,
-      rating: 4.4,
-      reviews: 156,
-      specs: '6.5" AMOLED, 128GB, 8GB RAM, 5G',
-      image: 'phone3',
-      inStock: true,
-      colors: ['Blue', 'Black', 'Green'],
-      features: ['5G', '128GB', 'AMOLED', 'Fast Charging']
-    },
-    {
-      id: 8,
-      name: 'HP Pavilion Gaming',
-      category: 'Laptops',
-      brand: 'HP',
-      price: 79999,
-      discount: 8,
-      rating: 4.3,
-      reviews: 142,
-      specs: '15.6" FHD, Intel i5, 16GB RAM, 512GB SSD, GTX 1650',
-      image: 'laptop3',
-      inStock: true,
-      colors: ['Black'],
-      features: ['Gaming', 'Dedicated GPU', 'Backlit Keyboard', 'SSD']
-    },
-    {
-      id: 9,
-      name: 'Apple Watch Series 9',
-      category: 'Accessories',
-      brand: 'Apple',
-      price: 54999,
-      rating: 4.7,
-      reviews: 287,
-      specs: '45mm GPS, Always-On Retina display',
-      image: 'watch',
-      inStock: true,
-      colors: ['Midnight', 'Starlight', 'Product Red'],
-      features: ['Health Tracking', 'Water Resistant', 'GPS', 'ECG']
-    },
-    {
-      id: 10,
-      name: 'LG Inverter Microwave',
-      category: 'Home Appliances',
-      brand: 'LG',
-      price: 18999,
-      discount: 15,
-      rating: 4.5,
-      reviews: 89,
-      specs: '25L Capacity, Smart Inverter, Grill Function',
-      image: 'microwave',
-      inStock: true,
-      colors: ['Silver'],
-      features: ['Inverter', 'Grill', 'Convection', 'Smart Sensor']
-    }
-  ];
+  constructor(
+    private router: Router,
+    private apiService: ApiService // Inject the API service
+  ) { }
+
+  // All products data - will be populated from API
+  allProducts: Product[] = [];
 
   // State variables
   products: Product[] = [];
@@ -188,10 +69,12 @@ export class ShopComponent implements OnInit {
   minPrice: number = 0;
   maxPrice: number = 200000;
   sortOption: string = 'featured';
+  isLoading: boolean = true; // Loading state
+  errorMessage: string = ''; // Error message
 
   // Filter options
-  categories: string[] = ['all', 'Phones', 'Laptops', 'Accessories', 'Home Appliances'];
-  brands: string[] = ['all', 'Samsung', 'Apple', 'Dell', 'Sony', 'Xiaomi', 'HP', 'LG'];
+  categories: string[] = ['all'];
+  brands: string[] = ['all'];
   sortOptions = [
     { value: 'featured', label: 'Featured' },
     { value: 'price-low', label: 'Price: Low to High' },
@@ -199,64 +82,279 @@ export class ShopComponent implements OnInit {
     { value: 'rating', label: 'Top Rated' }
   ];
 
-  // Special offers
-  specialOffers = [
-    {
-      title: '50% Off Headphones',
-      description: 'Premium noise-cancelling headphones',
-      category: 'Accessories',
-      discount: 50
-    },
-    {
-      title: 'Free Delivery in Nairobi',
-      description: 'On orders over KSh 5,000',
-      category: 'All',
-      discount: null
-    },
-    {
-      title: 'New Phone Launch',
-      description: 'Galaxy S24 with trade-in bonus',
-      category: 'Phones',
-      discount: 15
-    }
-  ];
+  // Special offers - will be populated from API
+  specialOffers: SpecialOffer[] = [];
 
   // Featured categories
   featuredCategories = [
-    { name: 'Phones', icon: '📱', count: 24 },
-    { name: 'Laptops', icon: '💻', count: 17 },
-    { name: 'Accessories', icon: '🎧', count: 42 },
-    { name: 'Home Appliances', icon: '🏠', count: 15 }
+    { name: 'Phones', icon: '📱', count: 0 },
+    { name: 'Laptops', icon: '💻', count: 0 },
+    { name: 'Accessories', icon: '🎧', count: 0 },
+    { name: 'Home Appliances', icon: '🏠', count: 0 },
+    { name: 'Gaming', icon: '🎮', count: 0 },
+    { name: 'Audio & Sound', icon: '🔊', count: 0 }
   ];
 
-  ngOnInit() {
+  // Cart
+  cartCount = 0;
+
+  ngOnInit(): void {
+    this.loadProducts();
+  }
+
+  private loadProducts(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    // Get products from all categories
+    const categories = ['Phones', 'Laptops', 'Accessories', 'Home Appliances', 'Gaming', 'Audio & Sound'];
+    const requests = categories.map(category =>
+      this.apiService.getProductsByCategoryName(category)
+    );
+
+    forkJoin(requests).pipe(
+      switchMap((productsByCategory: Product[][]) => {
+        // Flatten the array and get random products (max 3 per category)
+        const allProducts = productsByCategory.flat();
+
+        // Get random products (limit to 15 total)
+        const shuffled = [...allProducts].sort(() => 0.5 - Math.random());
+        this.allProducts = shuffled.slice(0, 15);
+
+        // Extract categories and brands
+        this.extractCategoriesAndBrands();
+
+        // Update featured categories counts
+        this.updateFeaturedCategoriesCount();
+
+        // Fetch images for each product
+        const imageRequests = this.allProducts.map(product =>
+          this.apiService.getProductImages(product.product_id.toString()).pipe(
+            map(images => ({
+              ...product,
+              images: this.processImages(images)
+            }))
+          )
+        );
+
+        return forkJoin(imageRequests);
+      })
+    ).subscribe({
+      next: (productsWithImages: Product[]) => {
+        this.allProducts = productsWithImages;
+        this.products = [...this.allProducts];
+        this.filteredProducts = [...this.allProducts];
+        this.isLoading = false;
+
+        // Load special offers
+        this.loadSpecialOffers();
+      },
+      error: (err) => {
+        console.error('Error loading products:', err);
+        this.errorMessage = 'Failed to load products. Please try again later.';
+        this.isLoading = false;
+
+        // Fallback to sample data if API fails
+        this.loadSampleData();
+      }
+    });
+  }
+
+  private loadSpecialOffers(): void {
+    this.apiService.getSpecialOffers().subscribe({
+      next: (offersData: any) => {
+        this.specialOffers = this.processSpecialOffers(offersData).slice(0, 3);
+      },
+      error: (err) => {
+        console.error('Error loading special offers:', err);
+        // Use sample offers if API fails
+        this.specialOffers = [
+          {
+            title: '50% Off Headphones',
+            description: 'Premium noise-cancelling headphones',
+            category: 'Accessories',
+            discount: 50
+          },
+          {
+            title: 'Free Delivery in Nairobi',
+            description: 'On orders over KSh 5,000',
+            category: 'All',
+            discount: null
+          }
+        ].slice(0, 2);
+      }
+    });
+  }
+
+  private processImages(images: any[]): ProductImage[] {
+    if (!images || !Array.isArray(images)) return [];
+
+    return images.map(img => ({
+      image_url: this.ensureAbsoluteUrl(img.image_url),
+      alt_text: img.alt_text || 'Product image',
+      is_primary: img.is_primary || false
+    }));
+  }
+
+  private ensureAbsoluteUrl(url: string): string {
+    if (!url) return this.getFallbackImage();
+
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+
+    if (url.startsWith('/')) {
+      return `${window.location.origin}${url}`;
+    }
+
+    return this.apiService.getProductImageUrl(url);
+  }
+
+  private getFallbackImage(): string {
+    return 'assets/images/product-placeholder.png';
+  }
+
+  // Process special offers from API response
+  private processSpecialOffers(offersData: any): SpecialOffer[] {
+    if (!offersData || !Array.isArray(offersData)) return [];
+
+    return offersData
+      .filter((offer: any) => offer.isActive)
+      .map((offer: any) => ({
+        title: offer.title || 'Special Offer',
+        description: offer.description || 'Limited time offer',
+        category: offer.appliesToCategory?.name || 'All',
+        discount: offer.discountPercentage || null
+      }));
+  }
+
+  // Extract categories and brands from products
+  private extractCategoriesAndBrands(): void {
+    const uniqueCategories = new Set<string>();
+    const uniqueBrands = new Set<string>();
+
+    // Add categories and brands from products
+    this.allProducts.forEach(product => {
+      if (product.category_name) {
+        uniqueCategories.add(product.category_name);
+      }
+
+      // Try to get brand from specs first, then from title
+      const brand = product.specs.brand || product.title.split(' ')[0];
+      if (brand) {
+        uniqueBrands.add(brand);
+      }
+    });
+
+    // Update categories and brands arrays
+    this.categories = ['all', ...Array.from(uniqueCategories)];
+    this.brands = ['all', ...Array.from(uniqueBrands)];
+  }
+
+  // Update featured categories count
+  private updateFeaturedCategoriesCount(): void {
+    this.featuredCategories = this.featuredCategories.map(category => {
+      const count = this.allProducts.filter(p => p.category_name === category.name).length;
+      return { ...category, count };
+    });
+  }
+
+  // Fallback to sample data if API fails
+  private loadSampleData(): void {
+    this.allProducts = [
+      {
+        product_id: 1,
+        title: 'Samsung Galaxy S24',
+        description: 'Latest Samsung flagship phone',
+        price: 89999,
+        sale_price: 80999,
+        stock: 10,
+        specs: {
+          type: 'Smartphone',
+          brand: 'Samsung',
+          connectivity: '5G, Wi-Fi 6',
+          features: '128GB Storage, 8GB RAM, OLED Display'
+        },
+        rating: 4.8,
+        review_count: 342,
+        category_name: 'Phones',
+        seller_name: 'TechWave Kenya',
+        images: []
+      },
+      {
+        product_id: 2,
+        title: 'iPhone 15 Pro',
+        description: 'Apple premium smartphone',
+        price: 129999,
+        sale_price: null,
+        stock: 15,
+        specs: {
+          type: 'Smartphone',
+          brand: 'Apple',
+          connectivity: '5G, Wi-Fi 6E',
+          features: '256GB Storage, Face ID, iOS'
+        },
+        rating: 4.9,
+        review_count: 487,
+        category_name: 'Phones',
+        seller_name: 'TechWave Kenya',
+        images: []
+      },
+      {
+        product_id: 3,
+        title: 'Dell XPS 15',
+        description: 'Premium performance laptop',
+        price: 149999,
+        sale_price: 127499,
+        stock: 5,
+        specs: {
+          type: 'Laptop',
+          brand: 'Dell',
+          connectivity: 'Wi-Fi 6, Bluetooth 5.2',
+          features: 'Intel Core i9, 32GB RAM, 1TB SSD'
+        },
+        rating: 4.7,
+        review_count: 231,
+        category_name: 'Laptops',
+        seller_name: 'TechWave Kenya',
+        images: []
+      }
+    ];
+
     this.products = [...this.allProducts];
     this.filteredProducts = [...this.allProducts];
+
+    this.extractCategoriesAndBrands();
+    this.updateFeaturedCategoriesCount();
   }
 
   // Filter products based on selections
   applyFilters() {
     this.filteredProducts = this.products.filter(product => {
       // Category filter
-      if (this.selectedCategory !== 'all' && product.category !== this.selectedCategory) {
+      if (this.selectedCategory !== 'all' && product.category_name !== this.selectedCategory) {
         return false;
       }
 
       // Brand filter
-      if (this.selectedBrand !== 'all' && product.brand !== this.selectedBrand) {
-        return false;
+      if (this.selectedBrand !== 'all') {
+        const productBrand = product.specs.brand || product.title.split(' ')[0];
+        if (productBrand !== this.selectedBrand) {
+          return false;
+        }
       }
 
       // Price range filter
-      if (product.price < this.minPrice || product.price > this.maxPrice) {
+      const price = product.sale_price || product.price;
+      if (price < this.minPrice || price > this.maxPrice) {
         return false;
       }
 
       // Search query filter
       if (this.searchQuery &&
-        !product.name.toLowerCase().includes(this.searchQuery.toLowerCase()) &&
-        !product.brand.toLowerCase().includes(this.searchQuery.toLowerCase()) &&
-        !product.specs.toLowerCase().includes(this.searchQuery.toLowerCase())) {
+        !product.title.toLowerCase().includes(this.searchQuery.toLowerCase()) &&
+        !product.description.toLowerCase().includes(this.searchQuery.toLowerCase()) &&
+        !this.formatSpecs(product.specs).toLowerCase().includes(this.searchQuery.toLowerCase())) {
         return false;
       }
 
@@ -270,10 +368,10 @@ export class ShopComponent implements OnInit {
   sortProducts() {
     switch (this.sortOption) {
       case 'price-low':
-        this.filteredProducts.sort((a, b) => a.price - b.price);
+        this.filteredProducts.sort((a, b) => (a.sale_price || a.price) - (b.sale_price || b.price));
         break;
       case 'price-high':
-        this.filteredProducts.sort((a, b) => b.price - a.price);
+        this.filteredProducts.sort((a, b) => (b.sale_price || b.price) - (a.sale_price || a.price));
         break;
       case 'rating':
         this.filteredProducts.sort((a, b) => b.rating - a.rating);
@@ -297,15 +395,38 @@ export class ShopComponent implements OnInit {
 
   // Add to cart functionality
   addToCart(product: Product) {
-    console.log(`Added to cart: ${product.name}`);
-    // In a real app, you would call a cart service here
-    alert(`Added ${product.name} to your cart!`);
+    console.log(`Added to cart: ${product.title}`);
+    this.cartCount++;
+    alert(`Added ${product.title} to your cart!`);
   }
 
   // View product details
   viewDetails(product: Product) {
-    console.log(`Viewing details for: ${product.name}`);
-    // In a real app, you would navigate to product detail page
+    console.log(`Viewing details for: ${product.title}`);
+    // Navigate to product detail page
+    this.router.navigate(['/product', product.product_id]);
+  }
+
+  // Get product image
+  getProductImage(product: Product): string | null {
+    if (!product.images || product.images.length === 0) {
+      return null;
+    }
+    const image = product.images.find(img => img.is_primary) || product.images[0];
+    return this.ensureAbsoluteUrl(image.image_url);
+  }
+
+  onImageError(event: any): void {
+    event.target.src = this.getFallbackImage();
+  }
+
+  formatSpecs(specs: any): string {
+    const parts = [];
+    if (specs.brand) parts.push(specs.brand);
+    if (specs.type) parts.push(specs.type);
+    if (specs.connectivity) parts.push(specs.connectivity);
+    if (specs.features) parts.push(specs.features);
+    return parts.join(' • ');
   }
 
   getColorCode(color: string): string {
@@ -326,8 +447,7 @@ export class ShopComponent implements OnInit {
   }
 
   onSearch(): void {
-    alert('Search functionality is not implemented yet.');
-    console.log('Search button clicked');
+    this.applyFilters();
   }
 
   /**
@@ -335,33 +455,10 @@ export class ShopComponent implements OnInit {
    * @param category - The category that was clicked
    */
   onCategoryClick(category: string): void {
-    console.log(`Category clicked: ${category}`);
-    // Example: this.router.navigate(['/categories', category]);
-
-    switch (category) {
-      case 'phones':
-        this.router.navigate(['/phones']);
-        break;
-      case 'laptops':
-        this.router.navigate(['/laptops']);
-        break;
-      case 'accessories':
-        this.router.navigate(['/accessories']);
-        break;
-      case 'appliances':
-        this.router.navigate(['/home-appliances']);
-        break;
-      case 'gaming':
-        this.router.navigate(['/gaming']);
-        break;
-      case 'audio':
-        this.router.navigate(['/audio-sound']);
-        break;
-      default:
-        console.warn('Unknown category:', category);
-    }
+    this.selectedCategory = category;
+    this.applyFilters();
   }
-  cartCount = 3;
+
   goToCart() {
     this.router.navigate(['/cart']);
   }

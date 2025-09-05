@@ -2,10 +2,11 @@ import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-signup',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, CommonModule],
   templateUrl: './signup.component.html',
   styleUrls: ['./signup.component.css']
 })
@@ -16,11 +17,11 @@ export class SignupComponent {
   isSubmitting = false;
   isLoading = false;
   signupMessage = '';
+  errorMessage = '';
 
-  constructor(private fb: FormBuilder, private router: Router, private signup: ApiService) {
+  constructor(private fb: FormBuilder, private router: Router, private apiService: ApiService) {
     this.signupForm = this.fb.group({
-      firstName: ['', Validators.required],
-      lastName: ['', Validators.required],
+      name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       phone: ['', [Validators.required, Validators.pattern(/^[0-9]{9}$/)]],
       location: ['', Validators.required],
@@ -47,11 +48,35 @@ export class SignupComponent {
   onSubmit(): void {
     if (this.signupForm.valid) {
       this.isSubmitting = true;
-      // Simulate API call
-      setTimeout(() => {
-        alert(`Account created successfully for ${this.signupForm.value.email}!\nWelcome to TechWave Kenya!`);
-        this.isSubmitting = false;
-      }, 2000);
+      this.errorMessage = '';
+      
+      // Prepare user data for API
+      const userData = {
+        name: this.signupForm.value.name,
+        email: this.signupForm.value.email,
+        phone: '+254' + this.signupForm.value.phone, // Add country code
+        location: this.signupForm.value.location,
+        password: this.signupForm.value.password,
+        confirmPassword: this.signupForm.value.confirmPassword,
+        newsletter: this.signupForm.value.newsletter
+      };
+
+      this.apiService.register(userData).subscribe({
+        next: (response) => {
+          this.isSubmitting = false;
+          this.signupMessage = `Account created successfully for ${userData.email}!\nWelcome to TechWave Kenya!`;
+          
+          // Show success message and redirect after a delay
+          setTimeout(() => {
+            this.router.navigate(['/login']);
+          }, 2000);
+        },
+        error: (error) => {
+          this.isSubmitting = false;
+          this.errorMessage = error.error?.message || 'Registration failed. Please try again.';
+          console.error('Registration error:', error);
+        }
+      });
     }
   }
 
@@ -64,7 +89,6 @@ export class SignupComponent {
   }
 
   showLogin(): void {
-    alert('Redirecting to login page...');
     this.router.navigate(['/login']);
   }
 
@@ -73,7 +97,7 @@ export class SignupComponent {
     this.signupMessage = 'Redirecting to Google...';
 
     // Redirect to backend Google auth endpoint
-    window.location.href = `${this.signup.apiUrl}/auth/google`;
+    window.location.href = `${this.apiService.apiUrl}/auth/google`;
   }
 
   signupWithFacebook(): void {

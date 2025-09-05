@@ -1,10 +1,12 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, CommonModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
@@ -14,11 +16,16 @@ export class LoginComponent {
   passwordFieldType = 'password';
   isLoading = false;
   loginMessage = '';
+  errorMessage = '';
 
-  constructor(private fb: FormBuilder, private login: ApiService) {
+  constructor(
+    private fb: FormBuilder, 
+    private apiService: ApiService,
+    private router: Router
+  ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', Validators.required, Validators.minLength(6)]
+      password: ['', [Validators.required, Validators.minLength(6)]]
     });
   }
 
@@ -29,31 +36,60 @@ export class LoginComponent {
 
   onSubmit(): void {
     if (this.loginForm.valid) {
-      const email = this.loginForm.get('email')?.value;
-      alert(`Login attempt for: ${email}`);
-      // Here you would typically make an API call to authenticate
+      this.isLoading = true;
+      this.errorMessage = '';
+      
+      const credentials = {
+        email: this.loginForm.value.email,
+        password: this.loginForm.value.password
+      };
+
+      this.apiService.login(credentials).subscribe({
+        next: (response) => {
+          this.isLoading = false;
+          this.loginMessage = 'Login successful! Redirecting...';
+          
+          // Store authentication token if available
+          if (response.token) {
+            localStorage.setItem('authToken', response.token);
+          }
+          
+          if (response.user) {
+            localStorage.setItem('user', JSON.stringify(response.user));
+          }
+
+          // Redirect to dashboard or home page
+          setTimeout(() => {
+            this.router.navigate(['/homepage']);
+          }, 1500);
+        },
+        error: (error) => {
+          this.isLoading = false;
+          this.errorMessage = error.error?.message || 'Login failed. Please check your credentials.';
+          console.error('Login error:', error);
+        }
+      });
     }
   }
 
   showForgotPassword(): void {
-    alert('Redirecting to forgot password page...');
+    this.router.navigate(['/forgot-password']);
   }
 
   showSignup(): void {
-    alert('Redirecting to signup page...');
+    this.router.navigate(['/signup']);
   }
 
   loginWithMpesa(): void {
     alert('M-Pesa login functionality - Enter your phone number for quick access');
   }
 
-  // Google login
   loginWithGoogle(): void {
     this.isLoading = true;
     this.loginMessage = 'Redirecting to Google...';
     
     // Redirect to backend Google auth endpoint
-    window.location.href = `${this.login.apiUrl}/auth/google`;
+    window.location.href = `${this.apiService.apiUrl}/auth/google`;
   }
 
   loginWithFacebook(): void {

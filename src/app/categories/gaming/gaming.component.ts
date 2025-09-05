@@ -1,216 +1,279 @@
-// gaming.component.ts
-import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+  // gaming.component.ts
+  import { CommonModule } from '@angular/common';
+  import { Component, OnInit } from '@angular/core';
+  import { FormsModule } from '@angular/forms';
+  import { Router } from '@angular/router';
+  import { Observable, forkJoin, map, switchMap } from 'rxjs';
+  import { ApiService } from '../../services/api.service';
 
-interface Product {
-  id: number;
-  name: string;
-  brand: string;
-  specs: string;
-  price: number;
-  features: string[];
-  discount?: number;
-  rating?: number;
+  interface Product {
+    product_id: number;
+    title: string;
+    description: string;
+    price: number;
+    sale_price: number | null;
+    stock: number;
+    specs: {
+      type?: string;
+      platform?: string;
+      resolution?: string;
+      storage?: string;
+      features?: string;
+      [key: string]: any;
+    };
+    rating: number;
+    review_count: number;
+    category_name: string;
+    seller_name: string;
+    images: ProductImage[];
+  }
+
+  interface ProductImage {
+    image_url: string;
+    alt_text: string;
+    is_primary: boolean;
+  }
+
+  @Component({
+    selector: 'app-gaming',
+    standalone: true,
+    imports: [CommonModule, FormsModule],
+    templateUrl: './gaming.component.html',
+    styleUrls: ['./gaming.component.css']
+  })
+  export class GamingComponent implements OnInit {
+    constructor(private router: Router, private apiService: ApiService) { }
+
+    // Products data
+    allProducts: Product[] = [];
+    filteredProducts: Product[] = [];
+    loading = true;
+    errorMessage: string | null = null;
+
+    // Filters
+    priceRange = { min: 5000, max: 250000 };
+    brands: string[] = [];
+    selectedBrands: string[] = [];
+    features: string[] = ['4K Gaming', 'VR Ready', 'Wireless', 'RGB Lighting', 'Mechanical Keys'];
+    selectedFeatures: string[] = [];
+    
+    // Sorting
+    sortOptions = [
+      { value: 'popularity', label: 'Popularity' },
+      { value: 'price-low', label: 'Price: Low to High' },
+      { value: 'price-high', label: 'Price: High to Low' },
+      { value: 'rating', label: 'Highest Rated' },
+      { value: 'newest', label: 'Newest First' }
+    ];
+    selectedSort = 'popularity';
+
+    // Cart
+    cartCount = 0;
+
+    ngOnInit(): void {
+      this.loadProducts();
+    }
+
+    private loadProducts(): void {
+      this.loading = true;
+      this.errorMessage = null;
+
+      this.apiService.getProductsByCategoryName('Gaming').pipe(
+        switchMap((products: Product[]) => {
+          this.allProducts = products;
+          this.extractBrands();
+
+          // Fetch images for each product
+          const imageRequests = products.map(product =>
+            this.apiService.getProductImages(product.product_id.toString()).pipe(
+              map(images => ({
+                ...product,
+                images: this.processImages(images)
+              }))
+            )
+          );
+          return forkJoin(imageRequests);
+        })
+      ).subscribe({
+        next: (productsWithImages: Product[]) => {
+          this.allProducts = productsWithImages;
+          this.applyFilters();
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error('Error loading products:', err);
+          this.errorMessage = 'Failed to load products. Please try again later.';
+          this.loading = false;
+        }
+      });
+    }
+
+    private processImages(images: any[]): ProductImage[] {
+      if (!images || !Array.isArray(images)) return [];
+
+      return images.map(img => ({
+        image_url: this.ensureAbsoluteUrl(img.image_url),
+        alt_text: img.alt_text || 'Product image',
+        is_primary: img.is_primary || false
+      }));
+    }
+
+    private ensureAbsoluteUrl(url: string): string {
+      if (!url) return this.getFallbackImage();
+
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+      }
+
+      if (url.startsWith('/')) {
+        return `${window.location.origin}${url}`;
+      }
+
+      return this.apiService.getProductImageUrl(url);
+    }
+
+    private extractBrands(): void {
+      const brands = new Set(
+        this.allProducts
+          .map(product => product.title.split(' ')[0]) // Get first word as brand
+          .filter(brand => brand)
+      );
+      this.brands = Array.from(brands).sort() as string[];
+    }
+
+    // Filter methods
+    toggleBrand(brand: string): void {
+      const index = this.selectedBrands.indexOf(brand);
+      if (index > -1) {
+        this.selectedBrands.splice(index, 1);
+      } else {
+        this.selectedBrands.push(brand);
+      }
+      this.applyFilters();
+    }
+
+    toggleFeature(feature: string): void {
+      const index = this.selectedFeatures.indexOf(feature);
+      if (index > -1) {
+        this.selectedFeatures.splice(index, 1);
+      } else {
+        this.selectedFeatures.push(feature);
+      }
+      this.applyFilters();
+    }
+
+  applyFilters(): void {
+  this.filteredProducts = this.allProducts.filter(product => {
+    const price = product.sale_price || product.price;
+
+    // Price filter - only filter by price if the range is valid
+    if (this.priceRange.min !== 5000 || this.priceRange.max !== 250000) {
+      if (price < this.priceRange.min || price > this.priceRange.max) {
+        return false;
+      }
+    }
+
+    // Brand filter - only apply if brands are selected
+    if (this.selectedBrands.length > 0) {
+      const productBrand = product.title.split(' ')[0];
+      if (!this.selectedBrands.includes(productBrand)) {
+        return false;
+      }
+    }
+
+    // Feature filter - only apply if features are selected
+    if (this.selectedFeatures.length > 0) {
+      const productFeatures = product.specs.features || '';
+      const hasMatchingFeature = this.selectedFeatures.some(feature => 
+        productFeatures.toLowerCase().includes(feature.toLowerCase())
+      );
+      if (!hasMatchingFeature) return false;
+    }
+
+    // Don't filter out products based on image availability
+    return true;
+  });
+
+  this.sortProducts();
 }
 
-@Component({
-  selector: 'app-gaming',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './gaming.component.html',
-  styleUrls: ['./gaming.component.css'] // Reuse accessories styles
-})
-export class GamingComponent implements OnInit {
-  constructor(private router: Router) { }
-
-  products: Product[] = [];
-  filteredProducts: Product[] = [];
-
-  // Filters
-  priceRange = { min: 5000, max: 150000 };
-  brands: string[] = ['Sony', 'Microsoft', 'Nintendo', 'Razer', 'SteelSeries', 'Logitech'];
-  selectedBrands: string[] = [];
-  features: string[] = ['4K Gaming', 'VR Ready', 'Wireless', 'RGB Lighting', 'Mechanical Keys'];
-  selectedFeatures: string[] = [];
-
-  // Sorting
-  sortOptions = [
-    { value: 'popularity', label: 'Popularity' },
-    { value: 'price-low', label: 'Price: Low to High' },
-    { value: 'price-high', label: 'Price: High to Low' },
-    { value: 'rating', label: 'Top Rated' }
-  ];
-  selectedSort = 'popularity';
-
-  ngOnInit() {
-    this.loadProducts();
-    this.applyFilters();
-  }
-
-  loadProducts() {
-    this.products = [
-      {
-        id: 1,
-        name: 'PlayStation 5 Console',
-        brand: 'Sony',
-        specs: '825GB SSD, 4K UHD Blu-ray, Ray Tracing',
-        price: 89999,
-        discount: 10,
-        rating: 4.9,
-        features: ['4K Gaming', 'VR Ready']
-      },
-      {
-        id: 2,
-        name: 'Xbox Series X',
-        brand: 'Microsoft',
-        specs: '1TB SSD, 4K Gaming, 120 FPS',
-        price: 84999,
-        rating: 4.8,
-        features: ['4K Gaming', 'Wireless']
-      },
-      {
-        id: 3,
-        name: 'Nintendo Switch OLED',
-        brand: 'Nintendo',
-        specs: '7-inch OLED screen, 64GB storage',
-        price: 49999,
-        discount: 5,
-        rating: 4.7,
-        features: ['Wireless']
-      },
-      {
-        id: 4,
-        name: 'Razer Blade 15 Gaming Laptop',
-        brand: 'Razer',
-        specs: 'RTX 3070 Ti, 16GB RAM, 1TB SSD',
-        price: 249999,
-        rating: 4.8,
-        features: ['4K Gaming', 'RGB Lighting', 'VR Ready']
-      },
-      {
-        id: 5,
-        name: 'SteelSeries Apex Pro Keyboard',
-        brand: 'SteelSeries',
-        specs: 'OmniPoint switches, OLED display',
-        price: 18999,
-        discount: 15,
-        rating: 4.6,
-        features: ['RGB Lighting', 'Mechanical Keys']
-      },
-      {
-        id: 6,
-        name: 'Logitech G Pro X Wireless Headset',
-        brand: 'Logitech',
-        specs: '7.1 Surround, Blue VO!CE, 20+ hour battery',
-        price: 15999,
-        rating: 4.7,
-        features: ['Wireless', 'RGB Lighting']
-      },
-      {
-        id: 7,
-        name: 'Meta Quest 3 VR Headset',
-        brand: 'Meta',
-        specs: '128GB, Mixed Reality, Touch Controllers',
-        price: 64999,
-        rating: 4.5,
-        features: ['VR Ready', 'Wireless']
-      },
-      {
-        id: 8,
-        name: 'Sony DualSense Edge Controller',
-        brand: 'Sony',
-        specs: 'Customizable controls, replaceable sticks',
-        price: 12999,
-        discount: 20,
-        rating: 4.4,
-        features: ['Wireless']
-      }
-    ];
-  }
-
-  toggleBrand(brand: string) {
-    const index = this.selectedBrands.indexOf(brand);
-    if (index > -1) {
-      this.selectedBrands.splice(index, 1);
-    } else {
-      this.selectedBrands.push(brand);
+    resetFilters(): void {
+      this.priceRange = { min: 5000, max: 250000 };
+      this.selectedBrands = [];
+      this.selectedFeatures = [];
+      this.selectedSort = 'popularity';
+      this.applyFilters();
     }
-    this.applyFilters();
-  }
 
-  toggleFeature(feature: string) {
-    const index = this.selectedFeatures.indexOf(feature);
-    if (index > -1) {
-      this.selectedFeatures.splice(index, 1);
-    } else {
-      this.selectedFeatures.push(feature);
-    }
-    this.applyFilters();
-  }
-
-  applyFilters() {
-    this.filteredProducts = this.products.filter(product => {
-      // Price filter
-      if (product.price < this.priceRange.min || product.price > this.priceRange.max) {
-        return false;
-      }
-
-      // Brand filter
-      if (this.selectedBrands.length > 0 && !this.selectedBrands.includes(product.brand)) {
-        return false;
-      }
-
-      // Feature filter
-      if (this.selectedFeatures.length > 0) {
-        return this.selectedFeatures.every(feature => product.features.includes(feature));
-      }
-
-      return true;
-    });
-
-    this.sortProducts();
-  }
-
-  sortProducts() {
-    this.filteredProducts.sort((a, b) => {
+    private sortProducts(): void {
       switch (this.selectedSort) {
         case 'price-low':
-          return a.price - b.price;
+          this.filteredProducts.sort((a, b) => (a.sale_price || a.price) - (b.sale_price || b.price));
+          break;
         case 'price-high':
-          return b.price - a.price;
+          this.filteredProducts.sort((a, b) => (b.sale_price || b.price) - (a.sale_price || a.price));
+          break;
         case 'rating':
-          return (b.rating || 0) - (a.rating || 0) || a.id - b.id;
+          this.filteredProducts.sort((a, b) => b.rating - a.rating);
+          break;
+        case 'newest':
+          this.filteredProducts.sort((a, b) => b.product_id - a.product_id);
+          break;
+        case 'popularity':
         default:
-          return a.id - b.id;
+          this.filteredProducts.sort((a, b) => b.review_count - a.review_count);
+          break;
       }
-    });
-  }
+    }
 
-  resetFilters() {
-    this.selectedBrands = [];
-    this.selectedFeatures = [];
-    this.priceRange = { min: 5000, max: 150000 };
-    this.selectedSort = 'popularity';
-    this.applyFilters();
-  }
+    // Product display methods
+    getProductImage(product: Product): string | null {
+      if (!product.images || product.images.length === 0) {
+        return null;
+      }
+      const image = product.images.find(img => img.is_primary) || product.images[0];
+      return this.ensureAbsoluteUrl(image.image_url);
+    }
 
-  getDiscountedPrice(price: number, discount?: number): number {
-    return discount ? price * (1 - discount / 100) : price;
-  }
+    private getFallbackImage(): string {
+      return 'assets/images/gaming-placeholder.png';
+    }
 
-  // Navigation methods
-  onCategoryClick(category: string): void {
-    this.router.navigate([`/categories/${category.toLowerCase().replace(' ', '-')}`]);
-  }
+    onImageError(event: any): void {
+      event.target.src = this.getFallbackImage();
+    }
 
-  onSearch() {
-    // Implement actual search functionality
-    console.log('Search initiated');
+    formatSpecs(specs: any): string {
+      const parts = [];
+      if (specs.platform) parts.push(specs.platform);
+      if (specs.type) parts.push(specs.type);
+      if (specs.resolution) parts.push(specs.resolution);
+      if (specs.storage) parts.push(specs.storage);
+      if (specs.features) parts.push(specs.features);
+      return parts.join(' • ');
+    }
+
+    getDiscountedPrice(price: number, discount?: number): number {
+      if (!discount) return price;
+      return price - (price * discount / 100);
+    }
+
+    // Navigation methods
+    onCategoryClick(category: string): void {
+      this.router.navigate([`/categories/${category.toLowerCase().replace(' ', '-')}`]);
+    }
+
+    onSearch(): void {
+      alert('Search functionality is not implemented yet.');
+    }
+
+    addToCart(product: Product): void {
+      console.log('Adding to cart:', product.title);
+      this.cartCount++;
+      alert(`${product.title} added to cart!`);
+    }
+
+    goToCart(): void {
+      this.router.navigate(['/cart']);
+    }
   }
-  cartCount = 3;
-  goToCart() {
-    this.router.navigate(['/cart']);
-  }
-}
