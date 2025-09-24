@@ -163,6 +163,10 @@ export class HomepageComponent implements OnInit {
     this.router.navigate(['/shop']);
   }
 
+  sellerPortal(): void {
+    this.router.navigate(['/login']);
+  }
+
   onSearch(): void {
     alert('Search functionality is not implemented yet.');
   }

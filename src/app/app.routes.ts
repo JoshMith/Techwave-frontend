@@ -39,7 +39,7 @@ export const routes: Routes = [
     { path: 'details', component: DetailsComponent },
     { path: 'payment', component: PaymentComponent },
     { path: 'profile', component: ProfileComponent },
-    { path: 'seller', component: SellerDashboardComponent },
+    { path: 'seller-dashboard', component: SellerDashboardComponent },
     { path: 'product', component: ProductComponent },
     { path: 'login', component: LoginComponent },
     { path: 'signup', component: SignupComponent },

@@ -58,10 +58,12 @@ export class LoginComponent {
             localStorage.setItem('user', JSON.stringify(response.user));
           }
 
-          // Redirect to dashboard or home page
-          setTimeout(() => {
+          // Redirect to dashboard or homepage
+          if (response.user?.role === 'seller') {
+            this.router.navigate(['/seller-dashboard']);
+          } else {
             this.router.navigate(['/homepage']);
-          }, 1500);
+          }
         },
         error: (error) => {
           this.isLoading = false;

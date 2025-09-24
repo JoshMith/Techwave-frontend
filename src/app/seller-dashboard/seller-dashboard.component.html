@@ -6,19 +6,19 @@
       <span class="seller-badge">Seller Portal</span>
     </div>
     <div class="nav-items">
-      <a href="/seller/dashboard" class="nav-link active">Dashboard</a>
-      <a href="/seller/products" class="nav-link">Products</a>
-      <a href="/seller/orders" class="nav-link">Orders</a>
-      <a href="/seller/analytics" class="nav-link">Analytics</a>
-      <a href="/seller/settings" class="nav-link">Settings</a>
+      <button class="nav-link" [class.active]="currentView === 'dashboard'" (click)="goToDashboard()">Dashboard</button>
+      <button class="nav-link" [class.active]="currentView === 'products'" (click)="navigateTo('products')">Products</button>
+      <button class="nav-link" [class.active]="currentView === 'manage-orders'" (click)="navigateTo('manage-orders')">Orders</button>
+      <button class="nav-link" [class.active]="currentView === 'analytics'" (click)="navigateTo('analytics')">Analytics</button>
+      <button class="nav-link" [class.active]="currentView === 'promotions'" (click)="navigateTo('promotions')">Promotions</button>
     </div>
     <div class="profile-section">
       <button class="notification-btn" title="Notifications" (click)="onNotificationClick()">
         🔔
-        <span class="notification-count">{{notificationCount}}</span>
+        <span class="notification-count" *ngIf="notificationCount > 0">{{notificationCount}}</span>
       </button>
       <div class="profile-avatar" title="Profile" (click)="onProfileClick()">
-        {{userName.charAt(0) + 'D'}}
+        {{userName.charAt(0).toUpperCase()}}
       </div>
     </div>
   </nav>
@@ -26,41 +26,424 @@
 
 <!-- Main Content -->
 <main class="main-content">
-  <!-- Dashboard Header -->
-  <div class="dashboard-header">
-    <h1 class="dashboard-title">Welcome back, {{userName}}!</h1>
-    <p class="dashboard-subtitle">Here's what's happening with your store today</p>
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p>Loading dashboard data...</p>
   </div>
 
-  <!-- Stats Grid -->
-  <div class="stats-grid">
-    <div class="stat-card" *ngFor="let stat of stats">
-      <div class="stat-header">
-        <div>
-          <div class="stat-title">{{stat.title}}</div>
-          <div class="stat-value">{{stat.value}}</div>
-          <div class="stat-change {{stat.changeClass}}">
-            <span class="change-arrow">↗</span>
-            <span>{{stat.change}}</span>
-          </div>
-        </div>
-        <div class="stat-icon {{stat.iconClass}}">{{stat.icon}}</div>
+  <!-- Unauthorized Access -->
+  <div *ngIf="!isLoading && !isAuthorized && !error" class="unauthorized-container">
+    <div class="unauthorized-message">
+      <span class="unauthorized-icon">🚫</span>
+      <h2>Access Denied</h2>
+      <p>You don't have permission to access the seller dashboard.</p>
+      <p>This area is restricted to sellers and administrators only.</p>
+      <div class="unauthorized-actions">
+        <a href="/" class="btn btn-primary">Go to Home</a>
+        <a href="/shop" class="btn btn-secondary">Continue Shopping</a>
+      </div>
+      <div class="user-info">
+        <small>Logged in as: <strong>{{userName}}</strong> ({{userRole}})</small>
       </div>
     </div>
   </div>
 
-  <!-- Dashboard Grid -->
-  <div class="dashboard-grid">
-    <!-- Main Panel -->
-    <div class="main-panel">
-      <!-- Recent Orders -->
-      <div class="card">
-        <div class="card-header">
-          <h2 class="card-title">Recent Orders</h2>
-          <a href="/seller/orders" class="view-all-btn">View All Orders</a>
+  <!-- Error State -->
+  <div *ngIf="error && !isLoading" class="error-container">
+    <div class="error-message">
+      <span class="error-icon">⚠️</span>
+      <p>{{error}}</p>
+      <button class="btn btn-primary" (click)="refreshData()">Retry</button>
+    </div>
+  </div>
+
+  <!-- Dashboard Content - Only show if authorized -->
+  <div *ngIf="!isLoading && !error && isAuthorized">
+    
+    <!-- ===== DASHBOARD VIEW ===== -->
+    <div *ngIf="currentView === 'dashboard'">
+      <!-- Dashboard Header -->
+      <div class="dashboard-header">
+        <h1 class="dashboard-title">Welcome back, {{userName}}!</h1>
+        <p class="dashboard-subtitle">Here's what's happening with your store today</p>
+        <button class="refresh-btn" (click)="refreshData()" title="Refresh Data">
+          🔄 Refresh
+        </button>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card" *ngFor="let stat of stats">
+          <div class="stat-header">
+            <div>
+              <div class="stat-title">{{stat.title}}</div>
+              <div class="stat-value">{{stat.value}}</div>
+              <div class="stat-change {{stat.changeClass}}">
+                <span class="change-arrow">↗</span>
+                <span>{{stat.change}}</span>
+              </div>
+            </div>
+            <div class="stat-icon {{stat.iconClass}}">{{stat.icon}}</div>
+          </div>
         </div>
+      </div>
+
+      <!-- Dashboard Grid -->
+      <div class="dashboard-grid">
+        <!-- Main Panel -->
+        <div class="main-panel">
+          <!-- Recent Orders -->
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Recent Orders</h2>
+              <button class="view-all-btn" (click)="navigateTo('manage-orders')">View All Orders</button>
+            </div>
+            <div class="table-container">
+              <div *ngIf="orders.length === 0" class="empty-state">
+                <p>No orders found</p>
+                <small>Your recent orders will appear here</small>
+              </div>
+              <table class="orders-table" *ngIf="orders.length > 0">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Product</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let order of orders" (click)="onOrderClick(order.id)">
+                    <td><span class="order-id">{{order.id}}</span></td>
+                    <td>{{order.customer}}</td>
+                    <td>{{order.product}}</td>
+                    <td>{{order.amount}}</td>
+                    <td><span class="status-badge {{order.statusClass}}">{{order.status}}</span></td>
+                    <td>{{order.date}}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Sales Chart -->
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Sales Overview</h2>
+              <select class="view-all-btn" style="border: none; background: transparent;">
+                <option>Last 7 days</option>
+                <option>Last 30 days</option>
+                <option>Last 3 months</option>
+              </select>
+            </div>
+            <div class="chart-container">
+              📈 Sales Chart Placeholder
+              <br>
+              <small>Chart integration would show sales trends here</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar Panel -->
+        <div class="sidebar-panel">
+          <!-- Quick Actions -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Quick Actions</h3>
+            </div>
+            <div class="quick-actions">
+              <button *ngFor="let action of quickActions" class="quick-action-btn"
+                (click)="onQuickActionClick(action.action)">
+                <div class="action-icon">{{action.icon}}</div>
+                <span class="action-text">{{action.text}}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Recent Activity -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Recent Activity</h3>
+            </div>
+            <div class="activity-list">
+              <div *ngIf="activities.length === 0" class="empty-state">
+                <p>No recent activity</p>
+                <small>Your activities will appear here</small>
+              </div>
+              <div class="activity-item" *ngFor="let activity of activities">
+                <div class="activity-icon {{activity.iconClass}}">{{activity.icon}}</div>
+                <div class="activity-content">
+                  <div class="activity-text">{{activity.text}}</div>
+                  <div class="activity-time">{{activity.time}}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Store Performance -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Store Performance</h3>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center;"
+                *ngFor="let metric of performanceMetrics">
+                <span style="color: #6b7280;">{{metric.label}}</span>
+                <span style="font-weight: 600;" [class]="metric.valueClass">{{metric.value}}</span>
+              </div>
+              <div style="margin-top: 1rem;">
+                <button class="btn btn-primary" style="width: 100%; justify-content: center;" 
+                  (click)="navigateTo('analytics')">
+                  📊 View Detailed Analytics
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ADD PRODUCT VIEW ===== -->
+    <div *ngIf="currentView === 'add-product'">
+      <div class="page-header">
+        <button class="back-btn" (click)="goToDashboard()">← Back to Dashboard</button>
+        <h1 class="page-title">Add New Product</h1>
+      </div>
+
+      <div class="form-container">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Product Information</h2>
+          </div>
+
+          <!-- Success/Error Messages -->
+          <div *ngIf="productSuccess" class="alert alert-success">
+            {{productSuccess}}
+          </div>
+          <div *ngIf="productError" class="alert alert-error">
+            {{productError}}
+          </div>
+
+          <form class="product-form">
+            <div class="form-group">
+              <label for="productTitle">Product Title *</label>
+              <input type="text" id="productTitle" [(ngModel)]="newProduct.title" 
+                name="productTitle" class="form-input" placeholder="Enter product title">
+            </div>
+
+            <div class="form-group">
+              <label for="productDescription">Description *</label>
+              <textarea id="productDescription" [(ngModel)]="newProduct.description" 
+                name="productDescription" class="form-textarea" rows="4" 
+                placeholder="Enter product description"></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="productPrice">Regular Price (KSh) *</label>
+                <input type="number" id="productPrice" [(ngModel)]="newProduct.price" 
+                  name="productPrice" class="form-input" placeholder="0" min="0" step="0.01">
+              </div>
+
+              <div class="form-group">
+                <label for="productSalePrice">Sale Price (KSh)</label>
+                <input type="number" id="productSalePrice" [(ngModel)]="newProduct.sale_price" 
+                  name="productSalePrice" class="form-input" placeholder="0" min="0" step="0.01">
+                <small style="color: #6b7280; font-size: 0.8rem;">Optional: Leave empty if no sale</small>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="productStock">Stock Quantity *</label>
+                <input type="number" id="productStock" [(ngModel)]="newProduct.stock" 
+                  name="productStock" class="form-input" placeholder="0" min="0">
+              </div>
+
+              <div class="form-group">
+                <label for="productCategory">Category *</label>
+                <select id="productCategory" [(ngModel)]="newProduct.category_id" 
+                  name="productCategory" class="form-select">
+                  <option value="">Select a category</option>
+                  <option *ngFor="let category of categories" [value]="category.category_id">
+                    {{category.name}}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="productSpecs">Product Specifications</label>
+              <textarea id="productSpecs" [(ngModel)]="newProduct.specs" 
+                name="productSpecs" class="form-textarea" rows="4" 
+                placeholder="Enter technical specifications, features, etc. (optional)"></textarea>
+              <small style="color: #6b7280; font-size: 0.8rem;">Optional: Add technical details, dimensions, features, etc.</small>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" (click)="goToDashboard()">Cancel</button>
+              <button type="button" class="btn btn-primary" (click)="onAddProduct()">Add Product</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MANAGE PRODUCTS VIEW ===== -->
+    <div *ngIf="currentView === 'products'">
+      <div class="page-header">
+        <button class="back-btn" (click)="goToDashboard()">← Back to Dashboard</button>
+        <h1 class="page-title">Manage Products</h1>
+        <button class="btn btn-primary" (click)="navigateTo('add-product')">+ Add Product</button>
+      </div>
+
+      <!-- Success/Error Messages -->
+      <div *ngIf="productSuccess" class="alert alert-success">
+        {{productSuccess}}
+      </div>
+      <div *ngIf="productError" class="alert alert-error">
+        {{productError}}
+      </div>
+
+      <div class="card">
         <div class="table-container">
-          <table class="orders-table">
+          <div *ngIf="products.length === 0" class="empty-state">
+            <p>No products found</p>
+            <small>Your products will appear here</small>
+            <button class="btn btn-primary" (click)="navigateTo('add-product')" style="margin-top: 1rem;">
+              Add Your First Product
+            </button>
+          </div>
+
+          <table class="products-table" *ngIf="products.length > 0">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let product of products">
+                <td>
+                  <div class="product-info">
+                    <div class="product-name">{{product.title}}</div>
+                    <div class="product-description">{{product.description | slice:0:50}}...</div>
+                  </div>
+                </td>   
+                <td>{{product.categoryName || product.category_name || product.category_id}}</td>
+                <td>
+                  <div *ngIf="product.sale_price; else regularPrice">
+                    <span class="sale-price-main">{{formatCurrency(product.sale_price)}} </span>
+                    <small style="text-decoration: line-through; color: red;" class="original-price-small">{{formatCurrency(product.price)}}</small>
+                  </div>
+                  <ng-template #regularPrice>
+                    {{formatCurrency(product.price)}}
+                  </ng-template>
+                </td>
+                <td>
+                  <span [class]="product.stock <= 5 ? 'stock-low' : 'stock-good'">
+                    {{product.stock}}
+                  </span>
+                </td>
+                <td>
+                  <span class="status-badge" [class]="product.status === 'active' ? 'delivered' : 'cancelled'">
+                    {{product.status || 'active'}}
+                  </span>
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <button class="btn-icon" (click)="onEditProduct(product.product_id)" title="Edit">✏️</button>
+                    <button class="btn-icon" (click)="onDeleteProduct(product.product_id)" title="Delete">🗑️</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Edit Product Modal -->
+      <div *ngIf="editingProduct" class="modal-overlay" (click)="editingProduct = null">
+        <div class="modal" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>Edit Product</h3>
+            <button class="modal-close" (click)="editingProduct = null">×</button>
+          </div>
+          <div class="modal-content">
+            <form class="product-form">
+              <div class="form-group">
+                <label>Product Name</label>
+                <input type="text" [(ngModel)]="editingProduct.title" 
+                  name="editName" class="form-input">
+              </div>
+              <div class="form-group">
+                <label>Description</label>
+                <textarea [(ngModel)]="editingProduct.description" 
+                  name="editDescription" class="form-textarea" rows="3"></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Price (KSh)</label>
+                  <input type="number" [(ngModel)]="editingProduct.price" 
+                    name="editPrice" class="form-input">
+                </div>
+                <div class="form-group">
+                  <label>Stock</label>
+                  <input type="number" [(ngModel)]="editingProduct.stock" 
+                    name="editStock" class="form-input">
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary" (click)="editingProduct = null">Cancel</button>
+                <button type="button" class="btn btn-primary" (click)="onUpdateProduct()">Update</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MANAGE ORDERS VIEW ===== -->
+    <div *ngIf="currentView === 'manage-orders'">
+      <div class="page-header">
+        <button class="back-btn" (click)="goToDashboard()">← Back to Dashboard</button>
+        <h1 class="page-title">Manage Orders</h1>
+      </div>
+
+      <div class="filters-container">
+        <div class="filter-group">
+          <label>Filter by Status:</label>
+          <select [(ngModel)]="orderFilter" (ngModelChange)="filterOrders()" class="form-select">
+            <option value="all">All Orders</option>
+            <option value="pending">Pending</option>
+            <option value="processing">Processing</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Search Orders:</label>
+          <input type="text" [(ngModel)]="orderSearch" (ngModelChange)="filterOrders()" 
+            class="form-input" placeholder="Search by ID, customer, or product">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-container">
+          <div *ngIf="filteredOrders.length === 0" class="empty-state">
+            <p>No orders found</p>
+            <small>Orders matching your criteria will appear here</small>
+          </div>
+
+          <table class="orders-table" *ngIf="filteredOrders.length > 0">
             <thead>
               <tr>
                 <th>Order ID</th>
@@ -69,91 +452,228 @@
                 <th>Amount</th>
                 <th>Status</th>
                 <th>Date</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let order of orders" (click)="onOrderClick(order.id)">
-                <td><span class="order-id">{{order.id}}</span></td>
-                <td>{{order.customer}}</td>
-                <td>{{order.product}}</td>
-                <td>{{order.amount}}</td>
-                <td><span class="status-badge {{order.statusClass}}">{{order.status}}</span></td>
-                <td>{{order.date}}</td>
+              <tr *ngFor="let order of filteredOrders">
+                <td><span class="order-id">{{order.order_id}}</span></td>
+                <td>{{order.user_name || order.customer?.name || 'Unknown'}}</td>
+                <td>{{order.product_name || order.items?.[0]?.productName || 'Unknown'}}</td>
+                <td>{{formatCurrency(order.total_amount || order.total || 0)}}</td>
+                <td>
+                  <select [(ngModel)]="order.status" (ngModelChange)="updateOrderStatus(order.id, order.status)"
+                    class="status-select">
+                    <option value="pending">Pending</option>
+                    <option value="processing">Processing</option>
+                    <option value="shipped">Shipped</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </td>
+                <td>{{formatDate(order.created_at || order.orderDate)}}</td>
+                <td>
+                  <button class="btn-small btn-primary" (click)="onOrderClick(order.id)">View</button>
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
-
-      <!-- Sales Chart -->
-      <div class="card">
-        <div class="card-header">
-          <h2 class="card-title">Sales Overview</h2>
-          <select class="view-all-btn" style="border: none; background: transparent;">
-            <option>Last 7 days</option>
-            <option>Last 30 days</option>
-            <option>Last 3 months</option>
-          </select>
-        </div>
-        <div class="chart-container">
-          📈 Sales Chart Placeholder
-          <br>
-          <small>Chart integration would show sales trends here</small>
-        </div>
-      </div>
     </div>
 
-    <!-- Sidebar Panel -->
-    <div class="sidebar-panel">
-      <!-- Quick Actions -->
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title">Quick Actions</h3>
-        </div>
-        <div class="quick-actions">
-          <a *ngFor="let action of quickActions" href="{{action.link}}" class="quick-action-btn"
-            (click)="onQuickActionClick(action.text); $event.preventDefault()">
-            <div class="action-icon">{{action.icon}}</div>
-            <span class="action-text">{{action.text}}</span>
-          </a>
-        </div>
+    <!-- ===== ANALYTICS VIEW ===== -->
+    <div *ngIf="currentView === 'analytics'">
+      <div class="page-header">
+        <button class="back-btn" (click)="goToDashboard()">← Back to Dashboard</button>
+        <h1 class="page-title">Analytics & Reports</h1>
       </div>
 
-      <!-- Recent Activity -->
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title">Recent Activity</h3>
-          <a href="/seller/activity" class="view-all-btn">View All</a>
+      <div class="analytics-grid">
+        <!-- Sales Trend Chart -->
+        <div class="card analytics-card">
+          <div class="card-header">
+            <h3 class="card-title">Sales Trend</h3>
+          </div>
+          <div class="chart-container">
+            <div class="mock-chart">
+              <div class="chart-bars">
+                <div *ngFor="let data of analyticsData.salesTrend" class="chart-bar">
+                  <div class="bar" [style.height.px]="(data.sales / 1000) * 2"></div>
+                  <span class="bar-label">{{data.month}}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="activity-list">
-          <div class="activity-item" *ngFor="let activity of activities">
-            <div class="activity-icon {{activity.iconClass}}">{{activity.icon}}</div>
-            <div class="activity-content">
-              <div class="activity-text">{{activity.text}}</div>
-              <div class="activity-time">{{activity.time}}</div>
+
+        <!-- Top Products -->
+        <div class="card analytics-card">
+          <div class="card-header">
+            <h3 class="card-title">Top Selling Products</h3>
+          </div>
+          <div class="top-products">
+            <div *ngFor="let product of analyticsData.topProducts" class="product-item">
+              <div class="product-details">
+                <div class="product-name">{{product.name}}</div>
+                <div class="product-stats">{{product.sales}} sold • {{formatCurrency(product.revenue)}}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Customer Statistics -->
+        <div class="card analytics-card">
+          <div class="card-header">
+            <h3 class="card-title">Customer Statistics</h3>
+          </div>
+          <div class="stats-list">
+            <div class="stat-item">
+              <span class="stat-label">Total Customers</span>
+              <span class="stat-value">{{analyticsData.customerStats.totalCustomers}}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">New Customers</span>
+              <span class="stat-value">{{analyticsData.customerStats.newCustomers}}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Returning Customers</span>
+              <span class="stat-value">{{analyticsData.customerStats.returningCustomers}}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Satisfaction Score</span>
+              <span class="stat-value">{{analyticsData.customerStats.customerSatisfaction}}/5.0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Revenue Chart -->
+        <div class="card analytics-card full-width">
+          <div class="card-header">
+            <h3 class="card-title">Monthly Revenue</h3>
+          </div>
+          <div class="chart-container">
+            <div class="mock-chart">
+              <div class="chart-bars">
+                <div *ngFor="let data of analyticsData.revenueByMonth" class="chart-bar">
+                  <div class="bar revenue-bar" [style.height.px]="(data.revenue / 2000) * 2"></div>
+                  <span class="bar-label">{{data.month}}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Store Performance -->
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title">Store Performance</h3>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 1rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center;"
-            *ngFor="let metric of performanceMetrics">
-            <span style="color: #6b7280;">{{metric.label}}</span>
-            <span style="font-weight: 600;" [class]="metric.valueClass">{{metric.value}}</span>
+    <!-- ===== PROMOTIONS VIEW ===== -->
+    <div *ngIf="currentView === 'promotions'">
+      <div class="page-header">
+        <button class="back-btn" (click)="goToDashboard()">← Back to Dashboard</button>
+        <h1 class="page-title">Promotions & Deals</h1>
+      </div>
+
+      <!-- Success/Error Messages -->
+      <div *ngIf="productSuccess" class="alert alert-success">
+        {{productSuccess}}
+      </div>
+      <div *ngIf="productError" class="alert alert-error">
+        {{productError}}
+      </div>
+
+      <div class="promotions-container">
+        <!-- Create New Offer -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Create New Offer</h3>
           </div>
-          <div style="margin-top: 1rem;">
-            <a href="/seller/analytics" class="btn btn-primary" style="width: 100%; justify-content: center;">
-              📊 View Detailed Analytics
-            </a>
+          <form class="offer-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Offer Title</label>
+                <input type="text" [(ngModel)]="newOffer.title" name="offerTitle" 
+                  class="form-input" placeholder="Enter offer title">
+              </div>
+              <div class="form-group">
+                <label>Discount Type</label>
+                <select [(ngModel)]="newOffer.discountType" name="discountType" class="form-select">
+                  <option value="percentage">Percentage</option>
+                  <option value="fixed">Fixed Amount</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Description</label>
+              <textarea [(ngModel)]="newOffer.description" name="offerDescription" 
+                class="form-textarea" rows="3" placeholder="Describe your offer"></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Discount Value</label>
+                <input type="number" [(ngModel)]="newOffer.discountValue" name="discountValue" 
+                  class="form-input" placeholder="0" min="0">
+              </div>
+              <div class="form-group">
+                <label>Valid From</label>
+                <input type="date" [(ngModel)]="newOffer.validFrom" name="validFrom" class="form-input">
+              </div>
+              <div class="form-group">
+                <label>Valid To</label>
+                <input type="date" [(ngModel)]="newOffer.validTo" name="validTo" class="form-input">
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn btn-primary" (click)="onCreateOffer()">Create Offer</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Active Offers -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Active Offers</h3>
+          </div>
+          <div *ngIf="specialOffers.length === 0" class="empty-state">
+            <p>No offers created yet</p>
+            <small>Create your first promotional offer above</small>
+          </div>
+
+          <div class="offers-grid" *ngIf="specialOffers.length > 0">
+            <div *ngFor="let offer of specialOffers" class="offer-card">
+              <div class="offer-header">
+                <h4 class="offer-title">{{offer.title}}</h4>
+                <div class="offer-actions">
+                  <button class="btn-icon" (click)="toggleOfferStatus(offer.id)" 
+                    [title]="offer.isActive ? 'Deactivate' : 'Activate'">
+                    {{offer.isActive ? '🔥' : '⏸️'}}
+                  </button>
+                  <button class="btn-icon" (click)="deleteOffer(offer.id)" title="Delete">🗑️</button>
+                </div>
+              </div>
+              <div class="offer-content">
+                <p class="offer-description">{{offer.description}}</p>
+                <div class="offer-details">
+                  <span class="offer-discount">
+                    {{offer.discountValue}}{{offer.discountType === 'percentage' ? '%' : ' KSh'}} OFF
+                  </span>
+                  <span class="offer-validity">
+                    {{formatDate(offer.validFrom)}} - {{formatDate(offer.validTo)}}
+                  </span>
+                </div>
+                <div class="offer-status">
+                  <span class="status-badge" [class]="offer.isActive ? 'delivered' : 'cancelled'">
+                    {{offer.isActive ? 'Active' : 'Inactive'}}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
+
   </div>
 </main>
