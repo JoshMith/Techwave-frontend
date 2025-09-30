@@ -9,9 +9,9 @@ export class ApiService {
   // public apiUrl = 'http://localhost:3000'; // Development URL
   public apiUrl = 'https://techwave-backend-lepy.onrender.com'; // Production URL
   private httpOptions = {
-    // headers: new HttpHeaders({
-    //   'Content-Type': 'application/json'
-    // }),
+    headers: new HttpHeaders({
+      'Content-Type': 'application/json'
+    }),
     withCredentials: true // This enables sending cookies with requests
   };
 
