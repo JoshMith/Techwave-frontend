@@ -267,8 +267,12 @@ body {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Error Styles */
@@ -715,8 +719,12 @@ body {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Error Styles */
@@ -1045,8 +1053,12 @@ body {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Unauthorized Access Styles */
@@ -1917,6 +1929,31 @@ body {
   margin-top: 0.5rem;
 }
 
+.profile-field {
+  padding: 1.5rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.profile-field:last-child {
+  border-bottom: none;
+}
+
+.profile-label {
+  display: block;
+  font-weight: 600;
+  color: #6b7280;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+.profile-value {
+  font-size: 1.1rem;
+  color: #1f2937;
+  font-weight: 500;
+}
+
 /* Utility Classes */
 .positive {
   color: #10b981;
@@ -1935,7 +1972,7 @@ body {
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .analytics-grid {
     grid-template-columns: 1fr;
   }
@@ -1993,6 +2030,31 @@ body {
   .offers-grid {
     grid-template-columns: 1fr;
   }
+
+  .profile-field {
+    padding: 1.5rem 0;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .profile-field:last-child {
+    border-bottom: none;
+  }
+
+  .profile-label {
+    display: block;
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+  }
+
+  .profile-value {
+    font-size: 1.1rem;
+    color: #1f2937;
+    font-weight: 500;
+  }
 }
 
 @media (max-width: 480px) {
@@ -2010,7 +2072,7 @@ body {
     width: 95%;
     margin: 1rem;
   }
-  
+
   .modal-content {
     padding: 1.5rem;
   }

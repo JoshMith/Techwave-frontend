@@ -45,7 +45,7 @@ interface PerformanceMetric {
 }
 
 interface Product {
-  id?: string;
+  product_id?: string;
   seller_id?: string;
   category_id: string;
   title: string;
@@ -60,6 +60,19 @@ interface Product {
 interface Category {
   category_id?: string;
   name: string;
+}
+
+interface SellerProfile {
+  seller_id?: string;
+  user_id?: string;
+  business_name: string;
+  tax_id: string;
+  business_license: string;
+  total_sales?: number;
+  created_at?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
 }
 
 @Component({
@@ -215,6 +228,18 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     isActive: true
   };
 
+  // Profile management
+  sellerProfile: SellerProfile | null = null;
+  editingProfile = false;
+  profileForm: SellerProfile = {
+    business_name: '',
+    tax_id: '',
+    business_license: ''
+  };
+  profileError: string | null = null;
+  profileSuccess: string | null = null;
+  profileLoading = false;
+
   constructor(private apiService: ApiService) {}
 
   ngOnInit(): void {
@@ -247,6 +272,9 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
       case 'products':
         this.loadProducts();
         break;
+      case 'profile':
+        this.loadSellerProfile();
+        break;
     }
   }
 
@@ -258,6 +286,8 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   private clearMessages(): void {
     this.productError = null;
     this.productSuccess = null;
+    this.profileError = null;
+    this.profileSuccess = null;
   }
 
   // Authentication and data loading
@@ -324,6 +354,133 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
       });
   }
 
+  // Profile management methods
+  private loadSellerProfile(): void {
+    this.profileLoading = true;
+    this.profileError = null;
+
+    try {
+      const userString = localStorage.getItem('user');
+      if (!userString) {
+        this.profileError = 'User session expired. Please log in again.';
+        this.profileLoading = false;
+        return;
+      }
+
+      const user = JSON.parse(userString);
+      const userId = user.id || user.user_id;
+
+      // Get all sellers and find the one matching the current user
+      this.apiService.getSellers()
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (sellers) => {
+            const userSeller = sellers.find((s: any) => s.user_id === userId);
+            
+            if (userSeller) {
+              this.sellerProfile = userSeller;
+              this.profileForm = {
+                business_name: userSeller.business_name || '',
+                tax_id: userSeller.tax_id || '',
+                business_license: userSeller.business_license || ''
+              };
+            } else {
+              // No seller profile exists yet
+              this.sellerProfile = null;
+            }
+            this.profileLoading = false;
+          },
+          error: (error) => {
+            console.error('Error loading seller profile:', error);
+            this.profileError = 'Failed to load profile. Please try again.';
+            this.profileLoading = false;
+          }
+        });
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+      this.profileError = 'Invalid user session. Please log in again.';
+      this.profileLoading = false;
+    }
+  }
+
+  onEditProfile(): void {
+    this.editingProfile = true;
+    this.profileError = null;
+    this.profileSuccess = null;
+  }
+
+  onCancelProfileEdit(): void {
+    this.editingProfile = false;
+    if (this.sellerProfile) {
+      this.profileForm = {
+        business_name: this.sellerProfile.business_name || '',
+        tax_id: this.sellerProfile.tax_id || '',
+        business_license: this.sellerProfile.business_license || ''
+      };
+    }
+    this.profileError = null;
+  }
+
+  onSaveProfile(): void {
+    if (!this.validateProfile()) {
+      return;
+    }
+
+    this.profileLoading = true;
+    this.profileError = null;
+    this.profileSuccess = null;
+
+    if (this.sellerProfile && this.sellerProfile.seller_id) {
+      // Update existing profile
+      this.apiService.updateSeller(this.sellerProfile.seller_id.toString(), this.profileForm)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (response) => {
+            this.profileSuccess = 'Profile updated successfully!';
+            this.editingProfile = false;
+            this.loadSellerProfile();
+          },
+          error: (error) => {
+            console.error('Error updating profile:', error);
+            this.profileError = 'Failed to update profile. Please try again.';
+            this.profileLoading = false;
+          }
+        });
+    } else {
+      // Create new profile
+      this.apiService.createSeller(this.profileForm)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (response) => {
+            this.profileSuccess = 'Profile created successfully!';
+            this.editingProfile = false;
+            this.loadSellerProfile();
+          },
+          error: (error) => {
+            console.error('Error creating profile:', error);
+            this.profileError = 'Failed to create profile. Please try again.';
+            this.profileLoading = false;
+          }
+        });
+    }
+  }
+
+  private validateProfile(): boolean {
+    if (!this.profileForm.business_name.trim()) {
+      this.profileError = 'Business name is required';
+      return false;
+    }
+    if (!this.profileForm.tax_id.trim()) {
+      this.profileError = 'Tax ID is required';
+      return false;
+    }
+    if (!this.profileForm.business_license.trim()) {
+      this.profileError = 'Business license is required';
+      return false;
+    }
+    return true;
+  }
+
   // Products management methods
   private loadProducts(): void {
     this.apiService.getProducts()
@@ -354,15 +511,13 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
 
   onAddProduct(): void {
     if (this.validateProduct(this.newProduct)) {
-      // Get seller_id from localStorage user
       try {
         const userString = localStorage.getItem('user');
         if (userString) {
           const user = JSON.parse(userString);
           
-          // Prepare product data according to backend structure
           const productData = {
-            seller_id: user.id || user._id,
+            seller_id: user.id || user.user_id,
             category_id: this.newProduct.category_id,
             title: this.newProduct.title,
             description: this.newProduct.description,
@@ -378,7 +533,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
               next: (response) => {
                 this.productSuccess = 'Product added successfully!';
                 this.resetNewProduct();
-                this.loadSellerData(); // Refresh dashboard stats
+                this.loadSellerData();
               },
               error: (error) => {
                 console.error('Error creating product:', error);
@@ -400,8 +555,8 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   }
 
   onUpdateProduct(): void {
-    if (this.editingProduct && this.validateProduct(this.editingProduct)) {
-      this.apiService.updateProduct(this.editingProduct.id!, this.editingProduct)
+    if (this.editingProduct) {
+      this.apiService.updateProduct(this.editingProduct.product_id!, this.editingProduct)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (response) => {
@@ -411,7 +566,9 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
           },
           error: (error) => {
             console.error('Error updating product:', error);
-            this.productError = 'Failed to update product. Please try again.';
+            setTimeout(() => {
+              this.productError = 'Failed to update product. Please try again.';
+            }, 10000);
           }
         });
     }
@@ -425,7 +582,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
           next: (response) => {
             this.productSuccess = 'Product deleted successfully!';
             this.loadProducts();
-            this.loadSellerData(); // Refresh dashboard stats
+            this.loadSellerData();
           },
           error: (error) => {
             console.error('Error deleting product:', error);
@@ -493,7 +650,6 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   filterOrders(): void {
     let filtered = this.allOrders;
 
-    // Filter by status
     if (this.orderFilter !== 'all') {
       filtered = filtered.filter(order =>
         order.status &&
@@ -501,7 +657,6 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
       );
     }
 
-    // Filter by search term
     if (this.orderSearch.trim()) {
       const searchTerm = this.orderSearch.toLowerCase();
       filtered = filtered.filter(order => {
@@ -525,7 +680,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           this.loadAllOrders();
-          this.loadSellerData(); // Refresh dashboard stats
+          this.loadSellerData();
         },
         error: (error) => {
           console.error('Error updating order status:', error);
@@ -535,7 +690,6 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
 
   // Analytics methods
   private loadAnalytics(): void {
-    // Mock analytics data - replace with actual API calls
     this.analyticsData = {
       salesTrend: [
         { month: 'Jan', sales: 12000 },
@@ -639,7 +793,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     };
   }
 
-  // Data processing methods (keeping the existing ones)
+  // Data processing methods
   private processOrders(ordersData: any[]): void {
     this.stats[1].value = ordersData.length.toString();
     this.stats[1].change = this.calculateOrdersChange(ordersData);
@@ -768,7 +922,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     ];
   }
 
-  // Utility methods (made public for template access)
+  // Utility methods
   private calculateOrdersChange(orders: any[]): string {
     const change = Math.floor(Math.random() * 20) - 5;
     return change > 0 ? `+${change}% from last month` : `${change}% from last month`;
@@ -813,7 +967,6 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     return statusClasses[status?.toLowerCase()] || 'pending';
   }
 
-  // Public utility methods for template access
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-KE', {
       style: 'currency',
@@ -860,7 +1013,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   }
 
   onProfileClick(): void {
-    console.log('Profile clicked');
+    this.navigateTo('profile');
   }
 
   refreshData(): void {
