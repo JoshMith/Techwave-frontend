@@ -282,6 +282,64 @@ export class ApiService {
     return this.http.delete(`${this.apiUrl}/delivery-prices/${id}`, this.httpOptions);
   }
 
+  // ========== Cart Routes ==========
+  getCarts(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/carts`, this.httpOptions);
+  }
+
+  getCartById(id: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/carts/${id}`, this.httpOptions);
+  }
+
+  getCartByUserId(userId: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/carts/user/${userId}`, this.httpOptions);
+  }
+
+  getCartBySessionId(sessionId: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/carts/session/${sessionId}`, this.httpOptions);
+  }
+
+  createCart(cartData: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/carts`, cartData, this.httpOptions);
+  }
+
+  updateCart(id: string, cartData: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/carts/${id}`, cartData, this.httpOptions);
+  }
+
+  deleteCart(id: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/carts/${id}`, this.httpOptions);
+  }
+
+  clearCart(id: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/carts/${id}/clear`, this.httpOptions);
+  }
+
+  // ========== Cart Item Routes ==========
+  getCartItemsByCartId(cartId: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/cart-items/cart/${cartId}`, this.httpOptions);
+  }
+
+  getCartSummary(cartId: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/cart-items/cart/${cartId}/summary`, this.httpOptions);
+  }
+
+  getCartItemById(id: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/cart-items/${id}`, this.httpOptions);
+  }
+
+  addCartItem(itemData: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/cart-items`, itemData, this.httpOptions);
+  }
+
+  updateCartItem(id: string, itemData: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/cart-items/${id}`, itemData, this.httpOptions);
+  }
+
+  removeCartItem(id: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/cart-items/${id}`, this.httpOptions);
+  }
+
   // ========== Order Routes ==========
   getOrders(): Observable<any> {
     return this.http.get(`${this.apiUrl}/orders`, this.httpOptions);

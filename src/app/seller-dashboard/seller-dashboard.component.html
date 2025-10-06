@@ -15,7 +15,8 @@
         (click)="navigateTo('analytics')">Analytics</button>
       <button class="nav-link" [class.active]="currentView === 'promotions'"
         (click)="navigateTo('promotions')">Promotions</button>
-      <button class="nav-link" [class.active]="currentView === 'profile'" (click)="navigateTo('profile')">Profile</button>
+      <button class="nav-link" [class.active]="currentView === 'profile'"
+        (click)="navigateTo('profile')">Profile</button>
     </div>
     <div class="profile-section">
       <button class="notification-btn" title="Notifications" (click)="onNotificationClick()">
@@ -475,12 +476,200 @@
                 </td>
                 <td>{{formatDate(order.created_at || order.orderDate)}}</td>
                 <td>
-                  <button class="btn-small btn-primary" (click)="onOrderClick(order.id)">View</button>
+                  <button class="btn-small btn-primary" (click)="onOrderClick(order.order_id)">View</button>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+
+    <!-- ===== ORDER DETAILS VIEW ===== -->
+    <div *ngIf="currentView === 'order-details'">
+      <div class="page-header">
+        <button class="back-btn" (click)="closeOrderDetails()">← Back to Orders</button>
+        <h1 class="page-title">Order Details</h1>
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="isLoadingOrderDetails" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Loading order details...</p>
+      </div>
+
+      <!-- Order Details Content -->
+      <div *ngIf="!isLoadingOrderDetails && selectedOrder" style="display: grid; gap: 1.5rem;">
+
+        <!-- Order Summary Card -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Order Summary</h2>
+            <span class="status-badge" [class]="getStatusClass(selectedOrder.status)">
+              {{mapOrderStatus(selectedOrder.status)}}
+            </span>
+          </div>
+          <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; padding: 1.5rem;">
+            <div>
+              <label class="profile-label">Order ID</label>
+              <div class="profile-value">{{selectedOrder.order_id || selectedOrder.id}}</div>
+            </div>
+            <div>
+              <label class="profile-label">Order Date</label>
+              <div class="profile-value">{{formatDate(selectedOrder.created_at || selectedOrder.orderDate)}}</div>
+            </div>
+            <div>
+              <label class="profile-label">Total Amount</label>
+              <div class="profile-value" style="color: #10b981; font-weight: 600; font-size: 1.2rem;">
+                {{formatCurrency(selectedOrder.total_amount || selectedOrder.total || 0)}}
+              </div>
+            </div>
+            <div>
+              <label class="profile-label">Payment Status</label>
+              <div class="profile-value">
+                <span class="status-badge" [class]="orderDetails.payment?.confirmed ? 'delivered' : 'pending'">
+                  {{orderDetails.payment?.confirmed ? 'Paid' : 'Pending'}}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Customer Information -->
+        <div class="card" *ngIf="orderDetails.user">
+          <div class="card-header">
+            <h3 class="card-title">Customer Information</h3>
+          </div>
+          <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; padding: 1.5rem;">
+            <div>
+              <label class="profile-label">Name</label>
+              <div class="profile-value">
+                {{orderDetails.user.name || orderDetails.user.Name}}
+              </div>
+            </div>
+            <div>
+              <label class="profile-label">Email</label>
+              <div class="profile-value">{{orderDetails.user.email}}</div>
+            </div>
+            <div>
+              <label class="profile-label">Phone</label>
+              <div class="profile-value">{{orderDetails.user.phone || 'N/A'}}</div>
+            </div>
+            <div>
+              <label class="profile-label">Customer Since</label>
+              <div class="profile-value">{{formatDate(orderDetails.user.created_at)}}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Delivery Address -->
+        <div class="card" *ngIf="orderDetails.address">
+          <div class="card-header">
+            <h3 class="card-title">Delivery Address</h3>
+          </div>
+          <div style="padding: 1.5rem;">
+            <div class="profile-value" style="line-height: 1.8;">
+              <div><strong>{{orderDetails.address.full_name || orderDetails.address.name}}</strong></div>
+              <div>{{orderDetails.address.phone}}</div>
+              <div style="margin-top: 0.5rem;">
+                {{orderDetails.address.street_address}}<br>
+                {{orderDetails.address.city}}, {{orderDetails.address.state}} {{orderDetails.address.postal_code}}<br>
+                {{orderDetails.address.country}}
+              </div>
+              <div *ngIf="orderDetails.address.is_default" style="margin-top: 0.5rem;">
+                <span class="status-badge delivered" style="font-size: 0.8rem;">Default Address</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Order Items -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Order Items</h3>
+          </div>
+          <div class="table-container">
+            <table class="orders-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Quantity</th>
+                  <th>Unit Price</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of orderDetails.items">
+                  <td>{{item.product_name || item.productName || 'Unknown Product'}}</td>
+                  <td>{{item.quantity}}</td>
+                  <td>{{formatCurrency(item.price || item.unit_price || 0)}}</td>
+                  <td style="font-weight: 600;">{{formatCurrency((item.price || item.unit_price || 0) * item.quantity)}}
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr style="border-top: 2px solid #e5e7eb; font-weight: 600;">
+                  <td colspan="3" style="text-align: right; padding: 1rem;">Total:</td>
+                  <td style="color: #10b981; font-size: 1.1rem;">
+                    {{formatCurrency(selectedOrder.total_amount || selectedOrder.total || 0)}}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- Payment Information -->
+        <div class="card" *ngIf="orderDetails.payment">
+          <div class="card-header">
+            <h3 class="card-title">Payment Information</h3>
+          </div>
+          <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; padding: 1.5rem;">
+            <div>
+              <label class="profile-label">Payment Method</label>
+              <div class="profile-value">{{orderDetails.payment.payment_method || 'N/A'}}</div>
+            </div>
+            <div>
+              <label class="profile-label">Transaction ID</label>
+              <div class="profile-value">{{orderDetails.payment.transaction_id || 'N/A'}}</div>
+            </div>
+            <div>
+              <label class="profile-label">Amount Paid</label>
+              <div class="profile-value" style="color: #10b981; font-weight: 600;">
+                {{formatCurrency(orderDetails.payment.amount || 0)}}
+              </div>
+            </div>
+            <div>
+              <label class="profile-label">Payment Date</label>
+              <div class="profile-value">{{formatDate(orderDetails.payment.created_at)}}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Order Actions -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Update Order Status</h3>
+          </div>
+          <div style="padding: 1.5rem;">
+            <div class="form-group">
+              <label>Current Status: <strong>{{mapOrderStatus(selectedOrder.status)}}</strong></label>
+              <select [(ngModel)]="selectedOrder.status"
+                (ngModelChange)="updateOrderStatus(selectedOrder.order_id || selectedOrder.id, selectedOrder.status)"
+                class="form-select" style="margin-top: 0.5rem;">
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="shipped">Shipped</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 

@@ -83,10 +83,10 @@ interface SellerProfile {
 })
 export class SellerDashboardComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
-  
+
   // Navigation state
   currentView = 'dashboard';
-  
+
   // User state
   notificationCount = 0;
   userName = 'Seller';
@@ -133,7 +133,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
 
   orders: Order[] = [];
   activities: Activity[] = [];
-  
+
   quickActions: QuickAction[] = [
     {
       icon: '➕',
@@ -210,11 +210,11 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     };
     revenueByMonth: { month: string; revenue: number }[];
   } = {
-    salesTrend: [],
-    topProducts: [],
-    customerStats: {},
-    revenueByMonth: []
-  };
+      salesTrend: [],
+      topProducts: [],
+      customerStats: {},
+      revenueByMonth: []
+    };
 
   // Promotions/Deals
   specialOffers: any[] = [];
@@ -240,7 +240,16 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   profileSuccess: string | null = null;
   profileLoading = false;
 
-  constructor(private apiService: ApiService) {}
+  selectedOrder: any = null;
+  orderDetails: {
+    user?: any;
+    address?: any;
+    items?: any[];
+    payment?: any;
+  } = {};
+  isLoadingOrderDetails = false;
+
+  constructor(private apiService: ApiService) { }
 
   ngOnInit(): void {
     this.loadDashboardData();
@@ -251,12 +260,17 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  removeSellerData(): void {
+    // localStorage.removeItem('sellerData');
+    // this.loadDashboardData();
+  }
+
   // Navigation methods
   navigateTo(view: string): void {
     this.currentView = view;
     this.clearMessages();
-    
-    switch(view) {
+
+    switch (view) {
       case 'add-product':
         this.loadCategories();
         break;
@@ -298,13 +312,13 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
 
     try {
       const userString = localStorage.getItem('user');
-      
+
       if (userString) {
         const user = JSON.parse(userString);
-        
+
         this.userName = user.firstName || user.name || 'User';
         this.userRole = user.role || 'buyer';
-        
+
         if (this.userRole.toLowerCase() === 'seller' || this.userRole.toLowerCase() === 'admin') {
           this.isAuthorized = true;
           this.loadSellerData();
@@ -376,8 +390,9 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
         .subscribe({
           next: (sellers) => {
             const userSeller = sellers.find((s: any) => s.user_id === userId);
-            
+
             if (userSeller) {
+              // console.log('Found seller profile:', userSeller);
               this.sellerProfile = userSeller;
               this.profileForm = {
                 business_name: userSeller.business_name || '',
@@ -513,11 +528,16 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     if (this.validateProduct(this.newProduct)) {
       try {
         const userString = localStorage.getItem('user');
+        const sellerString = sessionStorage.getItem('sellerData');
+        window.addEventListener('beforeunload', () => {
+          sessionStorage.removeItem('sellerData');
+        }); // Clear seller data on page unload
         if (userString) {
           const user = JSON.parse(userString);
-          
+          const seller = sellerString ? JSON.parse(sellerString) : null;
+
           const productData = {
-            seller_id: user.id || user.user_id,
+            seller_id: seller?.seller_id,
             category_id: this.newProduct.category_id,
             title: this.newProduct.title,
             description: this.newProduct.description,
@@ -526,6 +546,8 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
             stock: this.newProduct.stock || 0,
             specs: this.newProduct.specs || null
           };
+
+          // console.log('Creating product with data:', productData);
 
           this.apiService.createProduct(productData)
             .pipe(takeUntil(this.destroy$))
@@ -812,7 +834,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   }
 
   private processProducts(productsData: any[]): void {
-    const activeProducts = productsData.filter(product => 
+    const activeProducts = productsData.filter(product =>
       product.status === 'active' || product.isActive !== false
     );
     this.stats[2].value = activeProducts.length.toString();
@@ -820,7 +842,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   }
 
   private processUsers(usersData: any[]): void {
-    const customers = usersData.filter(user => 
+    const customers = usersData.filter(user =>
       !user.role || user.role === 'customer' || user.role === 'user'
     );
     this.stats[3].value = customers.length.toString();
@@ -828,24 +850,24 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   }
 
   private processPayments(paymentsData: any[]): void {
-    const successfulPayments = paymentsData.filter(payment => 
+    const successfulPayments = paymentsData.filter(payment =>
       payment.status === 'completed' || payment.status === 'success' || payment.confirmed
     );
-    
-    const totalRevenue = successfulPayments.reduce((sum, payment) => 
+
+    const totalRevenue = successfulPayments.reduce((sum, payment) =>
       sum + (payment.amount || 0), 0
     );
-    
+
     this.stats[0].value = this.formatCurrency(totalRevenue);
     this.stats[0].change = this.calculateRevenueChange(successfulPayments);
   }
 
   private processReviews(reviewsData: any[]): void {
     if (reviewsData.length > 0) {
-      const avgRating = reviewsData.reduce((sum, review) => 
+      const avgRating = reviewsData.reduce((sum, review) =>
         sum + (review.rating || 0), 0
       ) / reviewsData.length;
-      
+
       this.performanceMetrics[3] = {
         label: 'Customer Satisfaction',
         value: `${avgRating.toFixed(1)}/5.0`,
@@ -856,7 +878,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
 
   private generateActivities(data: any): void {
     const activities: Activity[] = [];
-    
+
     const recentOrders = (data.orders.data || []).slice(0, 2);
     recentOrders.forEach((order: any) => {
       activities.push({
@@ -896,10 +918,10 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
 
     const totalVisits = orders.length * 10;
     const conversionRate = orders.length > 0 ? ((orders.length / totalVisits) * 100).toFixed(1) : '0.0';
-    
+
     const totalRevenue = orders.reduce((sum: number, order: any) => sum + (order.totalAmount || 0), 0);
     const avgOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
-    
+
     const returnedOrders = orders.filter((order: any) => order.status === 'returned' || order.status === 'cancelled');
     const returnRate = orders.length > 0 ? ((returnedOrders.length / orders.length) * 100).toFixed(1) : '0.0';
 
@@ -943,7 +965,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     return `+${change}% from last month`;
   }
 
-  private mapOrderStatus(status: string): string {
+  public mapOrderStatus(status: string): string {
     const statusMap: { [key: string]: string } = {
       'pending': 'Pending',
       'processing': 'Processing',
@@ -955,7 +977,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     return statusMap[status?.toLowerCase()] || status || 'Unknown';
   }
 
-  private getStatusClass(status: string): string {
+  public getStatusClass(status: string): string {
     const statusClasses: { [key: string]: string } = {
       'pending': 'pending',
       'processing': 'processing',
@@ -987,11 +1009,11 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
 
   private getRelativeTime(dateString: string): string {
     if (!dateString) return 'Recently';
-    
+
     const now = new Date();
     const date = new Date(dateString);
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
+
     if (diffInSeconds < 60) return 'Just now';
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
@@ -1005,7 +1027,67 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   }
 
   onOrderClick(orderId: string): void {
-    console.log(`Order ${orderId} clicked`);
+    this.selectedOrder = null;
+    this.isLoadingOrderDetails = true;
+    this.orderDetails = {};
+
+    // Get the order first
+    this.apiService.getOrderById(orderId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (order) => {
+          this.selectedOrder = order;
+
+          // Load related data
+          const userId = order.user_id;
+          const addressId = order.address_id;
+
+          forkJoin({
+            user: userId ? this.apiService.getUserById(userId).pipe(catchError(() => of(null))) : of(null),
+            address: addressId ? this.apiService.getAddressById(addressId).pipe(catchError(() => of(null))) : of(null),
+            orderItems: this.apiService.getOrderItems().pipe(
+              catchError(() => of({ data: [] }))
+            ),
+            payment: this.apiService.getPayments().pipe(
+              catchError(() => of({ data: [] }))
+            )
+          }).subscribe({
+            next: (data) => {
+              this.orderDetails.user = data.user;
+              this.orderDetails.address = data.address;
+
+              // Filter order items for this order
+              const allItems = data.orderItems.data || data.orderItems || [];
+              this.orderDetails.items = allItems.filter((item: any) =>
+                item.order_id === orderId || item.order_id === order.order_id
+              );
+
+              // Find payment for this order
+              const allPayments = data.payment.data || data.payment || [];
+              this.orderDetails.payment = allPayments.find((payment: any) =>
+                payment.order_id === orderId || payment.order_id === order.order_id
+              );
+
+              this.isLoadingOrderDetails = false;
+              this.navigateTo('order-details');
+            },
+            error: (error) => {
+              console.error('Error loading order details:', error);
+              this.isLoadingOrderDetails = false;
+            }
+          });
+        },
+        error: (error) => {
+          console.error('Error loading order:', error);
+          this.isLoadingOrderDetails = false;
+        }
+      });
+  }
+
+  closeOrderDetails(): void {
+    this.selectedOrder = null;
+    this.orderDetails = {};
+    this.navigateTo('manage-orders');
   }
 
   onNotificationClick(): void {

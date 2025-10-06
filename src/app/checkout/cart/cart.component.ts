@@ -20,6 +20,7 @@ interface CartItem {
   templateUrl: './cart.component.html',
   styleUrl: './cart.component.css'
 })
+
 export class CartComponent {
   constructor(private router: Router) { }
 

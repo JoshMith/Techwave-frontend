@@ -11,9 +11,9 @@ import { AudioSoundComponent } from './categories/audio-sound/audio-sound.compon
 import { AboutComponent } from './about/about.component';
 import { ContactComponent } from './contact/contact.component';
 import { DealsComponent } from './deals/deals.component';
-import { CartComponent } from './closure/cart/cart.component';
-import { DetailsComponent } from './closure/details/details.component';
-import { PaymentComponent } from './closure/payment/payment.component';
+import { CartComponent } from './checkout/cart/cart.component';
+import { DetailsComponent } from './checkout/details/details.component';
+import { PaymentComponent } from './checkout/payment/payment.component';
 import { ProfileComponent } from './profile/profile.component';
 import { SellerDashboardComponent } from './seller-dashboard/seller-dashboard.component';
 import { ProductComponent } from './product/product.component';

@@ -60,6 +60,7 @@ export class LoginComponent {
 
           // Redirect to dashboard or homepage
           if (response.user?.role === 'seller') {
+            sessionStorage.setItem('sellerData', JSON.stringify(response.sellerData || {}));
             this.router.navigate(['/seller-dashboard']);
           } else {
             this.router.navigate(['/homepage']);
