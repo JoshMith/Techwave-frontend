@@ -23,7 +23,7 @@ import { SignupComponent } from './auth/signup/signup.component';
 import { AddProductComponent } from './add-product/add-product.component';
 
 export const routes: Routes = [
-    { path: '', redirectTo: 'homepage', pathMatch: 'full' },//the default page
+    { path: '', redirectTo: 'homepage', pathMatch: 'full' },
     { path: 'homepage', component: HomepageComponent },
     { path: 'shop', component: ShopComponent },
     { path: 'categories/Phones', component: PhonesComponent },
@@ -35,9 +35,12 @@ export const routes: Routes = [
     { path: 'about', component: AboutComponent },
     { path: 'contact', component: ContactComponent },
     { path: 'deals', component: DealsComponent },
+    
+    // Checkout routes with proper structure
     { path: 'cart', component: CartComponent },
-    { path: 'details', component: DetailsComponent },
-    { path: 'payment', component: PaymentComponent },
+    { path: 'checkout/details', component: DetailsComponent },
+    { path: 'checkout/payment', component: PaymentComponent },
+    
     { path: 'profile', component: ProfileComponent },
     { path: 'seller-dashboard', component: SellerDashboardComponent },
     { path: 'product', component: ProductComponent },
@@ -46,4 +49,5 @@ export const routes: Routes = [
     { path: 'forgot-pwd', component: ForgotPwdComponent },
     { path: 'add-product', component: AddProductComponent },
 ];
+
 

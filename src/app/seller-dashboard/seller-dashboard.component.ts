@@ -311,7 +311,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     this.isAuthorized = false;
 
     try {
-      const userString = localStorage.getItem('user');
+      const userString = localStorage.getItem('currentUser');
 
       if (userString) {
         const user = JSON.parse(userString);
@@ -374,7 +374,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     this.profileError = null;
 
     try {
-      const userString = localStorage.getItem('user');
+      const userString = localStorage.getItem('currentUser');
       if (!userString) {
         this.profileError = 'User session expired. Please log in again.';
         this.profileLoading = false;
@@ -527,7 +527,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   onAddProduct(): void {
     if (this.validateProduct(this.newProduct)) {
       try {
-        const userString = localStorage.getItem('user');
+        const userString = localStorage.getItem('currentUser');
         const sellerString = sessionStorage.getItem('sellerData');
         window.addEventListener('beforeunload', () => {
           sessionStorage.removeItem('sellerData');

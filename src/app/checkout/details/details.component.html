@@ -1,1 +1,211 @@
-<p>details works!</p>
+<div class="details-container">
+  <div class="checkout-header">
+    <h1>Checkout - Delivery Details</h1>
+    <div class="checkout-steps">
+      <div class="step completed">
+        <span class="step-number">1</span>
+        <span class="step-label">Cart</span>
+      </div>
+      <div class="step active">
+        <span class="step-number">2</span>
+        <span class="step-label">Details</span>
+      </div>
+      <div class="step">
+        <span class="step-number">3</span>
+        <span class="step-label">Payment</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="details-content">
+    <div class="main-section">
+      <!-- User Information -->
+      <div class="section-card" *ngIf="currentUser">
+        <h2>Contact Information</h2>
+        <div class="info-display">
+          <div class="info-row">
+            <span class="label">Name:</span>
+            <span class="value">{{ currentUser.name }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Email:</span>
+            <span class="value">{{ currentUser.email }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Phone:</span>
+            <span class="value">{{ currentUser.phone }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Saved Addresses -->
+      <div class="section-card">
+        <div class="section-header">
+          <h2>Delivery Address</h2>
+          <button class="btn-secondary" (click)="toggleAddressForm()">
+            {{ showAddressForm ? 'Cancel' : '+ Add New Address' }}
+          </button>
+        </div>
+
+        <!-- Address Form -->
+        <div class="address-form" *ngIf="showAddressForm">
+          <form [formGroup]="addressForm" (ngSubmit)="saveAddress()">
+            <div class="form-group">
+              <label for="city">City *</label>
+              <select id="city" formControlName="city" class="form-control">
+                <option value="">Select City</option>
+                <option *ngFor="let city of kenyaCities" [value]="city">{{ city }}</option>
+              </select>
+              <span class="error" *ngIf="addressForm.get('city')?.touched && addressForm.get('city')?.invalid">
+                City is required
+              </span>
+            </div>
+
+            <div class="form-group">
+              <label for="street">Street Address *</label>
+              <input type="text" id="street" formControlName="street" 
+                     class="form-control" placeholder="e.g., Kimathi Street">
+              <span class="error" *ngIf="addressForm.get('street')?.touched && addressForm.get('street')?.invalid">
+                Street address is required
+              </span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="building">Building/Apartment</label>
+                <input type="text" id="building" formControlName="building" 
+                       class="form-control" placeholder="e.g., Building 5, Apt 3B">
+              </div>
+
+              <div class="form-group">
+                <label for="postal_code">Postal Code</label>
+                <input type="text" id="postal_code" formControlName="postal_code" 
+                       class="form-control" placeholder="e.g., 00100">
+              </div>
+            </div>
+
+            <div class="form-check">
+              <input type="checkbox" id="is_default" formControlName="is_default">
+              <label for="is_default">Set as default address</label>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary" [disabled]="loading">
+                {{ loading ? 'Saving...' : 'Save Address' }}
+              </button>
+              <button type="button" class="btn-secondary" (click)="toggleAddressForm()">
+                Cancel
+              </button>
+            </div>
+            <p class="error" *ngIf="error">{{ error }}</p>
+          </form>
+        </div>
+
+        <!-- Saved Addresses List -->
+        <div class="addresses-list" *ngIf="!showAddressForm">
+          <div *ngIf="savedAddresses.length === 0" class="empty-state">
+            <p>No saved addresses. Please add a delivery address.</p>
+          </div>
+
+          <div *ngFor="let address of savedAddresses" class="address-card"
+               [class.selected]="selectedAddressId === address.address_id">
+            <input type="radio" 
+                   [id]="'addr_' + address.address_id" 
+                   name="selectedAddress"
+                   [value]="address.address_id"
+                   [checked]="selectedAddressId === address.address_id"
+                   (change)="onAddressSelect(address.address_id!)">
+            
+            <label [for]="'addr_' + address.address_id" class="address-content">
+              <div class="address-header">
+                <span class="city">{{ address.city }}</span>
+                <span class="badge" *ngIf="address.is_default">Default</span>
+              </div>
+              <div class="address-details">
+                <p>{{ address.street }}</p>
+                <p *ngIf="address.building">{{ address.building }}</p>
+                <p *ngIf="address.postal_code">{{ address.postal_code }}</p>
+              </div>
+            </label>
+
+            <div class="address-actions">
+              <button class="btn-icon" 
+                      (click)="setDefaultAddress(address.address_id!)"
+                      [disabled]="address.is_default"
+                      title="Set as default">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" 
+                        [attr.stroke]="address.is_default ? '#FFD700' : 'currentColor'" 
+                        [attr.fill]="address.is_default ? '#FFD700' : 'none'"
+                        stroke-width="2"/>
+                </svg>
+              </button>
+              <button class="btn-icon text-danger" 
+                      (click)="deleteAddress(address.address_id!)"
+                      title="Delete">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" 
+                        stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delivery Options -->
+      <div class="section-card" *ngIf="selectedAddressId">
+        <h2>Delivery Information</h2>
+        <div class="delivery-info">
+          <div class="delivery-row">
+            <span class="label">Estimated Delivery:</span>
+            <span class="value">2-3 business days</span>
+          </div>
+          <div class="delivery-row">
+            <span class="label">Delivery Fee:</span>
+            <span class="value" [class.free]="calculatedDeliveryFee === 0">
+              {{ calculatedDeliveryFee === 0 ? 'FREE' : ('KSh ' + calculatedDeliveryFee) }}
+            </span>
+          </div>
+          <p class="delivery-note" *ngIf="calculatedDeliveryFee > 0">
+            Free delivery for orders above KSh 5,000
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order Summary Sidebar -->
+    <div class="summary-section">
+      <div class="summary-card">
+        <h2>Order Summary</h2>
+        
+        <div class="summary-row">
+          <span>Subtotal:</span>
+          <span>KSh {{ cartTotal | number }}</span>
+        </div>
+        
+        <div class="summary-row">
+          <span>Delivery Fee:</span>
+          <span [class.free]="calculatedDeliveryFee === 0">
+            {{ calculatedDeliveryFee === 0 ? 'FREE' : ('KSh ' + calculatedDeliveryFee | number) }}
+          </span>
+        </div>
+        
+        <div class="summary-row total">
+          <span>Total:</span>
+          <span>KSh {{ (cartTotal + calculatedDeliveryFee) | number }}</span>
+        </div>
+
+        <button class="btn-checkout" 
+                (click)="proceedToPayment()"
+                [disabled]="!selectedAddressId || loading">
+          Proceed to Payment
+        </button>
+
+        <button class="btn-back" (click)="goBack()">
+          ← Back to Cart
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { CommonModule } from '@angular/common';
 
@@ -10,23 +10,31 @@ import { CommonModule } from '@angular/common';
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   loginForm: FormGroup;
   showPassword = false;
   passwordFieldType = 'password';
   isLoading = false;
   loginMessage = '';
   errorMessage = '';
+  returnUrl: string = '/homepage'; // Default fallback
 
   constructor(
-    private fb: FormBuilder, 
+    private fb: FormBuilder,
     private apiService: ApiService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]]
     });
+  }
+
+  ngOnInit(): void {
+    // Get the returnUrl from query parameters
+    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/homepage';
+    console.log('Return URL:', this.returnUrl);
   }
 
   togglePassword(): void {
@@ -38,7 +46,7 @@ export class LoginComponent {
     if (this.loginForm.valid) {
       this.isLoading = true;
       this.errorMessage = '';
-      
+
       const credentials = {
         email: this.loginForm.value.email,
         password: this.loginForm.value.password
@@ -48,22 +56,23 @@ export class LoginComponent {
         next: (response) => {
           this.isLoading = false;
           this.loginMessage = 'Login successful! Redirecting...';
-          
+
           // Store authentication token if available
           if (response.token) {
             localStorage.setItem('authToken', response.token);
           }
-          
+
           if (response.user) {
-            localStorage.setItem('user', JSON.stringify(response.user));
+            localStorage.setItem('currentUser', JSON.stringify(response.user));
           }
 
-          // Redirect to dashboard or homepage
+          // Redirect to the intended destination or based on role
           if (response.user?.role === 'seller') {
             sessionStorage.setItem('sellerData', JSON.stringify(response.sellerData || {}));
             this.router.navigate(['/seller-dashboard']);
           } else {
-            this.router.navigate(['/homepage']);
+            // Use the returnUrl from query parameters
+            this.router.navigateByUrl(this.returnUrl);
           }
         },
         error: (error) => {
@@ -75,6 +84,7 @@ export class LoginComponent {
     }
   }
 
+  // ... rest of your methods remain the same
   showForgotPassword(): void {
     this.router.navigate(['/forgot-password']);
   }
@@ -90,9 +100,10 @@ export class LoginComponent {
   loginWithGoogle(): void {
     this.isLoading = true;
     this.loginMessage = 'Redirecting to Google...';
-    
-    // Redirect to backend Google auth endpoint
-    window.location.href = `${this.apiService.apiUrl}/auth/google`;
+
+    // Redirect to backend Google auth endpoint with returnUrl
+    const googleAuthUrl = `${this.apiService.apiUrl}/auth/google?returnUrl=${encodeURIComponent(this.returnUrl)}`;
+    window.location.href = googleAuthUrl;
   }
 
   loginWithFacebook(): void {

@@ -1,93 +1,104 @@
-<!-- cart.component.html -->
 <div class="cart-container">
     <!-- Header Navigation -->
     <header class="header">
         <nav class="nav-container">
             <div class="nav-items">
-                <a href="#" class="nav-link">Home</a>
+                <a href="/" class="nav-link">Home</a>
                 <a href="/shop" class="nav-link">Shop</a>
                 <div class="dropdown">
-                <a class="nav-link dropdown-trigger">
-                    Categories
-                    <svg class="dropdown-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                    </svg>
-                </a>
-                <div class="dropdown-menu">
-                    <a href="/categories/Phones" class="dropdown-link" (click)="onCategoryClick('Phones')">
-                        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    <a class="nav-link dropdown-trigger">
+                        Categories
+                        <svg class="dropdown-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
                             xmlns="http://www.w3.org/2000/svg">
-                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2" stroke="currentColor"
-                                stroke-width="2" />
-                            <line x1="12" y1="18" x2="12.01" y2="18" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                        Phones
-                    </a>
-                    <a href="/categories/Laptops" class="dropdown-link" (click)="onCategoryClick('Laptops')">
-                        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <rect x="2" y="4" width="20" height="12" rx="2" ry="2" stroke="currentColor"
-                                stroke-width="2" />
-                            <line x1="2" y1="20" x2="22" y2="20" stroke="currentColor" stroke-width="2" />
-                        </svg>
-                        Laptops
-                    </a>
-                    <a href="/categories/Accessories" class="dropdown-link" (click)="onCategoryClick('Accessories')">
-                        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path d="M3 18V15C3 13.3431 4.34315 12 6 12C7.65686 12 9 13.3431 9 15V18"
-                                stroke="currentColor" stroke-width="2" />
-                            <path d="M21 18V15C21 13.3431 19.6569 12 18 12C16.3431 12 15 13.3431 15 15V18"
-                                stroke="currentColor" stroke-width="2" />
-                            <path
-                                d="M9 9C9 6.79086 10.7909 5 13 5H11C8.79086 5 7 6.79086 7 9V12H15V9C15 6.79086 16.2091 5 18.5 5H16.5C14.2909 5 12.5 6.79086 12.5 9"
-                                stroke="currentColor" stroke-width="2" />
-                        </svg>
-                        Accessories
-                    </a>
-                    <a href="/categories/Home Appliances" class="dropdown-link" (click)="onCategoryClick('Home Appliances')">
-                        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke="currentColor"
-                                stroke-width="2" />
-                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
-                            <path d="M12 1V3" stroke="currentColor" stroke-width="2" />
-                            <path d="M21 12H23" stroke="currentColor" stroke-width="2" />
-                            <path d="M12 21V23" stroke="currentColor" stroke-width="2" />
-                            <path d="M1 12H3" stroke="currentColor" stroke-width="2" />
-                        </svg>
-                        Home Appliances
-                    </a>
-                    <a href="/categories/Gaming" class="dropdown-link" (click)="onCategoryClick('Gaming')">
-                        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <rect x="2" y="6" width="20" height="12" rx="4" ry="4" stroke="currentColor"
-                                stroke-width="2" />
-                            <circle cx="8" cy="12" r="2" stroke="currentColor" stroke-width="2" />
-                            <path d="M16 10L18 12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                 stroke-linejoin="round" />
                         </svg>
-                        Gaming
                     </a>
-                    <a href="/categories/Audio & Sound" class="dropdown-link" (click)="onCategoryClick('Audio & Sound')">
-                        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" stroke="currentColor"
-                                stroke-width="2" />
-                            <path
-                                d="M19.07 4.93C20.98 6.84 20.98 10.16 19.07 12.07M15.54 8.46C16.17 9.09 16.17 10.09 15.54 10.72"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                        Audio & Sound
-                    </a>
+                    <div class="dropdown-menu">
+                        <a href="/categories/Phones" class="dropdown-link" (click)="onCategoryClick('Phones')">
+                            <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <rect x="5" y="2" width="14" height="20" rx="2" ry="2" stroke="currentColor"
+                                    stroke-width="2" />
+                                <line x1="12" y1="18" x2="12.01" y2="18" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            Phones
+                        </a>
+                        <a href="/categories/Laptops" class="dropdown-link" (click)="onCategoryClick('Laptops')">
+                            <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <rect x="2" y="4" width="20" height="12" rx="2" ry="2" stroke="currentColor"
+                                    stroke-width="2" />
+                                <line x1="2" y1="20" x2="22" y2="20" stroke="currentColor" stroke-width="2" />
+                            </svg>
+                            Laptops
+                        </a>
+                        <a href="/categories/Accessories" class="dropdown-link" (click)="onCategoryClick('Accessories')">
+                            <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 18V15C3 13.3431 4.34315 12 6 12C7.65686 12 9 13.3431 9 15V18"
+                                    stroke="currentColor" stroke-width="2" />
+                                <path d="M21 18V15C21 13.3431 19.6569 12 18 12C16.3431 12 15 13.3431 15 15V18"
+                                    stroke="currentColor" stroke-width="2" />
+                                <path
+                                    d="M9 9C9 6.79086 10.7909 5 13 5H11C8.79086 5 7 6.79086 7 9V12H15V9C15 6.79086 16.2091 5 18.5 5H16.5C14.2909 5 12.5 6.79086 12.5 9"
+                                    stroke="currentColor" stroke-width="2" />
+                            </svg>
+                            Accessories
+                        </a>
+                        <a href="/categories/Home Appliances" class="dropdown-link" (click)="onCategoryClick('Home Appliances')">
+                            <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke="currentColor"
+                                    stroke-width="2" />
+                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
+                                <path d="M12 1V3" stroke="currentColor" stroke-width="2" />
+                                <path d="M21 12H23" stroke="currentColor" stroke-width="2" />
+                                <path d="M12 21V23" stroke="currentColor" stroke-width="2" />
+                                <path d="M1 12H3" stroke="currentColor" stroke-width="2" />
+                            </svg>
+                            Home Appliances
+                        </a>
+                        <a href="/categories/Gaming" class="dropdown-link" (click)="onCategoryClick('Gaming')">
+                            <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <rect x="2" y="6" width="20" height="12" rx="4" ry="4" stroke="currentColor"
+                                    stroke-width="2" />
+                                <circle cx="8" cy="12" r="2" stroke="currentColor" stroke-width="2" />
+                                <path d="M16 10L18 12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            Gaming
+                        </a>
+                        <a href="/categories/Audio & Sound" class="dropdown-link" (click)="onCategoryClick('Audio & Sound')">
+                            <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" stroke="currentColor"
+                                    stroke-width="2" />
+                                <path
+                                    d="M19.07 4.93C20.98 6.84 20.98 10.16 19.07 12.07M15.54 8.46C16.17 9.09 16.17 10.09 15.54 10.72"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            Audio & Sound
+                        </a>
+                    </div>
                 </div>
-            </div>
                 <a href="/deals" class="nav-link">Deals</a>
                 <a href="/profile" class="nav-link">Profile</a>
             </div>
+            
+            <div class="search-bar-container">
+                <input type="text" class="search-input" placeholder="Search products, brands, or categories..." />
+                <button class="search-btn" aria-label="Search" (click)="onSearch()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z"
+                            stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+            </div>
+
             <div class="cart-icon-container">
                 <button class="cart-icon" aria-label="Cart" (click)="goToCart()" title="Cart">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -103,108 +114,178 @@
                     <span class="cart-count" *ngIf="cartCount > 0">{{ cartCount }}</span>
                 </button>
             </div>
-            <div class="search-bar-container">
-                <input type="text" class="search-input" placeholder="Search products, brands, or categories..." />
-                <button class="search-btn" aria-label="Search" (click)="onSearch()">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path
-                            d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z"
-                            stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                </button>
-            </div>
         </nav>
     </header>
 
-    <div class="cart-content">
-        <h1 class="cart-title">Your Cart ({{ cartItems.length }} items)</h1>
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-container">
+        <div class="spinner"></div>
+        <p>Loading your cart...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error && !loading" class="error-container">
+        <div class="error-message">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="10" stroke="#ef4444" stroke-width="2"/>
+                <path d="M12 8v4m0 4h.01" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <h3>Unable to Load Cart</h3>
+            <p>{{ error }}</p>
+            <button class="retry-btn" (click)="loadCart()">Try Again</button>
+        </div>
+    </div>
+
+    <!-- Empty Cart State -->
+    <div *ngIf="!loading && !error && cartItems.length === 0" class="empty-cart">
+        <div class="empty-cart-content">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 2L3 6V20C3 20.5304 3.21071 21.0391 3.58579 21.4142C3.96086 21.7893 4.46957 22 5 22H19C19.5304 22 20.0391 21.7893 20.4142 21.4142C20.7893 21.0391 21 20.5304 21 20V6L18 2H6Z" 
+                      stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3 6H21" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <h2>Your cart is empty</h2>
+            <p>Browse our products and add items to get started</p>
+            <a routerLink="/shop" class="shop-btn">Start Shopping</a>
+        </div>
+    </div>
+
+    <!-- Cart Content -->
+    <div *ngIf="!loading && !error && cartItems.length > 0" class="cart-content">
+        <h1 class="cart-title">Your Shopping Cart ({{ cartItems.length }} {{ cartItems.length === 1 ? 'item' : 'items' }})</h1>
 
         <div class="cart-layout">
-            <!-- Cart Items -->
-            <div class="cart-items">
-                <div *ngFor="let item of cartItems" class="cart-item">
-                    <div class="item-image">
-                        <div class="image-placeholder">{{ item.category.charAt(0) }}</div>
-                    </div>
-
-                    <div class="item-details">
-                        <h3>{{ item.name }}</h3>
-                        <p class="specs">{{ item.specs }}</p>
-                        <p class="color">Color: {{ item.color }}</p>
-
-                        <div class="item-controls">
-                            <div class="quantity-control">
-                                <button (click)="updateQuantity(item, -1)" aria-label="Decrease quantity">-</button>
-                                <span>{{ item.quantity }}</span>
-                                <button (click)="updateQuantity(item, 1)" aria-label="Increase quantity">+</button>
-                            </div>
-                            <button class="remove-btn" (click)="removeItem(item)">Remove</button>
+            <!-- Cart Items Section -->
+            <div class="cart-items-section">
+                <div class="cart-items">
+                    <div *ngFor="let item of cartItems" class="cart-item">
+                        <div class="item-image">
+                            <div class="image-placeholder">{{ item.category_name.charAt(0) || 'P' }}</div>
                         </div>
-                    </div>
 
-                    <div class="item-price">
-                        <p class="price">KSh {{ (item.price * item.quantity) | number }}</p>
+                        <div class="item-details">
+                            <h3 class="item-title">{{ item.product_title }}</h3>
+                            <p class="item-description">{{ item.product_description }}</p>
+                            <p class="item-category">Category: {{ item.category_name }}</p>
+                            
+                            <div class="price-info">
+                                <span class="current-price">KSh {{ item.current_price | number }}</span>
+                                <span *ngIf="item.current_sale_price && item.current_sale_price < item.current_price" 
+                                      class="original-price">KSh {{ item.current_price | number }}</span>
+                                <span *ngIf="item.current_sale_price && item.current_sale_price < item.current_price" 
+                                      class="sale-price">KSh {{ item.current_sale_price | number }}</span>
+                            </div>
+
+                            <div class="stock-info">
+                                <span class="stock-status" [class.low-stock]="item.available_stock < 10">
+                                    {{ item.available_stock > 0 ? item.available_stock + ' in stock' : 'Out of stock' }}
+                                </span>
+                            </div>
+
+                            <div class="item-controls">
+                                <div class="quantity-control">
+                                    <button (click)="updateQuantity(item, -1)" 
+                                            [disabled]="item.quantity <= 1"
+                                            aria-label="Decrease quantity">-</button>
+                                    <span class="quantity">{{ item.quantity }}</span>
+                                    <button (click)="updateQuantity(item, 1)" 
+                                            [disabled]="item.quantity >= item.available_stock"
+                                            aria-label="Increase quantity">+</button>
+                                </div>
+                                <button class="remove-btn" (click)="removeItem(item)">
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="item-price">
+                            <p class="subtotal">KSh {{ item.subtotal | number }}</p>
+                            <p class="unit-price">{{ item.quantity }} × KSh {{ item.unit_price | number }}</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Order Summary -->
-            <div class="order-summary">
-                <h2>Order Summary</h2>
+            <!-- Order Summary Section -->
+            <div class="order-summary-section">
+                <div class="order-summary">
+                    <h2>Order Summary</h2>
 
-                <div class="summary-details">
-                    <div class="summary-row">
-                        <span>Subtotal</span>
-                        <span>KSh {{ subtotal | number }}</span>
+                    <div class="summary-details">
+                        <div class="summary-row">
+                            <span>Subtotal ({{ cartItems.length }} items)</span>
+                            <span>KSh {{ subtotal | number }}</span>
+                        </div>
+
+                        <div class="summary-row">
+                            <span>Shipping</span>
+                            <span [class.free-shipping]="shipping === 0">
+                                {{ shipping === 0 ? 'FREE' : ('KSh ' + shipping | number) }}
+                            </span>
+                        </div>
+
+                        <div class="summary-row">
+                            <span>Tax (16% VAT)</span>
+                            <span>KSh {{ tax | number }}</span>
+                        </div>
+
+                        <div *ngIf="couponApplied" class="summary-row discount">
+                            <span>Coupon Discount</span>
+                            <span>-KSh {{ couponDiscount | number }}</span>
+                        </div>
+
+                        <div class="coupon-section">
+                            <input type="text" 
+                                   [(ngModel)]="couponCode" 
+                                   placeholder="Enter coupon code"
+                                   [disabled]="couponApplied">
+                            <button (click)="applyCoupon()" 
+                                    [disabled]="!couponCode || couponApplied">
+                                {{ couponApplied ? 'Applied' : 'Apply' }}
+                            </button>
+                        </div>
+
+                        <div class="summary-row total">
+                            <span>Total Amount</span>
+                            <span>KSh {{ total | number }}</span>
+                        </div>
+
+                        <button class="checkout-btn" 
+                                (click)="proceedToCheckout()"
+                                [disabled]="cartItems.length === 0">
+                            Proceed to Checkout
+                        </button>
+
+                        <div *ngIf="!currentUser" class="login-notice">
+                            <p>You'll need to login to complete your purchase</p>
+                        </div>
                     </div>
 
-                    <div class="summary-row">
-                        <span>Shipping</span>
-                        <span>{{ shipping > 0 ? ('KSh ' + shipping | number) : 'Free' }}</span>
+                    <div class="delivery-info">
+                        <h3>🚚 Delivery Estimate</h3>
+                        <ul>
+                            <li *ngFor="let option of deliveryOptions">
+                                <strong>{{ option.location }}:</strong> {{ option.estimate }}
+                            </li>
+                        </ul>
+                        <p class="free-shipping-note" *ngIf="subtotal > 5000">
+                            🎉 You qualify for free shipping!
+                        </p>
                     </div>
 
-                    <div class="summary-row">
-                        <span>Tax (16% VAT)</span>
-                        <span>KSh {{ tax | number }}</span>
+                    <div class="continue-shopping">
+                        <a routerLink="/shop" class="continue-link">
+                            ← Continue Shopping
+                        </a>
                     </div>
 
-                    <div *ngIf="couponApplied" class="summary-row discount">
-                        <span>Coupon Discount</span>
-                        <span>-KSh {{ couponDiscount | number }}</span>
-                    </div>
-
-                    <div class="coupon-section">
-                        <input type="text" [(ngModel)]="couponCode" placeholder="Enter coupon code">
-                        <button (click)="applyCoupon()">Apply Coupon</button>
-                    </div>
-
-                    <div class="summary-row total">
-                        <span>Total</span>
-                        <span>KSh {{ total | number }}</span>
-                    </div>
-
-                    <button class="checkout-btn" (click)="proceedToCheckout()">Proceed to Checkout</button>
-                </div>
-
-                <div class="delivery-info">
-                    <h3>Delivery Estimate</h3>
-                    <ul>
-                        <li *ngFor="let option of deliveryOptions">
-                            {{ option.location }}: {{ option.estimate }}
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="continue-shopping">
-                    <a routerLink="/shop">← Continue Shopping</a>
-                </div>
-
-                <div class="payment-methods">
-                    <h3>We Accept</h3>
-                    <div class="payment-icons">
-                        <div class="payment-icon">M-PESA</div>
-                        <div class="payment-icon">VISA</div>
-                        <div class="payment-icon">MasterCard</div>
+                    <div class="payment-methods">
+                        <h3>We Accept</h3>
+                        <div class="payment-icons">
+                            <div class="payment-icon">M-PESA</div>
+                            <div class="payment-icon">VISA</div>
+                            <div class="payment-icon">MasterCard</div>
+                        </div>
                     </div>
                 </div>
             </div>

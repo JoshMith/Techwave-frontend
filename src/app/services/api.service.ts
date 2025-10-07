@@ -49,8 +49,8 @@ export class ApiService {
     return this.http.get(`${this.apiUrl}/users/${id}`, this.httpOptions);
   }
 
-  getCurrentUserProfile(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/users/profile`, this.httpOptions);
+  getCurrentUserProfile(id: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/users/profile/${id}`, this.httpOptions);
   }
 
   createUser(userData: any): Observable<any> {
@@ -93,6 +93,10 @@ export class ApiService {
 
   getAddressById(id: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/addresses/${id}`, this.httpOptions);
+  }
+
+  getAddressByUserId(userId: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/addresses/user/${userId}`, this.httpOptions);
   }
 
   createAddress(addressData: any): Observable<any> {

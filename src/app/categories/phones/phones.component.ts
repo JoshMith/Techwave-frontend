@@ -73,6 +73,12 @@ export class PhonesComponent implements OnInit {
   availableBrands: string[] = [];
   sortBy = 'popularity';
 
+  // Cart related
+  cartCount = 0;
+  currentUser: any = null;
+  currentCart: any = null;
+  addingToCart = false;
+
   get totalProducts(): number {
     return this.filteredProducts.length;
   }
@@ -82,7 +88,131 @@ export class PhonesComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadCurrentUser();
+    this.loadOrCreateCart();
     this.loadProducts();
+  }
+
+  private loadCurrentUser(): void {
+    const userStr = localStorage.getItem('currentUser');
+    if (userStr) {
+      this.currentUser = JSON.parse(userStr);
+    }
+  }
+
+  private loadOrCreateCart(): void {
+    if (this.currentUser?.user_id) {
+      // Load cart for authenticated user
+      this.apiService.getCartByUserId(this.currentUser.user_id).subscribe({
+        next: (cart) => {
+          this.currentCart = cart;
+          this.updateCartCount();
+        },
+        error: (err) => {
+          if (err.status === 404) {
+            // Create new cart for user
+            this.createCart(this.currentUser.user_id, null);
+          }
+        }
+      });
+    } else {
+      // Load or create cart for guest
+      const sessionId = this.getOrCreateSessionId();
+      this.apiService.getCartBySessionId(sessionId).subscribe({
+        next: (cart) => {
+          this.currentCart = cart;
+          this.updateCartCount();
+        },
+        error: (err) => {
+          if (err.status === 404) {
+            // Create new cart for guest
+            this.createCart(null, sessionId);
+          }
+        }
+      });
+    }
+  }
+
+  private createCart(userId: number | null, sessionId: string | null): void {
+    const cartData = userId ? { user_id: userId } : { session_id: sessionId };
+    
+    this.apiService.createCart(cartData).subscribe({
+      next: (response) => {
+        this.currentCart = response.cart;
+        this.cartCount = 0;
+      },
+      error: (err) => {
+        console.error('Failed to create cart:', err);
+      }
+    });
+  }
+
+  private getOrCreateSessionId(): string {
+    let sessionId = localStorage.getItem('guestSessionId');
+    if (!sessionId) {
+      sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('guestSessionId', sessionId);
+    }
+    return sessionId;
+  }
+
+  private updateCartCount(): void {
+    if (!this.currentCart?.cart_id) return;
+
+    this.apiService.getCartSummary(this.currentCart.cart_id.toString()).subscribe({
+      next: (summary) => {
+        this.cartCount = summary.totalItems;
+      },
+      error: (err) => {
+        console.error('Failed to update cart count:', err);
+      }
+    });
+  }
+
+  addToCart(product: Product): void {
+    if (this.addingToCart) return;
+
+    if (!this.currentCart) {
+      alert('Cart is not ready. Please try again.');
+      return;
+    }
+
+    if (product.stock < 1) {
+      alert('This product is out of stock.');
+      return;
+    }
+
+    this.addingToCart = true;
+
+    const cartItemData = {
+      cart_id: this.currentCart.cart_id,
+      product_id: product.product_id,
+      quantity: 1
+    };
+
+    this.apiService.addCartItem(cartItemData).subscribe({
+      next: (response) => {
+        this.addingToCart = false;
+        this.cartCount++;
+        
+        // Show success message
+        const message = response.message === 'Cart item quantity updated' 
+          ? `${product.title} quantity updated in cart!`
+          : `${product.title} added to cart!`;
+        
+        alert(message);
+      },
+      error: (err) => {
+        this.addingToCart = false;
+        const errorMessage = err.error?.message || 'Failed to add item to cart';
+        alert(errorMessage);
+        console.error('Error adding to cart:', err);
+      }
+    });
+  }
+
+  goToCart(): void {
+    this.router.navigate(['/cart']);
   }
 
   private loadProducts(): void {
@@ -93,12 +223,11 @@ export class PhonesComponent implements OnInit {
         this.allProducts = products;
         this.extractAvailableBrands();
 
-        // Fetch images for each product
         const imageRequests = products.map(product =>
           this.apiService.getProductImages(product.product_id.toString()).pipe(
             map(images => ({
               ...product,
-              images: this.processImages(images) // Process and validate images
+              images: this.processImages(images)
             }))
           ));
         return forkJoin(imageRequests);
@@ -108,7 +237,6 @@ export class PhonesComponent implements OnInit {
         this.allProducts = productsWithImages;
         this.applyFilters();
         this.loading = false;
-        console.log('Products loaded:', this.allProducts);
       },
       error: (err) => {
         console.error('Error loading products:', err);
@@ -130,17 +258,14 @@ export class PhonesComponent implements OnInit {
   private ensureAbsoluteUrl(url: string): string {
     if (!url) return this.getFallbackImage();
 
-    // If URL is already absolute
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
 
-    // Handle relative paths
     if (url.startsWith('/')) {
       return `${window.location.origin}${url}`;
     }
 
-    // Handle filenames only
     return this.apiService.getProductImageUrl(url);
   }
 
@@ -149,38 +274,27 @@ export class PhonesComponent implements OnInit {
       return this.getFallbackImage();
     }
 
-    // Find primary image or use first image
     const image = product.images.find(img => img.is_primary) || product.images[0];
-
-    // Ensure URL is properly formatted
     return this.ensureAbsoluteUrl(image.image_url);
   }
 
-  // private getFallbackImage(): string {
-  //   return 'assets/images/placeholder-product.png'; // Use a local fallback
-  // }
-
   private getFallbackImage(): string {
-    // Use a local fallback image
-    return 'https://www.pinterest.com/pin/702631979346894042/';
+    return 'assets/images/placeholder-product.png';
   }
 
   onImageError(event: any): void {
     event.target.src = this.getFallbackImage();
   }
 
-
-
   private extractAvailableBrands(): void {
     const brands = new Set(
       this.allProducts
         .map(product => product.specs.brand)
-        .filter(brand => brand) // Filter out undefined/null brands
+        .filter(brand => brand)
     );
     this.availableBrands = Array.from(brands).sort() as string[];
   }
 
-  // Filter methods
   onPriceChange(): void {
     if (this.filters.priceRange.min > this.filters.priceRange.max) {
       this.filters.priceRange.min = this.filters.priceRange.max;
@@ -204,21 +318,17 @@ export class PhonesComponent implements OnInit {
 
   applyFilters(): void {
     this.filteredProducts = this.allProducts.filter(product => {
-      // Use sale price if available, otherwise use regular price
       const price = product.sale_price || product.price;
 
-      // Price filter
       if (price < this.filters.priceRange.min || price > this.filters.priceRange.max) {
         return false;
       }
 
-      // Brand filter
       if (this.filters.brands.length > 0 &&
         (!product.specs.brand || !this.filters.brands.includes(product.specs.brand))) {
         return false;
       }
 
-      // Feature filters
       if (this.filters.features.has5G && !product.specs.has5G) {
         return false;
       }
@@ -241,21 +351,13 @@ export class PhonesComponent implements OnInit {
 
   resetFilters(): void {
     this.filters = {
-      priceRange: {
-        min: 5000,
-        max: 200000
-      },
+      priceRange: { min: 5000, max: 200000 },
       brands: [],
-      features: {
-        has5G: false,
-        has128GB: false,
-        has8GBRAM: false
-      }
+      features: { has5G: false, has128GB: false, has8GBRAM: false }
     };
     this.applyFilters();
   }
 
-  // Sorting methods
   onSortChange(): void {
     this.sortProducts();
     this.updatePagination();
@@ -284,7 +386,6 @@ export class PhonesComponent implements OnInit {
     }
   }
 
-  // Pagination methods (unchanged from your original)
   private updatePagination(): void {
     this.totalPages = Math.ceil(this.filteredProducts.length / this.itemsPerPage);
     this.updatePaginatedProducts();
@@ -342,25 +443,10 @@ export class PhonesComponent implements OnInit {
     this.router.navigate([`/categories/${category.toLowerCase()}`]);
   }
 
-
-
-  addToCart(product: Product): void {
-    console.log('Adding to cart:', product.title);
-    alert(`${product.title} added to cart!`);
-    this.router.navigate(['/cart']);
-  }
-
-  cartCount = 3;
-  goToCart() {
-    this.router.navigate(['/cart']);
-  }
-
-  // Helper to get display price (shows sale price if available)
   getDisplayPrice(product: Product): number {
     return product.sale_price || product.price;
   }
 
-  // Helper to get product specs string
   getProductSpecs(product: Product): string {
     const specs = product.specs;
     const parts = [];
