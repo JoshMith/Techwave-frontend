@@ -199,6 +199,7 @@ export class CartComponent implements OnInit {
     });
   }
 
+  
   removeItem(item: CartItem): void {
     if (!confirm('Remove this item from cart?')) {
       return;
