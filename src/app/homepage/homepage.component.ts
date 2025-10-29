@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { finalize } from 'rxjs/operators';
@@ -24,17 +25,31 @@ interface Category {
   styleUrl: './homepage.component.css'
 })
 export class HomepageComponent implements OnInit {
+  isBrowser: boolean;
+
   constructor(
     private router: Router,
-    private apiService: ApiService
-  ) { }
+    private apiService: ApiService,
+    @Inject(PLATFORM_ID) private platformId: any
+  ) { 
+    this.isBrowser = isPlatformBrowser(this.platformId);
+  }
 
   featuredCategories: Category[] = [];
   isLoading = true;
   error: string | null = null;
 
+  // Cart related
+  cartCount = 0;
+  currentUser: any = null;
+  currentCart: any = null;
+
   ngOnInit(): void {
     this.loadCategories();
+    if (this.isBrowser) {
+      this.loadCurrentUser();
+      this.loadOrCreateCart();
+    }
   }
 
   /**
@@ -43,7 +58,7 @@ export class HomepageComponent implements OnInit {
   loadCategories(): void {
     this.isLoading = true;
     this.error = null;
-    
+
     this.apiService.getCategories().subscribe({
       next: (categories: Category[]) => {
         this.featuredCategories = categories.map(category => ({
@@ -52,7 +67,7 @@ export class HomepageComponent implements OnInit {
           key: this.createCategoryKey(category.name),
           count: 0 // Initialize with 0, will be updated
         }));
-        
+
         // Fetch product counts for each category
         this.loadProductCounts();
       },
@@ -69,7 +84,7 @@ export class HomepageComponent implements OnInit {
    * Load product counts for all categories
    */
   private loadProductCounts(): void {
-    const countRequests = this.featuredCategories.map(category => 
+    const countRequests = this.featuredCategories.map(category =>
       this.apiService.getProductCountByCategory(category.category_id.toString()).pipe(
         finalize(() => {
           // When all requests complete, set loading to false
@@ -113,7 +128,7 @@ export class HomepageComponent implements OnInit {
    * Get an emoji icon based on category name
    */
   private getCategoryIcon(name: string): string {
-    const iconMap: {[key: string]: string} = {
+    const iconMap: { [key: string]: string } = {
       'Phones': '📱',
       'Laptops': '💻',
       'Accessories': '🎧',
@@ -124,7 +139,7 @@ export class HomepageComponent implements OnInit {
       'Tablets': '📱',
       'Cameras': '📷'
     };
-    
+
     return iconMap[name] || '🛍️';
   }
 
@@ -171,8 +186,85 @@ export class HomepageComponent implements OnInit {
     alert('Search functionality is not implemented yet.');
   }
 
-  cartCount = 3;
-  goToCart() {
+  private loadCurrentUser(): void {
+    const userStr = localStorage.getItem('currentUser');
+    if (userStr) {
+      this.currentUser = JSON.parse(userStr);
+    }
+  }
+
+  private loadOrCreateCart(): void {
+    if (this.currentUser?.user_id) {
+      // Load cart for authenticated user
+      this.apiService.getCartByUserId(this.currentUser.user_id).subscribe({
+        next: (cart) => {
+          this.currentCart = cart;
+          this.updateCartCount();
+        },
+        error: (err) => {
+          if (err.status === 404) {
+            // Create new cart for user
+            this.createCart(this.currentUser.user_id, null);
+          }
+        }
+      });
+    } else {
+      // Load or create cart for guest
+      const sessionId = this.getOrCreateSessionId();
+      this.apiService.getCartBySessionId(sessionId).subscribe({
+        next: (cart) => {
+          this.currentCart = cart;
+          this.updateCartCount();
+        },
+        error: (err) => {
+          if (err.status === 404) {
+            // Create new cart for guest
+            this.createCart(null, sessionId);
+          }
+        }
+      });
+    }
+  }
+
+  private createCart(userId: number | null, sessionId: string | null): void {
+    const cartData = userId ? { user_id: userId } : { session_id: sessionId };
+
+    this.apiService.createCart(cartData).subscribe({
+      next: (response) => {
+        this.currentCart = response.cart;
+        this.cartCount = 0;
+      },
+      error: (err) => {
+        console.error('Failed to create cart:', err);
+      }
+    });
+  }
+
+  private getOrCreateSessionId(): string {
+    let sessionId = localStorage.getItem('guestSessionId');
+    if (!sessionId) {
+      sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('guestSessionId', sessionId);
+    }
+    return sessionId;
+  }
+
+  private updateCartCount(): void {
+    if (!this.currentCart?.cart_id) return;
+
+    this.apiService.getCartSummary(this.currentCart.cart_id.toString()).subscribe({
+      next: (summary) => {
+        this.cartCount = summary.totalItems;
+      },
+      error: (err) => {
+        console.error('Failed to update cart count:', err);
+      }
+    });
+  }
+
+  goToCart(): void {
     this.router.navigate(['/cart']);
   }
 }
+
+  

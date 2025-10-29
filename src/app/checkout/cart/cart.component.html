@@ -34,7 +34,8 @@
                             </svg>
                             Laptops
                         </a>
-                        <a href="/categories/Accessories" class="dropdown-link" (click)="onCategoryClick('Accessories')">
+                        <a href="/categories/Accessories" class="dropdown-link"
+                            (click)="onCategoryClick('Accessories')">
                             <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
                                 xmlns="http://www.w3.org/2000/svg">
                                 <path d="M3 18V15C3 13.3431 4.34315 12 6 12C7.65686 12 9 13.3431 9 15V18"
@@ -47,7 +48,8 @@
                             </svg>
                             Accessories
                         </a>
-                        <a href="/categories/Home Appliances" class="dropdown-link" (click)="onCategoryClick('Home Appliances')">
+                        <a href="/categories/Home Appliances" class="dropdown-link"
+                            (click)="onCategoryClick('Home Appliances')">
                             <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
                                 xmlns="http://www.w3.org/2000/svg">
                                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke="currentColor"
@@ -66,19 +68,21 @@
                                 <rect x="2" y="6" width="20" height="12" rx="4" ry="4" stroke="currentColor"
                                     stroke-width="2" />
                                 <circle cx="8" cy="12" r="2" stroke="currentColor" stroke-width="2" />
-                                <path d="M16 10L18 12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round" />
+                                <path d="M16 10L18 12L16 14" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
                             Gaming
                         </a>
-                        <a href="/categories/Audio & Sound" class="dropdown-link" (click)="onCategoryClick('Audio & Sound')">
+                        <a href="/categories/Audio & Sound" class="dropdown-link"
+                            (click)="onCategoryClick('Audio & Sound')">
                             <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
                                 xmlns="http://www.w3.org/2000/svg">
                                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" stroke="currentColor"
                                     stroke-width="2" />
                                 <path
                                     d="M19.07 4.93C20.98 6.84 20.98 10.16 19.07 12.07M15.54 8.46C16.17 9.09 16.17 10.09 15.54 10.72"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
                             </svg>
                             Audio & Sound
                         </a>
@@ -87,7 +91,7 @@
                 <a href="/deals" class="nav-link">Deals</a>
                 <a href="/profile" class="nav-link">Profile</a>
             </div>
-            
+
             <div class="search-bar-container">
                 <input type="text" class="search-input" placeholder="Search products, brands, or categories..." />
                 <button class="search-btn" aria-label="Search" (click)="onSearch()">
@@ -127,8 +131,8 @@
     <div *ngIf="error && !loading" class="error-container">
         <div class="error-message">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="10" stroke="#ef4444" stroke-width="2"/>
-                <path d="M12 8v4m0 4h.01" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="12" cy="12" r="10" stroke="#ef4444" stroke-width="2" />
+                <path d="M12 8v4m0 4h.01" stroke="#ef4444" stroke-width="2" stroke-linecap="round" />
             </svg>
             <h3>Unable to Load Cart</h3>
             <p>{{ error }}</p>
@@ -140,9 +144,10 @@
     <div *ngIf="!loading && !error && cartItems.length === 0" class="empty-cart">
         <div class="empty-cart-content">
             <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6 2L3 6V20C3 20.5304 3.21071 21.0391 3.58579 21.4142C3.96086 21.7893 4.46957 22 5 22H19C19.5304 22 20.0391 21.7893 20.4142 21.4142C20.7893 21.0391 21 20.5304 21 20V6L18 2H6Z" 
-                      stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M3 6H21" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path
+                    d="M6 2L3 6V20C3 20.5304 3.21071 21.0391 3.58579 21.4142C3.96086 21.7893 4.46957 22 5 22H19C19.5304 22 20.0391 21.7893 20.4142 21.4142C20.7893 21.0391 21 20.5304 21 20V6L18 2H6Z"
+                    stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M3 6H21" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
             <h2>Your cart is empty</h2>
             <p>Browse our products and add items to get started</p>
@@ -152,7 +157,8 @@
 
     <!-- Cart Content -->
     <div *ngIf="!loading && !error && cartItems.length > 0" class="cart-content">
-        <h1 class="cart-title">Your Shopping Cart ({{ cartItems.length }} {{ cartItems.length === 1 ? 'item' : 'items' }})</h1>
+        <h1 class="cart-title">Your Shopping Cart ({{ cartItems.length }} {{ cartItems.length === 1 ? 'item' : 'items'
+            }})</h1>
 
         <div class="cart-layout">
             <!-- Cart Items Section -->
@@ -167,13 +173,11 @@
                             <h3 class="item-title">{{ item.product_title }}</h3>
                             <p class="item-description">{{ item.product_description }}</p>
                             <p class="item-category">Category: {{ item.category_name }}</p>
-                            
+
                             <div class="price-info">
                                 <span class="current-price">KSh {{ item.current_price | number }}</span>
-                                <span *ngIf="item.current_sale_price && item.current_sale_price < item.current_price" 
-                                      class="original-price">KSh {{ item.current_price | number }}</span>
-                                <span *ngIf="item.current_sale_price && item.current_sale_price < item.current_price" 
-                                      class="sale-price">KSh {{ item.current_sale_price | number }}</span>
+                                <span *ngIf="item.current_sale_price && item.current_sale_price < item.current_price"
+                                    class="sale-price"> KSh {{ item.current_sale_price | number }}</span>
                             </div>
 
                             <div class="stock-info">
@@ -184,13 +188,12 @@
 
                             <div class="item-controls">
                                 <div class="quantity-control">
-                                    <button (click)="updateQuantity(item, -1)" 
-                                            [disabled]="item.quantity <= 1"
-                                            aria-label="Decrease quantity">-</button>
+                                    <button (click)="updateQuantity(item, -1)" [disabled]="item.quantity <= 1"
+                                        aria-label="Decrease quantity">-</button>
                                     <span class="quantity">{{ item.quantity }}</span>
-                                    <button (click)="updateQuantity(item, 1)" 
-                                            [disabled]="item.quantity >= item.available_stock"
-                                            aria-label="Increase quantity">+</button>
+                                    <button (click)="updateQuantity(item, 1)"
+                                        [disabled]="item.quantity >= item.available_stock"
+                                        aria-label="Increase quantity">+</button>
                                 </div>
                                 <button class="remove-btn" (click)="removeItem(item)">
                                     Remove
@@ -235,12 +238,9 @@
                         </div>
 
                         <div class="coupon-section">
-                            <input type="text" 
-                                   [(ngModel)]="couponCode" 
-                                   placeholder="Enter coupon code"
-                                   [disabled]="couponApplied">
-                            <button (click)="applyCoupon()" 
-                                    [disabled]="!couponCode || couponApplied">
+                            <input type="text" [(ngModel)]="couponCode" placeholder="Enter coupon code"
+                                [disabled]="couponApplied">
+                            <button (click)="applyCoupon()" [disabled]="!couponCode || couponApplied">
                                 {{ couponApplied ? 'Applied' : 'Apply' }}
                             </button>
                         </div>
@@ -250,9 +250,7 @@
                             <span>KSh {{ total | number }}</span>
                         </div>
 
-                        <button class="checkout-btn" 
-                                (click)="proceedToCheckout()"
-                                [disabled]="cartItems.length === 0">
+                        <button class="checkout-btn" (click)="proceedToCheckout()" [disabled]="cartItems.length === 0">
                             Proceed to Checkout
                         </button>
 

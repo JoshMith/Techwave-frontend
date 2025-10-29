@@ -1,6 +1,6 @@
 <!-- details.component.html -->
 <div class="details-container">
-  <div class="details-header">
+  <div class="checkout-header">
     <button class="back-btn" (click)="goBack()">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -8,14 +8,40 @@
       Back to Cart
     </button>
     <h1>Checkout Details</h1>
+    <div class="checkout-steps">
+      <div class="step active">
+        <span class="step-number">1</span>
+        <span class="step-label">Details</span>
+      </div>
+      <div class="step">
+        <span class="step-number">2</span>
+        <span class="step-label">Payment</span>
+      </div>
+      <div class="step">
+        <span class="step-number">3</span>
+        <span class="step-label">Confirmation</span>
+      </div>
+    </div>
   </div>
 
-  <div class="details-content" *ngIf="orderData">
-    <!-- Error message -->
-    <div class="error-message" *ngIf="error">
-      {{ error }}
-    </div>
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading checkout details...</p>
+  </div>
 
+  <!-- Error State -->
+  <div *ngIf="error && !isLoading" class="error-state">
+    <div class="error-icon">⚠️</div>
+    <h3>Checkout Error</h3>
+    <p>{{error}}</p>
+    <button (click)="goBack()" class="btn btn-primary">
+      Return to Cart
+    </button>
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!isLoading && !error && orderData" class="details-content">
     <div class="details-layout">
       <!-- Left Column - Forms -->
       <div class="details-forms">
@@ -23,24 +49,22 @@
         <div class="form-section">
           <h2>Contact Information</h2>
           <div class="form-group">
-            <label for="email">Email *</label>
-            <input 
-              type="email" 
-              id="email" 
-              [(ngModel)]="contactInfo.email" 
+            <label for="email">Email Address *</label>
+            <input
+              id="email"
+              type="email"
+              [(ngModel)]="contactInfo.email"
               placeholder="your@email.com"
-              required
-            />
+              required>
           </div>
           <div class="form-group">
             <label for="phone">Phone Number *</label>
-            <input 
-              type="tel" 
-              id="phone" 
-              [(ngModel)]="contactInfo.phone" 
-              placeholder="+254 700 000 000"
-              required
-            />
+            <input
+              id="phone"
+              type="tel"
+              [(ngModel)]="contactInfo.phone"
+              placeholder="+254 712 345 678"
+              required>
           </div>
         </div>
 
@@ -48,119 +72,115 @@
         <div class="form-section">
           <div class="section-header">
             <h2>Delivery Address</h2>
-            <button class="add-address-btn" (click)="toggleAddressForm()">
+            <button (click)="toggleAddressForm()" class="add-address-btn">
               {{ showAddressForm ? 'Cancel' : '+ Add New Address' }}
             </button>
           </div>
 
-          <!-- Loading state -->
+          <!-- Loading Addresses -->
           <div *ngIf="isLoadingAddresses" class="loading">
             Loading addresses...
           </div>
 
-          <!-- Existing addresses -->
+          <!-- Address Error -->
+          <div *ngIf="addressError && !isLoadingAddresses" class="address-error">
+            <p>{{addressError}}</p>
+          </div>
+
+          <!-- Address Options -->
           <div *ngIf="!isLoadingAddresses && addresses.length > 0" class="addresses-list">
-            <div 
-              *ngFor="let address of addresses" 
+            <div
+              *ngFor="let address of addresses"
               class="address-card"
               [class.selected]="selectedAddressId === address.id"
-              (click)="selectAddress(address.id)"
-            >
-              <input 
-                type="radio" 
-                [checked]="selectedAddressId === address.id"
-                [id]="'address-' + address.id"
-                name="address"
-              />
+              (click)="selectAddress(address.id)">
+              <input
+                type="radio"
+                [value]="address.id"
+                [(ngModel)]="selectedAddressId"
+                name="address">
               <div class="address-content">
                 <p class="address-line">{{ address.address_line1 }}</p>
                 <p class="address-line" *ngIf="address.address_line2">{{ address.address_line2 }}</p>
                 <p class="address-line">{{ address.city }}, {{ address.state }} {{ address.postal_code }}</p>
                 <p class="address-line">{{ address.country }}</p>
-                <span class="default-badge" *ngIf="address.is_default">Default</span>
+                <span *ngIf="address.is_default" class="default-badge">Default</span>
               </div>
             </div>
           </div>
 
-          <!-- No addresses message -->
-          <div *ngIf="!isLoadingAddresses && addresses.length === 0 && !showAddressForm" class="no-addresses">
-            <p>No saved addresses. Please add a delivery address.</p>
+          <!-- No Addresses -->
+          <div *ngIf="!isLoadingAddresses && addresses.length === 0 && !showAddressForm && !addressError" class="no-addresses">
+            <p>No addresses saved. Please add a delivery address.</p>
           </div>
 
-          <!-- New address form -->
+          <!-- New Address Form -->
           <div *ngIf="showAddressForm" class="new-address-form">
+            <h3>Add New Address</h3>
             <div class="form-group">
               <label for="address_line1">Address Line 1 *</label>
-              <input 
-                type="text" 
-                id="address_line1" 
+              <input
+                type="text"
+                id="address_line1"
                 [(ngModel)]="newAddress.address_line1"
-                placeholder="Street address"
-                required
-              />
+                placeholder="Street address, P.O. Box"
+                required>
             </div>
             <div class="form-group">
               <label for="address_line2">Address Line 2</label>
-              <input 
-                type="text" 
-                id="address_line2" 
+              <input
+                type="text"
+                id="address_line2"
                 [(ngModel)]="newAddress.address_line2"
-                placeholder="Apartment, suite, etc. (optional)"
-              />
+                placeholder="Apartment, suite, unit, building, floor, etc.">
             </div>
             <div class="form-row">
               <div class="form-group">
                 <label for="city">City *</label>
-                <input 
-                  type="text" 
-                  id="city" 
+                <input
+                  type="text"
+                  id="city"
                   [(ngModel)]="newAddress.city"
                   placeholder="City"
-                  required
-                />
+                  required>
               </div>
               <div class="form-group">
-                <label for="state">State/County *</label>
-                <input 
-                  type="text" 
-                  id="state" 
+                <label for="state">State/Province *</label>
+                <input
+                  type="text"
+                  id="state"
                   [(ngModel)]="newAddress.state"
-                  placeholder="State/County"
-                  required
-                />
+                  placeholder="State or Province"
+                  required>
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
                 <label for="postal_code">Postal Code *</label>
-                <input 
-                  type="text" 
-                  id="postal_code" 
+                <input
+                  type="text"
+                  id="postal_code"
                   [(ngModel)]="newAddress.postal_code"
-                  placeholder="Postal Code"
-                  required
-                />
+                  placeholder="Postal code"
+                  required>
               </div>
               <div class="form-group">
                 <label for="country">Country *</label>
-                <input 
-                  type="text" 
-                  id="country" 
+                <input
+                  type="text"
+                  id="country"
                   [(ngModel)]="newAddress.country"
                   placeholder="Country"
-                  required
-                />
+                  required>
               </div>
             </div>
-            <div class="form-group checkbox-group">
-              <input 
-                type="checkbox" 
-                id="is_default" 
-                [(ngModel)]="newAddress.is_default"
-              />
-              <label for="is_default">Set as default address</label>
+            <div class="checkbox-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="newAddress.is_default">
+                Set as default address
+              </label>
             </div>
-            <button class="save-address-btn" (click)="saveNewAddress()">
+            <button (click)="saveNewAddress()" class="save-address-btn">
               Save Address
             </button>
           </div>
@@ -170,40 +190,20 @@
         <div class="form-section">
           <h2>Delivery Method</h2>
           <div class="delivery-options">
-            <div 
+            <div
+              *ngFor="let option of deliveryOptions"
               class="delivery-option"
-              [class.selected]="deliveryMethod === 'standard'"
-              (click)="deliveryMethod = 'standard'"
-            >
-              <input 
-                type="radio" 
-                id="standard" 
-                value="standard"
-                [(ngModel)]="deliveryMethod"
-                name="delivery"
-              />
+              [class.selected]="selectedDelivery === option.id"
+              (click)="selectedDelivery = option.id">
+              <input
+                type="radio"
+                [value]="option.id"
+                [(ngModel)]="selectedDelivery"
+                name="delivery">
               <div class="delivery-info">
-                <h3>Standard Delivery</h3>
-                <p>3-5 business days</p>
-                <p class="delivery-price">{{ orderData.shipping > 0 ? 'KSh ' + orderData.shipping : 'Free' }}</p>
-              </div>
-            </div>
-            <div 
-              class="delivery-option"
-              [class.selected]="deliveryMethod === 'express'"
-              (click)="deliveryMethod = 'express'"
-            >
-              <input 
-                type="radio" 
-                id="express" 
-                value="express"
-                [(ngModel)]="deliveryMethod"
-                name="delivery"
-              />
-              <div class="delivery-info">
-                <h3>Express Delivery</h3>
-                <p>1-2 business days</p>
-                <p class="delivery-price">KSh 1,500</p>
+                <span class="delivery-name">{{option.name}}</span>
+                <span class="delivery-estimate">{{option.estimate}}</span>
+                <span class="delivery-cost">{{option.cost | currency:'KES'}}</span>
               </div>
             </div>
           </div>
@@ -218,54 +218,58 @@
           <!-- Order Items -->
           <div class="summary-items">
             <div *ngFor="let item of orderItems" class="summary-item">
-              <div class="item-info">
-                <p class="item-name">{{ item.name }}</p>
-                <p class="item-qty">Qty: {{ item.quantity }}</p>
+              <img [src]="item.image_url || 'assets/images/placeholder-product.png'" 
+                   [alt]="item.product_title"
+                   class="item-image">
+              <div class="item-details">
+                <h4>{{item.product_title}}</h4>
+                <p class="item-quantity">Qty: {{item.quantity}}</p>
               </div>
-              <p class="item-price">KSh {{ (item.price * item.quantity) | number }}</p>
+              <div class="item-price">
+                {{item.subtotal | currency:'KES'}}
+              </div>
             </div>
           </div>
 
-          <!-- Price Breakdown -->
+          <!-- Order Totals -->
           <div class="price-breakdown">
             <div class="price-row">
               <span>Subtotal</span>
-              <span>KSh {{ orderData.subtotal | number }}</span>
+              <span>{{orderData.subtotal | currency:'KES'}}</span>
             </div>
             <div class="price-row">
               <span>Shipping</span>
-              <span>{{ orderData.shipping > 0 ? ('KSh ' + orderData.shipping) : 'Free' }}</span>
+              <span>{{selectedDeliveryOption.cost | currency:'KES'}}</span>
             </div>
             <div class="price-row">
               <span>Tax (16% VAT)</span>
-              <span>KSh {{ orderData.tax | number }}</span>
+              <span>{{orderData.tax | currency:'KES'}}</span>
             </div>
             <div *ngIf="orderData.couponDiscount > 0" class="price-row discount">
               <span>Discount</span>
-              <span>-KSh {{ orderData.couponDiscount | number }}</span>
+              <span>-{{orderData.couponDiscount | currency:'KES'}}</span>
             </div>
             <div class="price-row total">
-              <span>Total</span>
-              <span>KSh {{ orderData.total | number }}</span>
+              <strong>Total</strong>
+              <strong>{{finalTotal | currency:'KES'}}</strong>
             </div>
           </div>
 
           <!-- Proceed Button -->
-          <button 
-            class="proceed-btn" 
+          <button
             (click)="proceedToPayment()"
-            [disabled]="isProcessing || !selectedAddressId"
-          >
+            [disabled]="isProcessing"
+            class="proceed-btn">
             <span *ngIf="!isProcessing">Proceed to Payment</span>
             <span *ngIf="isProcessing">Processing...</span>
           </button>
 
-          <!-- Security Info -->
+          <!-- Security Notice -->
           <div class="security-info">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <span>Secure checkout</span>
+            <span>Your payment information is secure and encrypted</span>
           </div>
         </div>
       </div>
@@ -273,8 +277,13 @@
   </div>
 
   <!-- No order data message -->
-  <div *ngIf="!orderData" class="no-data">
+  <div *ngIf="!isLoading && !error && !orderData" class="no-data">
     <p>No order data available. Please start from the cart.</p>
     <button class="back-btn" (click)="goBack()">Go to Cart</button>
   </div>
+
+  <!-- Debug Button (Remove in production) -->
+  <button *ngIf="!isLoading && !error && orderData" (click)="debugCheckout()" class="debug-btn">
+    Debug
+  </button>
 </div>

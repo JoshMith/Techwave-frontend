@@ -2,8 +2,9 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Observable, forkJoin, map, switchMap } from 'rxjs';
+import { Observable, Subscription, forkJoin, map, switchMap } from 'rxjs';
 import { ApiService } from '../../services/api.service';
+import { CartService } from '../../services/cart.service';
 
 interface Product {
   product_id: number;
@@ -37,7 +38,6 @@ interface ProductImage {
   styleUrls: ['./accessories.component.css']
 })
 export class AccessoriesComponent implements OnInit {
-  constructor(private router: Router, private apiService: ApiService) { }
 
   // Products data
   allProducts: Product[] = [];
@@ -62,11 +62,59 @@ export class AccessoriesComponent implements OnInit {
   ];
   selectedSort = 'popularity';
 
-  // Cart
   cartCount = 0;
+  addingToCart = false;
+  private cartSubscription?: Subscription;
+
+  constructor(
+    private router: Router,
+    private apiService: ApiService,
+    private cartService: CartService
+  ) { }
 
   ngOnInit(): void {
+    // Subscribe to cart state
+    this.cartSubscription = this.cartService.cartState$.subscribe(state => {
+      this.cartCount = state.item_count;
+    });
+
     this.loadProducts();
+  }
+
+  ngOnDestroy(): void {
+    if (this.cartSubscription) {
+      this.cartSubscription.unsubscribe();
+    }
+  }
+
+  addToCart(product: Product): void {
+    if (this.addingToCart) return;
+
+    if (product.stock < 1) {
+      alert('This product is out of stock.');
+      return;
+    }
+
+    this.addingToCart = true;
+
+    this.cartService.addToCart(product.product_id, 1).subscribe({
+      next: (response) => {
+        this.addingToCart = false;
+        const message = response.message === 'Cart item quantity updated'
+          ? `${product.title} quantity updated in cart!`
+          : `${product.title} added to cart!`;
+        alert(message);
+      },
+      error: (err) => {
+        this.addingToCart = false;
+        const errorMessage = err.error?.message || 'Failed to add item to cart';
+        alert(errorMessage);
+      }
+    });
+  }
+
+  goToCart(): void {
+    this.router.navigate(['/cart']);
   }
 
   private loadProducts(): void {
@@ -276,14 +324,5 @@ export class AccessoriesComponent implements OnInit {
   onSearch(): void {
     alert('Search functionality is not implemented yet.');
   }
-
-  addToCart(product: Product): void {
-    console.log('Adding to cart:', product.title);
-    this.cartCount++;
-    alert(`${product.title} added to cart!`);
-  }
-
-  goToCart(): void {
-    this.router.navigate(['/cart']);
-  }
+  
 }
