@@ -3,7 +3,8 @@
   <div class="checkout-header">
     <button class="back-btn" (click)="goBack()">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round" />
       </svg>
       Back to Cart
     </button>
@@ -50,21 +51,11 @@
           <h2>Contact Information</h2>
           <div class="form-group">
             <label for="email">Email Address *</label>
-            <input
-              id="email"
-              type="email"
-              [(ngModel)]="contactInfo.email"
-              placeholder="your@email.com"
-              required>
+            <input id="email" type="email" [(ngModel)]="contactInfo.email" placeholder="your@email.com" required>
           </div>
           <div class="form-group">
             <label for="phone">Phone Number *</label>
-            <input
-              id="phone"
-              type="tel"
-              [(ngModel)]="contactInfo.phone"
-              placeholder="+254 712 345 678"
-              required>
+            <input id="phone" type="tel" [(ngModel)]="contactInfo.phone" placeholder="+254 712 345 678" required>
           </div>
         </div>
 
@@ -89,16 +80,9 @@
 
           <!-- Address Options -->
           <div *ngIf="!isLoadingAddresses && addresses.length > 0" class="addresses-list">
-            <div
-              *ngFor="let address of addresses"
-              class="address-card"
-              [class.selected]="selectedAddressId === address.id"
-              (click)="selectAddress(address.id)">
-              <input
-                type="radio"
-                [value]="address.id"
-                [(ngModel)]="selectedAddressId"
-                name="address">
+            <div *ngFor="let address of addresses" class="address-card"
+              [class.selected]="selectedAddressId === address.address_id" (click)="selectAddress(address.address_id)">
+              <input type="radio" [value]="address.address_id" [(ngModel)]="selectedAddressId" name="address">
               <div class="address-content">
                 <p class="address-line">{{ address.address_line1 }}</p>
                 <p class="address-line" *ngIf="address.address_line2">{{ address.address_line2 }}</p>
@@ -110,7 +94,8 @@
           </div>
 
           <!-- No Addresses -->
-          <div *ngIf="!isLoadingAddresses && addresses.length === 0 && !showAddressForm && !addressError" class="no-addresses">
+          <div *ngIf="!isLoadingAddresses && addresses.length === 0 && !showAddressForm && !addressError"
+            class="no-addresses">
             <p>No addresses saved. Please add a delivery address.</p>
           </div>
 
@@ -119,59 +104,33 @@
             <h3>Add New Address</h3>
             <div class="form-group">
               <label for="address_line1">Address Line 1 *</label>
-              <input
-                type="text"
-                id="address_line1"
-                [(ngModel)]="newAddress.address_line1"
-                placeholder="Street address, P.O. Box"
-                required>
+              <input type="text" id="address_line1" [(ngModel)]="newAddress.address_line1"
+                placeholder="Street address, P.O. Box" required>
             </div>
             <div class="form-group">
               <label for="address_line2">Address Line 2</label>
-              <input
-                type="text"
-                id="address_line2"
-                [(ngModel)]="newAddress.address_line2"
+              <input type="text" id="address_line2" [(ngModel)]="newAddress.address_line2"
                 placeholder="Apartment, suite, unit, building, floor, etc.">
             </div>
             <div class="form-row">
               <div class="form-group">
                 <label for="city">City *</label>
-                <input
-                  type="text"
-                  id="city"
-                  [(ngModel)]="newAddress.city"
-                  placeholder="City"
-                  required>
+                <input type="text" id="city" [(ngModel)]="newAddress.city" placeholder="City" required>
               </div>
               <div class="form-group">
                 <label for="state">State/Province *</label>
-                <input
-                  type="text"
-                  id="state"
-                  [(ngModel)]="newAddress.state"
-                  placeholder="State or Province"
-                  required>
+                <input type="text" id="state" [(ngModel)]="newAddress.state" placeholder="State or Province" required>
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
                 <label for="postal_code">Postal Code *</label>
-                <input
-                  type="text"
-                  id="postal_code"
-                  [(ngModel)]="newAddress.postal_code"
-                  placeholder="Postal code"
+                <input type="text" id="postal_code" [(ngModel)]="newAddress.postal_code" placeholder="Postal code"
                   required>
               </div>
               <div class="form-group">
                 <label for="country">Country *</label>
-                <input
-                  type="text"
-                  id="country"
-                  [(ngModel)]="newAddress.country"
-                  placeholder="Country"
-                  required>
+                <input type="text" id="country" [(ngModel)]="newAddress.country" placeholder="Country" required>
               </div>
             </div>
             <div class="checkbox-group">
@@ -190,87 +149,77 @@
         <div class="form-section">
           <h2>Delivery Method</h2>
           <div class="delivery-options">
-            <div
-              *ngFor="let option of deliveryOptions"
-              class="delivery-option"
-              [class.selected]="selectedDelivery === option.id"
-              (click)="selectedDelivery = option.id">
-              <input
-                type="radio"
-                [value]="option.id"
-                [(ngModel)]="selectedDelivery"
-                name="delivery">
-              <div class="delivery-info">
-                <span class="delivery-name">{{option.name}}</span>
-                <span class="delivery-estimate">{{option.estimate}}</span>
-                <span class="delivery-cost">{{option.cost | currency:'KES'}}</span>
-              </div>
+            <div *ngFor="let option of deliveryOptions" class="delivery-option"
+              [class.selected]="selectedDelivery === option.id" (click)="changeDelivery(option.id)">
+              <input type="radio" [value]="option.id" [checked]="selectedDelivery === option.id" name="delivery"
+                (change)="changeDelivery(option.id)">
+              <div class="delivery-info"></div>
+              <span class="delivery-name">{{option.name}}</span>
+              <span class="delivery-estimate">{{option.estimate}}</span>
+              <span class="delivery-cost">{{option.cost | currency:'KES'}}</span>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Right Column - Order Summary -->
-      <div class="order-summary-section">
-        <div class="order-summary-sticky">
-          <h2>Order Summary</h2>
-          
-          <!-- Order Items -->
-          <div class="summary-items">
-            <div *ngFor="let item of orderItems" class="summary-item">
-              <img [src]="item.image_url || 'assets/images/placeholder-product.png'" 
-                   [alt]="item.product_title"
-                   class="item-image">
-              <div class="item-details">
-                <h4>{{item.product_title}}</h4>
-                <p class="item-quantity">Qty: {{item.quantity}}</p>
-              </div>
-              <div class="item-price">
-                {{item.subtotal | currency:'KES'}}
-              </div>
+    <!-- Right Column - Order Summary -->
+    <div class="order-summary-section">
+      <div class="order-summary-sticky">
+        <h2>Order Summary</h2>
+
+        <!-- Order Items -->
+        <div class="summary-items">
+          <div *ngFor="let item of orderItems" class="summary-item">
+            <img [src]="item.image_url || 'assets/images/placeholder-product.png'" [alt]="item.product_title"
+              class="item-image">
+            <div class="item-details">
+              <h4>{{item.product_title}}</h4>
+              <p class="item-quantity">Qty: {{item.quantity}}</p>
+            </div>
+            <div class="item-price">
+              {{item.subtotal | currency:'KES'}}
             </div>
           </div>
+        </div>
 
-          <!-- Order Totals -->
-          <div class="price-breakdown">
-            <div class="price-row">
-              <span>Subtotal</span>
-              <span>{{orderData.subtotal | currency:'KES'}}</span>
-            </div>
-            <div class="price-row">
-              <span>Shipping</span>
-              <span>{{selectedDeliveryOption.cost | currency:'KES'}}</span>
-            </div>
-            <div class="price-row">
-              <span>Tax (16% VAT)</span>
-              <span>{{orderData.tax | currency:'KES'}}</span>
-            </div>
-            <div *ngIf="orderData.couponDiscount > 0" class="price-row discount">
-              <span>Discount</span>
-              <span>-{{orderData.couponDiscount | currency:'KES'}}</span>
-            </div>
-            <div class="price-row total">
-              <strong>Total</strong>
-              <strong>{{finalTotal | currency:'KES'}}</strong>
-            </div>
+        <!-- Order Totals -->
+        <div class="price-breakdown">
+          <div class="price-row">
+            <span>Subtotal</span>
+            <span>{{orderData.subtotal | currency:'KES'}}</span>
           </div>
-
-          <!-- Proceed Button -->
-          <button
-            (click)="proceedToPayment()"
-            [disabled]="isProcessing"
-            class="proceed-btn">
-            <span *ngIf="!isProcessing">Proceed to Payment</span>
-            <span *ngIf="isProcessing">Processing...</span>
-          </button>
-
-          <!-- Security Notice -->
-          <div class="security-info">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span>Your payment information is secure and encrypted</span>
+          <div class="price-row">
+            <span>Shipping</span>
+            <span>{{selectedDeliveryOption.cost | currency:'KES'}}</span>
           </div>
+          <div class="price-row">
+            <span>Tax (16% VAT)</span>
+            <span>{{orderData.tax | currency:'KES'}}</span>
+          </div>
+          <div *ngIf="orderData.couponDiscount > 0" class="price-row discount">
+            <span>Discount</span>
+            <span>-{{orderData.couponDiscount | currency:'KES'}}</span>
+          </div>
+          <div class="price-row total">
+            <strong>Total</strong>
+            <strong>{{finalTotal | currency:'KES'}}</strong>
+          </div>
+        </div>
+
+        <!-- Proceed Button -->
+        <button (click)="proceedToPayment()" [disabled]="isProcessing" class="proceed-btn">
+          <span *ngIf="!isProcessing">Proceed to Payment</span>
+          <span *ngIf="isProcessing">Processing...</span>
+        </button>
+
+        <!-- Security Notice -->
+        <div class="security-info">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span>Your payment information is secure and encrypted</span>
         </div>
       </div>
     </div>

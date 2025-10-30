@@ -1,15 +1,16 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ApiService } from '../../services/api.service';
+import { forkJoin } from 'rxjs';
 
 interface PaymentInfo {
   cartId: number;
   addressId: number;
   subtotal: number;
-  deliveryFee: number;
-  total: number;
+  deliveryCost: number;
+  finalTotal: number;
   deliveryCity: string;
 }
 
@@ -23,7 +24,8 @@ export class PaymentComponent implements OnInit {
   paymentForm: FormGroup;
   paymentInfo: PaymentInfo | null = null;
   selectedPaymentMethod: 'mpesa' | 'card' | 'cash_on_delivery' | null = null;
-  
+
+  isBrowser: boolean;
   currentUser: any = null;
   loading = false;
   error: string | null = null;
@@ -31,11 +33,17 @@ export class PaymentComponent implements OnInit {
   orderCreated = false;
   orderId: number | null = null;
 
+  // Add new state tracking variables
+  currentStep: 'creating_order' | 'creating_items' | 'processing_payment' | 'completed' = 'creating_order';
+
   constructor(
     private fb: FormBuilder,
     private router: Router,
-    private apiService: ApiService
+    private apiService: ApiService,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {
+    this.isBrowser = isPlatformBrowser(this.platformId);
+
     // Get payment info from navigation state
     const navigation = this.router.getCurrentNavigation();
     if (navigation?.extras.state) {
@@ -43,10 +51,11 @@ export class PaymentComponent implements OnInit {
         cartId: navigation.extras.state['cartId'],
         addressId: navigation.extras.state['addressId'],
         subtotal: navigation.extras.state['subtotal'],
-        deliveryFee: navigation.extras.state['deliveryFee'],
-        total: navigation.extras.state['total'],
+        deliveryCost: navigation.extras.state['deliveryCost'],
+        finalTotal: navigation.extras.state['finalTotal'],
         deliveryCity: navigation.extras.state['deliveryCity']
       };
+      console.log('📦 Payment info received:', this.paymentInfo);
     }
 
     this.paymentForm = this.fb.group({
@@ -60,9 +69,30 @@ export class PaymentComponent implements OnInit {
 
   ngOnInit(): void {
     if (!this.paymentInfo) {
-      // Redirect back to cart if no payment info
-      this.router.navigate(['/cart']);
-      return;
+      console.error('❌ No payment info found');
+      // Try to get from localStorage as fallback
+      const storedPaymentData = localStorage.getItem('payment_data');
+      if (storedPaymentData) {
+        try {
+          const data = JSON.parse(storedPaymentData);
+          this.paymentInfo = {
+            cartId: data.cartId,
+            addressId: data.addressId,
+            subtotal: data.subtotal,
+            deliveryCost: data.deliveryCost,
+            finalTotal: data.finalTotal,
+            deliveryCity: data.deliveryCity
+          };
+          console.log('✅ Loaded payment info from localStorage:', this.paymentInfo);
+        } catch (e) {
+          console.error('❌ Error parsing stored payment data:', e);
+        }
+      }
+
+      if (!this.paymentInfo) {
+        this.router.navigate(['/cart']);
+        return;
+      }
     }
     this.loadCurrentUser();
   }
@@ -96,7 +126,7 @@ export class PaymentComponent implements OnInit {
 
     // Update validators based on payment method
     this.clearValidators();
-    
+
     if (method === 'mpesa') {
       this.paymentForm.get('mpesaPhone')?.setValidators([
         Validators.required,
@@ -151,164 +181,202 @@ export class PaymentComponent implements OnInit {
 
     this.processingPayment = true;
     this.error = null;
+    this.currentStep = 'creating_order';
 
     // Step 1: Create the order
     this.createOrder();
   }
 
   createOrder(): void {
-    if (!this.paymentInfo || !this.currentUser) return;
+    if (!this.paymentInfo || !this.currentUser) {
+      this.handleError('Missing payment info or user data');
+      return;
+    }
+
+    console.log('🔄 Creating order...');
+    this.currentStep = 'creating_order';
 
     const orderData = {
       user_id: this.currentUser.user_id,
       address_id: this.paymentInfo.addressId,
-      total_amount: this.paymentInfo.total,
+      total_amount: this.paymentInfo.finalTotal,
       status: 'pending',
       notes: `Payment method: ${this.selectedPaymentMethod}`
     };
 
+    console.log('📦 Sending order data:', orderData);
+
     this.apiService.createOrder(orderData).subscribe({
       next: (response) => {
-        this.orderId = response.orderId;
-        this.orderCreated = true;
-        
+        console.log('✅ Order created:', response);
+        this.orderId = response.order.order_id;
+
         // Step 2: Create order items from cart
+        this.currentStep = 'creating_items';
         this.createOrderItems();
       },
       error: (err) => {
-        this.processingPayment = false;
-        this.error = 'Failed to create order: ' + (err.error?.message || 'Unknown error');
+        this.handleError('Failed to create order: ' + (err.error?.message || 'Unknown error'));
       }
     });
   }
 
   createOrderItems(): void {
-    if (!this.paymentInfo || !this.orderId) return;
+    if (!this.paymentInfo || !this.orderId) {
+      this.handleError('Missing payment info or order ID');
+      return;
+    }
+
+    console.log('🔄 Creating order items...');
 
     // Get cart items first
     this.apiService.getCartItemsByCartId(this.paymentInfo.cartId.toString()).subscribe({
       next: (cartItems) => {
+        console.log('📦 Cart items loaded:', cartItems);
+
         // Create order items for each cart item
-        const orderItemPromises = cartItems.map((item: any) => {
+        const orderItemRequests = cartItems.map((item: any) => {
           const orderItemData = {
             order_id: this.orderId,
             product_id: item.product_id,
             quantity: item.quantity,
             unit_price: item.unit_price,
-            discount: 0
+            discount: item.discount || 0
           };
-          return this.apiService.createOrderItem(orderItemData).toPromise();
+          return this.apiService.createOrderItem(orderItemData);
         });
 
-        Promise.all(orderItemPromises)
-          .then(() => {
+        // Use forkJoin for all order item requests
+        forkJoin(orderItemRequests).subscribe({
+          next: (results) => {
+            console.log('✅ Order items created:', results);
+
             // Step 3: Process payment
+            this.currentStep = 'processing_payment';
             this.processPaymentRecord();
-          })
-          .catch((err) => {
-            this.processingPayment = false;
-            this.error = 'Failed to create order items';
-          });
+          },
+          error: (err) => {
+            this.handleError('Failed to create order items: ' + (err.error?.message || 'Unknown error'));
+          }
+        });
       },
       error: (err) => {
-        this.processingPayment = false;
-        this.error = 'Failed to load cart items';
+        this.handleError('Failed to load cart items: ' + (err.error?.message || 'Unknown error'));
       }
     });
   }
 
   processPaymentRecord(): void {
-    if (!this.orderId || !this.paymentInfo) return;
+    if (!this.orderId || !this.paymentInfo) {
+      this.handleError('Missing order ID or payment info');
+      return;
+    }
+
+    console.log('🔄 Processing payment...');
 
     let paymentData: any = {
       orderId: this.orderId,
       method: this.selectedPaymentMethod,
-      amount: this.paymentInfo.total
+      amount: this.paymentInfo.finalTotal
     };
 
     // Add method-specific data
     if (this.selectedPaymentMethod === 'mpesa') {
       paymentData.mpesaPhone = this.paymentForm.value.mpesaPhone;
-      paymentData.mpesaCode = 'MPX' + Date.now(); // Simulated code
+      paymentData.mpesaCode = 'MPX' + Date.now();
     } else if (this.selectedPaymentMethod === 'card') {
       paymentData.transactionReference = 'CARD' + Date.now();
     }
 
     this.apiService.createPayment(paymentData).subscribe({
       next: (response) => {
+        console.log('✅ Payment created:', response);
+
         // For demo purposes, auto-confirm payment
         if (this.selectedPaymentMethod !== 'cash_on_delivery') {
           this.confirmPaymentRecord(response.payment_id);
         } else {
-          this.completeCheckout();
+          this.finalizeOrder();
         }
       },
       error: (err) => {
-        this.processingPayment = false;
-        this.error = 'Payment processing failed: ' + (err.error?.message || 'Unknown error');
+        this.handleError('Payment processing failed: ' + (err.error?.message || 'Unknown error'));
       }
     });
   }
 
   confirmPaymentRecord(paymentId: number): void {
+    console.log('🔄 Confirming payment...');
+
     this.apiService.confirmPayment(paymentId.toString()).subscribe({
       next: () => {
+        console.log('✅ Payment confirmed');
+
         // Update order status to processing
         if (this.orderId) {
           this.updateOrderStatus();
+        } else {
+          this.finalizeOrder();
         }
       },
       error: (err) => {
-        this.processingPayment = false;
-        this.error = 'Failed to confirm payment';
+        console.warn('⚠️ Payment confirmation failed, continuing with order...');
+        // Continue even if confirmation fails
+        this.finalizeOrder();
       }
     });
   }
 
   updateOrderStatus(): void {
-    if (!this.orderId) return;
+    if (!this.orderId) {
+      this.finalizeOrder();
+      return;
+    }
 
-    this.apiService.updateOrder(this.orderId.toString(), { 
-      status: 'processing' 
+    console.log('🔄 Updating order status...');
+
+    this.apiService.updateOrder(this.orderId.toString(), {
+      status: 'processing'
     }).subscribe({
       next: () => {
-        // Update cart status to converted
-        if (this.paymentInfo) {
-          this.convertCart();
-        }
+        console.log('✅ Order status updated');
+        this.finalizeOrder();
       },
       error: (err) => {
-        // Continue even if status update fails
-        this.completeCheckout();
+        console.warn('⚠️ Order status update failed, continuing...');
+        this.finalizeOrder();
       }
     });
   }
 
-  convertCart(): void {
-    if (!this.paymentInfo) return;
+  finalizeOrder(): void {
+    console.log('✅ Finalizing order...');
 
-    this.apiService.updateCart(this.paymentInfo.cartId.toString(), { 
-      status: 'converted' 
-    }).subscribe({
-      next: () => {
-        this.completeCheckout();
-      },
-      error: () => {
-        // Continue even if cart update fails
-        this.completeCheckout();
-      }
-    });
+    // Mark order as created and completed
+    this.orderCreated = true;
+    this.currentStep = 'completed';
+
+    // Complete the checkout process
+    this.completeCheckout();
   }
 
   completeCheckout(): void {
-    this.processingPayment = false;
-    
-    // Show success message and redirect
+    console.log('🎉 Checkout completed!');
+
+    // Short delay to show success state
     setTimeout(() => {
+      this.processingPayment = false;
       this.router.navigate(['/orders', this.orderId], {
         state: { orderSuccess: true }
       });
-    }, 1500);
+    }, 2000);
+  }
+
+  private handleError(message: string): void {
+    console.error('❌ Error:', message);
+    this.error = message;
+    this.processingPayment = false;
+    this.currentStep = 'creating_order';
   }
 
   goBack(): void {
@@ -330,4 +398,18 @@ export class PaymentComponent implements OnInit {
     event.target.value = value;
     this.paymentForm.patchValue({ cardExpiry: value });
   }
+
+  // Helper method for template to check current step
+  isStepActive(step: string): boolean {
+    return this.currentStep === step;
+  }
+
+  // Helper method for template to check if step is completed
+  isStepCompleted(step: string): boolean {
+    const steps = ['creating_order', 'creating_items', 'processing_payment', 'completed'];
+    const currentIndex = steps.indexOf(this.currentStep);
+    const stepIndex = steps.indexOf(step);
+    return currentIndex > stepIndex;
+  }
+
 }

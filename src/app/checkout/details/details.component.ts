@@ -5,7 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 
 interface Address {
-  id: number;
+  address_id: number;
   user_id: number;
   address_line1: string;
   address_line2?: string;
@@ -22,19 +22,22 @@ interface OrderItem {
   product_id: number;
   product_title: string;
   quantity: number;
-  price: number;
+  unit_price: number;
   subtotal: number;
   image_url?: string;
+  current_sale_price?: number;
 }
 
 interface CheckoutData {
   cartId: number;
+  addressId: number;
   total: number;
   subtotal: number;
   shipping: number;
   tax: number;
   couponDiscount: number;
   items: OrderItem[];
+  isGuest: boolean;
 }
 
 @Component({
@@ -45,22 +48,20 @@ interface CheckoutData {
   styleUrl: './details.component.css'
 })
 export class DetailsComponent implements OnInit {
-  // Platform check
   isBrowser: boolean;
-
-  // User and authentication
   currentUser: any = null;
-  
+  isGuest: boolean = true;
+
   // Order data from cart
   orderData: CheckoutData | null = null;
   orderItems: OrderItem[] = [];
-  
+
   // Addresses
   addresses: Address[] = [];
   selectedAddressId: number | null = null;
-  isLoadingAddresses = true;
+  isLoadingAddresses = false;
   addressError: string | null = null;
-  
+
   // New address form
   showAddressForm = false;
   newAddress = {
@@ -72,13 +73,13 @@ export class DetailsComponent implements OnInit {
     country: 'Kenya',
     is_default: false
   };
-  
+
   // Contact information
   contactInfo = {
     email: '',
     phone: ''
   };
-  
+
   // Delivery options
   deliveryOptions = [
     { id: 'standard', name: 'Standard Delivery', cost: 300, estimate: '3-5 business days' },
@@ -86,7 +87,7 @@ export class DetailsComponent implements OnInit {
     { id: 'same_day', name: 'Same Day Delivery', cost: 1200, estimate: 'Within Nairobi only' }
   ];
   selectedDelivery = 'standard';
-  
+
   // Processing states
   isProcessing = false;
   error = '';
@@ -102,48 +103,198 @@ export class DetailsComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.isBrowser) {
-      this.loadCheckoutData();
+      console.log('🔄 DetailsComponent initialized - starting user load');
       this.loadCurrentUser();
     }
   }
 
   /**
-   * Load checkout data from localStorage or navigation state
+   * Load current user - MAIN ENTRY POINT
    */
-  loadCheckoutData(): void {
-    // Try to get data from navigation state first
-    const navigation = this.router.getCurrentNavigation();
-    const state = navigation?.extras.state as any;
+  loadCurrentUser(): void {
+    if (!this.isBrowser) return;
 
-    if (state) {
-      this.processCheckoutData(state);
-    } else {
-      // Fallback to localStorage
-      this.loadCheckoutDataFromStorage();
+    try {
+      const storedUser = localStorage.getItem('currentUser');
+      if (!storedUser) {
+        console.log('ℹ️ No user logged in - guest checkout');
+        this.setupGuestCheckout();
+        // For guest, load checkout data immediately
+        this.loadCheckoutData();
+        return;
+      }
+
+      const userData = JSON.parse(storedUser);
+      this.currentUser = userData;
+      this.isGuest = false;
+
+      console.log('✅ User loaded, loading profile and addresses...');
+      
+      // Load user profile and addresses FIRST, then checkout data
+      this.loadUserProfileAndAddresses(userData.user_id);
+
+    } catch (error) {
+      console.error('❌ Error loading user data:', error);
+      this.setupGuestCheckout();
+      this.loadCheckoutData();
     }
   }
 
   /**
-   * Process checkout data from any source
+   * Load user profile and addresses, then checkout data
+   */
+  private loadUserProfileAndAddresses(userId: number): void {
+    this.apiService.getCurrentUserProfile(userId.toString()).subscribe({
+      next: (user) => {
+        this.currentUser = { ...this.currentUser, ...user };
+        this.contactInfo.email = user.email || '';
+        this.contactInfo.phone = user.phone || '';
+        console.log('✅ User profile loaded, now loading addresses...');
+        
+        // Now load addresses, then checkout data
+        this.loadAddresses(() => {
+          console.log('✅ Addresses loaded, now loading checkout data...');
+          this.loadCheckoutData();
+        });
+      },
+      error: (err) => {
+        console.error('❌ Error loading user profile:', err);
+        // Still try to load addresses
+        this.loadAddresses(() => {
+          this.loadCheckoutData();
+        });
+      }
+    });
+  }
+
+  /**
+   * Load addresses with callback - FIXED to ensure completion
+   */
+  loadAddresses(callback?: () => void): void {
+    if (!this.currentUser?.user_id || this.isGuest) {
+      console.log('ℹ️ No addresses to load (guest or no user)');
+      this.isLoadingAddresses = false;
+      callback?.();
+      return;
+    }
+
+    this.isLoadingAddresses = true;
+    this.addressError = null;
+
+    console.log('🔄 Loading addresses for user:', this.currentUser.user_id);
+
+    this.apiService.getAddressByUserId(this.currentUser.user_id.toString()).subscribe({
+      next: (res: any) => {
+        const addresses: Address[] = Array.isArray(res)
+          ? res
+          : (res?.addresses || res?.data || []);
+
+        console.log('✅ Addresses loaded:', addresses);
+        this.addresses = addresses;
+
+        // Auto-select default address
+        const defaultAddress = addresses.find((addr: Address) => addr.is_default);
+        if (defaultAddress) {
+          this.selectedAddressId = defaultAddress.address_id;
+          console.log('✅ Auto-selected default address:', this.selectedAddressId);
+        } else if (addresses.length > 0) {
+          this.selectedAddressId = addresses[0].address_id;
+          console.log('✅ Auto-selected first address:', this.selectedAddressId);
+        } else {
+          console.log('ℹ️ No addresses found, showing address form');
+          this.showAddressForm = true;
+        }
+
+        this.isLoadingAddresses = false;
+        callback?.();
+      },
+      error: (err) => {
+        console.error('❌ Error loading addresses:', err);
+        this.addressError = 'Failed to load addresses. You can add a new address below.';
+        this.isLoadingAddresses = false;
+        this.addresses = [];
+        this.showAddressForm = true;
+        callback?.();
+      }
+    });
+  }
+
+  /**
+   * Load checkout data from navigation state or localStorage
+   */
+  loadCheckoutData(): void {
+    console.log('🔄 Loading checkout data...');
+    console.log('📌 Current selectedAddressId:', this.selectedAddressId);
+    
+    // Try navigation state first
+    const navigation = this.router.getCurrentNavigation();
+    const state = navigation?.extras.state as any;
+
+    if (state && state.cartId) {
+      this.processCheckoutData(state);
+      return;
+    }
+
+    // Fallback to localStorage
+    this.loadCheckoutDataFromStorage();
+  }
+
+  /**
+   * Process checkout data - FIXED to use current selectedAddressId
    */
   private processCheckoutData(data: any): void {
-    this.orderData = {
-      cartId: data.cartId,
-      total: data.total || 0,
-      subtotal: data.subtotal || 0,
-      shipping: data.shipping || 0,
-      tax: data.tax || 0,
-      couponDiscount: data.couponDiscount || 0,
-      items: data.items || []
-    };
-    this.orderItems = this.orderData.items;
+    console.log('🔄 Processing checkout data...');
+    console.log('📌 Using selectedAddressId:', this.selectedAddressId);
 
-    // Also save to localStorage for persistence
+    // Normalize items and compute subtotals
+    const items: OrderItem[] = (data.items || []).map((it: any) => {
+      const qty = Number(it.quantity ?? 1);
+      const price = Number(it.current_sale_price ?? it.unit_price ?? 0);
+      const computedSubtotal = Number(it.subtotal ?? price * qty);
+      return {
+        product_id: Number(it.product_id ?? 0),
+        product_title: String(it.product_title ?? it.title ?? ''),
+        quantity: qty,
+        unit_price: price,
+        subtotal: computedSubtotal,
+        image_url: it.image_url,
+        current_sale_price: it.current_sale_price
+      } as OrderItem;
+    });
+
+    // Sum values
+    const subtotal = items.reduce((sum, it) => sum + (Number(it.subtotal) || 0), 0);
+    const shipping = Number(this.selectedDeliveryOption?.cost ?? data.shipping ?? 0);
+    const tax = Number(data.tax ?? 0);
+    const couponDiscount = Number(data.couponDiscount ?? 0);
+
+    const total = subtotal + shipping + tax - couponDiscount;
+
+    // CRITICAL FIX: Use the CURRENT selectedAddressId, don't default to 0
+    const addressId = this.selectedAddressId ? Number(this.selectedAddressId) : 0;
+
+    this.orderData = {
+      cartId: Number(data.cartId ?? data.cart_id ?? 0),
+      addressId: addressId,
+      total,
+      subtotal,
+      shipping,
+      tax,
+      couponDiscount,
+      items,
+      isGuest: data.isGuest !== undefined ? !!data.isGuest : true
+    };
+
+    this.orderItems = this.orderData.items;
+    this.isGuest = this.orderData.isGuest;
+
+    // Save to localStorage for persistence
     if (this.isBrowser) {
       localStorage.setItem('checkout_data', JSON.stringify(this.orderData));
     }
 
-    console.log('✅ Checkout data loaded:', this.orderData);
+    console.log('✅ Checkout data loaded with addressId:', this.orderData.addressId);
+    console.log('✅ Full orderData:', this.orderData);
   }
 
   /**
@@ -168,7 +319,7 @@ export class DetailsComponent implements OnInit {
   }
 
   /**
-   * Show error and redirect to cart
+   * Show error and redirect
    */
   private showErrorAndRedirect(message: string): void {
     this.error = message;
@@ -178,123 +329,19 @@ export class DetailsComponent implements OnInit {
   }
 
   /**
-   * Load current user with enhanced error handling
-   */
-  loadCurrentUser(): void {
-    if (!this.isBrowser) return;
-
-    try {
-      const storedUser = localStorage.getItem('currentUser');
-      if (!storedUser) {
-        console.log('ℹ️ No user logged in - proceeding as guest');
-        this.setupGuestCheckout();
-        return;
-      }
-
-      const userData = JSON.parse(storedUser);
-      this.currentUser = userData;
-      
-      // Load user profile and addresses
-      this.loadUserProfile(userData.user_id);
-      this.loadAddresses();
-
-    } catch (error) {
-      console.error('❌ Error loading user data:', error);
-      this.setupGuestCheckout();
-    }
-  }
-
-  /**
-   * Load user profile data
-   */
-  private loadUserProfile(userId: number): void {
-    this.apiService.getCurrentUserProfile(userId.toString()).subscribe({
-      next: (user) => {
-        this.currentUser = { ...this.currentUser, ...user };
-        this.contactInfo.email = user.email || '';
-        this.contactInfo.phone = user.phone || '';
-        console.log('✅ User profile loaded:', user);
-      },
-      error: (err) => {
-        console.error('❌ Error loading user profile:', err);
-        // Continue with basic user data
-      }
-    });
-  }
-
-  /**
    * Setup guest checkout
    */
   private setupGuestCheckout(): void {
+    this.isGuest = true;
     this.contactInfo.email = '';
     this.contactInfo.phone = '';
     this.addresses = [];
     this.isLoadingAddresses = false;
+    this.showAddressForm = true;
   }
 
   /**
-   * Load addresses with error handling
-   */
-  loadAddresses(): void {
-    if (!this.currentUser?.user_id) {
-      this.isLoadingAddresses = false;
-      return;
-    }
-
-    this.isLoadingAddresses = true;
-    this.addressError = null;
-
-    this.apiService.getAddresses().subscribe({
-      next: (addresses) => {
-        console.log('✅ Addresses loaded:', addresses);
-        this.addresses = addresses;
-        
-        // Auto-select default address
-        const defaultAddress = addresses.find((addr: Address) => addr.is_default);
-        if (defaultAddress) {
-          this.selectedAddressId = defaultAddress.id;
-        } else if (addresses.length > 0) {
-          this.selectedAddressId = addresses[0].id;
-        }
-        
-        this.isLoadingAddresses = false;
-      },
-      error: (err) => {
-        console.error('❌ Error loading addresses:', err);
-        this.addressError = 'Failed to load addresses. You can add a new address below.';
-        this.isLoadingAddresses = false;
-        this.addresses = [];
-      }
-    });
-  }
-
-  /**
-   * Toggle address form visibility
-   */
-  toggleAddressForm(): void {
-    this.showAddressForm = !this.showAddressForm;
-    if (!this.showAddressForm) {
-      this.resetAddressForm();
-    }
-  }
-
-  /**
-   * Reset address form to initial state
-   */
-  resetAddressForm(): void {
-    this.newAddress = {
-      address_line1: '',
-      address_line2: '',
-      city: '',
-      state: '',
-      postal_code: '',
-      country: 'Kenya',
-      is_default: false
-    };
-  }
-
-  /**
-   * Save new address with validation
+   * Save new address - FIXED to update orderData
    */
   saveNewAddress(): void {
     if (!this.validateAddress(this.newAddress)) {
@@ -302,19 +349,54 @@ export class DetailsComponent implements OnInit {
       return;
     }
 
-    // For guest users, we'll store the address locally
-    if (!this.currentUser?.user_id) {
+    // For guest users, store address locally
+    if (this.isGuest || !this.currentUser?.user_id) {
       this.handleGuestAddress();
       return;
     }
 
-    this.apiService.createAddress(this.newAddress).subscribe({
-      next: (address) => {
-        console.log('✅ New address saved:', address);
-        this.addresses.push(address);
-        this.selectedAddressId = address.id;
+    // For authenticated users, save to database
+    this.apiService.createAddress({
+      city: this.newAddress.city,
+      street: this.newAddress.address_line1,
+      building: this.newAddress.address_line2,
+      postal_code: this.newAddress.postal_code,
+      is_default: this.newAddress.is_default
+    }).subscribe({
+      next: (res: any) => {
+        const newId = res?.address_id;
+        if (!newId) {
+          console.error('❌ Unexpected response creating address:', res);
+          alert('Address saved but server response was unexpected. Please refresh addresses.');
+          this.showAddressForm = false;
+          this.resetAddressForm();
+          return;
+        }
+
+        const createdAddress: Address = {
+          address_id: newId,
+          user_id: this.currentUser?.user_id || 0,
+          address_line1: this.newAddress.address_line1,
+          address_line2: this.newAddress.address_line2,
+          city: this.newAddress.city,
+          state: this.newAddress.state,
+          postal_code: this.newAddress.postal_code,
+          country: this.newAddress.country,
+          is_default: this.newAddress.is_default
+        };
+
+        this.addresses.push(createdAddress);
+        this.selectedAddressId = createdAddress.address_id;
         this.showAddressForm = false;
         this.resetAddressForm();
+        
+        // CRITICAL: Update orderData with the new address
+        if (this.orderData) {
+          this.orderData.addressId = createdAddress.address_id;
+          localStorage.setItem('checkout_data', JSON.stringify(this.orderData));
+          console.log('✅ Updated orderData with new addressId:', this.orderData.addressId);
+        }
+        
         alert('Address added successfully!');
       },
       error: (err) => {
@@ -325,63 +407,52 @@ export class DetailsComponent implements OnInit {
   }
 
   /**
-   * Handle address for guest users
+   * Handle guest address - FIXED to update orderData
    */
   private handleGuestAddress(): void {
     const guestAddress: Address = {
-      id: Date.now(), // Temporary ID
+      address_id: Date.now(),
       user_id: 0,
       ...this.newAddress,
       is_default: true
     };
 
     this.addresses = [guestAddress];
-    this.selectedAddressId = guestAddress.id;
+    this.selectedAddressId = guestAddress.address_id;
     this.showAddressForm = false;
     this.resetAddressForm();
+    
+    // CRITICAL: Update orderData with the new address
+    if (this.orderData) {
+      this.orderData.addressId = guestAddress.address_id;
+      localStorage.setItem('checkout_data', JSON.stringify(this.orderData));
+      console.log('✅ Updated orderData with guest addressId:', this.orderData.addressId);
+    }
+    
     alert('Delivery address saved!');
   }
 
   /**
-   * Validate address form
-   */
-  validateAddress(address: any): boolean {
-    return !!(
-      address.address_line1?.trim() &&
-      address.city?.trim() &&
-      address.state?.trim() &&
-      address.postal_code?.trim()
-    );
-  }
-
-  /**
-   * Select address
+   * Select address - FIXED to update orderData
    */
   selectAddress(addressId: number): void {
+    console.log('📍 Selecting address:', addressId);
     this.selectedAddressId = addressId;
+    
+    // CRITICAL: Update orderData with the selected address
+    if (this.orderData) {
+      this.orderData.addressId = addressId;
+      localStorage.setItem('checkout_data', JSON.stringify(this.orderData));
+      console.log('✅ Updated orderData with selected addressId:', this.orderData.addressId);
+    }
   }
 
   /**
-   * Get selected delivery option
-   */
-  get selectedDeliveryOption() {
-    return this.deliveryOptions.find(opt => opt.id === this.selectedDelivery) || this.deliveryOptions[0];
-  }
-
-  /**
-   * Calculate final total with delivery
-   */
-  get finalTotal(): number {
-    if (!this.orderData) return 0;
-    return this.orderData.total - this.orderData.shipping + this.selectedDeliveryOption.cost;
-  }
-
-  /**
-   * Validate form before proceeding
+   * Validate form - ENHANCED to check for valid addressId
    */
   validateForm(): boolean {
-    if (!this.selectedAddressId) {
-      alert('Please select a delivery address');
+    if (!this.selectedAddressId || this.selectedAddressId === 0) {
+      alert('Please select or add a delivery address');
       return false;
     }
 
@@ -395,14 +466,12 @@ export class DetailsComponent implements OnInit {
       return false;
     }
 
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(this.contactInfo.email)) {
       alert('Please enter a valid email address');
       return false;
     }
 
-    // Basic phone validation
     const phoneRegex = /^[+]?[\d\s\-()]{10,}$/;
     if (!phoneRegex.test(this.contactInfo.phone.replace(/\s/g, ''))) {
       alert('Please enter a valid phone number');
@@ -413,10 +482,19 @@ export class DetailsComponent implements OnInit {
   }
 
   /**
-   * Proceed to payment with comprehensive validation
+   * Proceed to payment - FIXED to use addressId
    */
   proceedToPayment(): void {
+    console.log('🔄 Proceeding to payment...');
+    console.log('📌 Current selectedAddressId:', this.selectedAddressId);
+    
     if (!this.validateForm()) {
+      return;
+    }
+
+    // Double-check we have a valid address ID
+    if (!this.selectedAddressId || this.selectedAddressId === 0) {
+      alert('Please select a valid delivery address');
       return;
     }
 
@@ -429,170 +507,104 @@ export class DetailsComponent implements OnInit {
     this.isProcessing = true;
     this.error = '';
 
-    // Prepare order data for payment page
+    // Prepare data for payment page - FIXED: use addressId
     const paymentData = {
-      ...this.orderData,
-      selectedAddress: this.selectedAddress,
-      contactInfo: this.contactInfo,
-      deliveryMethod: this.selectedDelivery,
+      cartId: this.orderData.cartId,
+      addressId: this.selectedAddressId, // This is the key fix
+      subtotal: this.orderData.subtotal,
       deliveryCost: this.selectedDeliveryOption.cost,
-      finalTotal: this.finalTotal
+      finalTotal: this.finalTotal,
+      deliveryCity: this.selectedAddress?.city || this.newAddress.city
     };
 
-    // For guest checkout, we'll create the order during payment
-    if (this.currentUser?.user_id) {
-      this.createOrderForUser(paymentData);
-    } else {
-      this.proceedToGuestPayment(paymentData);
-    }
-  }
+    console.log('📦 Sending payment data:', paymentData);
+    console.log('📍 addressId being sent:', paymentData.addressId);
 
-  /**
-   * Create order for authenticated user
-   */
-  private createOrderForUser(paymentData: any): void {
-    const orderPayload = {
-      user_id: this.currentUser.user_id,
-      address_id: this.selectedAddressId,
-      total_amount: paymentData.finalTotal,
-      subtotal: paymentData.subtotal,
-      tax_amount: paymentData.tax,
-      shipping_cost: paymentData.deliveryCost,
-      discount_amount: paymentData.couponDiscount,
-      status: 'pending',
-      payment_status: 'pending',
-      delivery_method: paymentData.deliveryMethod,
-      contact_email: paymentData.contactInfo.email,
-      contact_phone: paymentData.contactInfo.phone
-    };
-
-    this.apiService.createOrder(orderPayload).subscribe({
-      next: (order) => {
-        console.log('✅ Order created:', order);
-        this.createOrderItems(order.id, paymentData);
-      },
-      error: (err) => {
-        console.error('❌ Error creating order:', err);
-        this.handleOrderError(err);
-      }
-    });
-  }
-
-  /**
-   * Create order items
-   */
-  private createOrderItems(orderId: number, paymentData: any): void {
-    const orderItemPromises = paymentData.items.map((item: OrderItem) => {
-      const orderItemPayload = {
-        order_id: orderId,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        price: item.price,
-        subtotal: item.subtotal
-      };
-      return this.apiService.createOrderItem(orderItemPayload).toPromise();
-    });
-
-    Promise.all(orderItemPromises)
-      .then(() => {
-        console.log('✅ Order items created');
-        this.finalizeOrderCreation(orderId, paymentData);
-      })
-      .catch(err => {
-        console.error('❌ Error creating order items:', err);
-        this.handleOrderError(err);
-      });
-  }
-
-  /**
-   * Finalize order creation and proceed to payment
-   */
-  private finalizeOrderCreation(orderId: number, paymentData: any): void {
-    // Clear the cart after successful order creation
-    if (paymentData.cartId) {
-      this.apiService.clearCart(paymentData.cartId.toString()).subscribe({
-        next: () => {
-          console.log('✅ Cart cleared');
-          this.navigateToPayment(orderId, paymentData);
-        },
-        error: (err) => {
-          console.error('❌ Error clearing cart:', err);
-          // Still proceed to payment even if cart clearing fails
-          this.navigateToPayment(orderId, paymentData);
-        }
-      });
-    } else {
-      this.navigateToPayment(orderId, paymentData);
-    }
-  }
-
-  /**
-   * Proceed to payment for guest users
-   */
-  private proceedToGuestPayment(paymentData: any): void {
-    // For guest users, we'll create the order during payment processing
-    const tempOrderId = 'guest_' + Date.now();
-    this.navigateToPayment(tempOrderId, paymentData);
-  }
-
-  /**
-   * Navigate to payment page
-   */
-  private navigateToPayment(orderId: any, paymentData: any): void {
-    // Store order data for payment page
+    // Store for payment page
     if (this.isBrowser) {
-      localStorage.setItem('current_order_id', orderId.toString());
       localStorage.setItem('payment_data', JSON.stringify(paymentData));
     }
 
     this.isProcessing = false;
-    this.router.navigate(['/checkout/payment'], { 
-      state: { 
-        orderId,
-        paymentData
-      }
+
+    // Navigate to payment
+    this.router.navigate(['/checkout/payment'], {
+      state: paymentData
     });
   }
 
+  // ========== REST OF THE METHODS (unchanged) ==========
+
   /**
-   * Handle order creation errors
+   * Apply delivery cost to order
    */
-  private handleOrderError(err: any): void {
-    this.isProcessing = false;
-    
-    if (err.status === 401) {
-      this.error = 'Please log in to complete your order.';
-      setTimeout(() => {
-        this.router.navigate(['/login'], { 
-          queryParams: { returnUrl: '/checkout/details' } 
-        });
-      }, 2000);
-    } else if (err.status === 400) {
-      this.error = 'Invalid order data. Please check your information and try again.';
-    } else if (err.status === 0) {
-      this.error = 'Network error. Please check your connection and try again.';
-    } else {
-      this.error = 'Failed to create order. Please try again.';
+  private applyDeliveryToOrder(): void {
+    if (!this.orderData) return;
+
+    const cost = Number(this.selectedDeliveryOption?.cost ?? 0);
+    this.orderData.shipping = cost;
+    this.orderData.total = this.orderData.subtotal + cost + this.orderData.tax - this.orderData.couponDiscount;
+
+    if (this.isBrowser) {
+      try {
+        localStorage.setItem('checkout_data', JSON.stringify(this.orderData));
+      } catch (err) {
+        console.error('❌ Failed to persist checkout_data with updated delivery:', err);
+      }
     }
   }
 
-  /**
-   * Go back to cart
-   */
+  changeDelivery(optionId: string): void {
+    if (!optionId || this.selectedDelivery === optionId) return;
+    this.selectedDelivery = optionId;
+    this.applyDeliveryToOrder();
+  }
+
+  toggleAddressForm(): void {
+    this.showAddressForm = !this.showAddressForm;
+    if (!this.showAddressForm) {
+      this.resetAddressForm();
+    }
+  }
+
+  resetAddressForm(): void {
+    this.newAddress = {
+      address_line1: '',
+      address_line2: '',
+      city: '',
+      state: '',
+      postal_code: '',
+      country: 'Kenya',
+      is_default: false
+    };
+  }
+
+  validateAddress(address: any): boolean {
+    return !!(
+      address.address_line1?.trim() &&
+      address.city?.trim() &&
+      address.state?.trim() &&
+      address.postal_code?.trim()
+    );
+  }
+
+  get selectedDeliveryOption() {
+    return this.deliveryOptions.find(opt => opt.id === this.selectedDelivery) || this.deliveryOptions[0];
+  }
+
+  get finalTotal(): number {
+    if (!this.orderData) return 0;
+    return this.orderData.subtotal + this.selectedDeliveryOption.cost + this.orderData.tax - this.orderData.couponDiscount;
+  }
+
   goBack(): void {
     this.router.navigate(['/cart']);
   }
 
-  /**
-   * Get selected address
-   */
   get selectedAddress(): Address | undefined {
-    return this.addresses.find(addr => addr.id === this.selectedAddressId);
+    return this.addresses.find(addr => addr.address_id === this.selectedAddressId);
   }
 
-  /**
-   * Format address for display
-   */
   formatAddress(address: Address): string {
     const parts = [
       address.address_line1,
@@ -602,17 +614,15 @@ export class DetailsComponent implements OnInit {
       address.postal_code,
       address.country
     ].filter(part => part && part.trim());
-    
+
     return parts.join(', ');
   }
 
-  /**
-   * Debug method for development
-   */
   debugCheckout(): void {
     console.group('🔧 Checkout Debug Info');
     console.log('isBrowser:', this.isBrowser);
     console.log('currentUser:', this.currentUser);
+    console.log('isGuest:', this.isGuest);
     console.log('orderData:', this.orderData);
     console.log('addresses:', this.addresses);
     console.log('selectedAddressId:', this.selectedAddressId);
