@@ -1,10 +1,12 @@
 // deals.component.ts
-import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, Inject, OnInit, PLATFORM_ID } from '@angular/core';
 import { RouterModule, Router } from '@angular/router';
 import { Observable, forkJoin, map, switchMap } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../services/api.service';
+import { CartService } from '../services/cart.service';
+
 
 interface Product {
   product_id: number;
@@ -54,7 +56,11 @@ interface Deal {
   styleUrl: './deals.component.css'
 })
 export class DealsComponent implements OnInit {
-  constructor(private router: Router, private apiService: ApiService) { }
+  constructor(
+    private router: Router, 
+    private apiService: ApiService,
+    @Inject(PLATFORM_ID) private platformId: any
+  ) { }
 
   // Products data
   allProducts: Product[] = [];
@@ -92,7 +98,7 @@ export class DealsComponent implements OnInit {
       switchMap((products: Product[]) => {
         // Filter products with discounts (sale_price)
         const discountedProducts = products.filter(product => product.sale_price !== null);
-        
+
         // Calculate discount percentage
         this.allProducts = discountedProducts.map(product => ({
           ...product,
@@ -108,7 +114,7 @@ export class DealsComponent implements OnInit {
             }))
           )
         );
-        
+
         return forkJoin(imageRequests);
       })
     ).subscribe({
@@ -143,7 +149,15 @@ export class DealsComponent implements OnInit {
     }
 
     if (url.startsWith('/')) {
-      return `${window.location.origin}${url}`;
+      if (isPlatformBrowser(this.platformId)) {
+        return `${window.location.origin}${url}`;
+      } else {
+        // For SSR, you can either:
+        // 1. Return relative URL (will work when hydrated in browser)
+        return url;
+        // 2. Or use your actual domain
+        // return `https://your-domain.com${url}`;
+      }
     }
 
     return this.apiService.getProductImageUrl(url);
@@ -170,7 +184,7 @@ export class DealsComponent implements OnInit {
         const topProducts = products
           .sort((a, b) => (b.discount_percentage || 0) - (a.discount_percentage || 0))
           .slice(0, 2);
-        
+
         return {
           id: Math.floor(Math.random() * 1000),
           title: `Flash Sale: ${category}`,
@@ -191,7 +205,7 @@ export class DealsComponent implements OnInit {
         const discount = Math.round(
           products.reduce((sum, product) => sum + (product.discount_percentage || 0), 0) / products.length
         );
-        
+
         return {
           id: Math.floor(Math.random() * 1000),
           title: `${category} Special`,
@@ -211,7 +225,7 @@ export class DealsComponent implements OnInit {
         const discount = Math.round(
           products.reduce((sum, product) => sum + (product.discount_percentage || 0), 0) / products.length
         );
-        
+
         return {
           id: Math.floor(Math.random() * 1000),
           title: `Last Chance: ${category}`,
@@ -231,11 +245,11 @@ export class DealsComponent implements OnInit {
       if (category.name === 'All Deals') {
         return { ...category, count: this.activeDeals.length + this.expiringDeals.length };
       }
-      
+
       const matchingDeals = [...this.activeDeals, ...this.expiringDeals].filter(
         deal => deal.category === category.name
       );
-      
+
       return { ...category, count: matchingDeals.length };
     });
   }

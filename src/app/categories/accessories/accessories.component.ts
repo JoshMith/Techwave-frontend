@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Observable, Subscription, forkJoin, map, switchMap } from 'rxjs';
@@ -37,7 +37,7 @@ interface ProductImage {
   templateUrl: './accessories.component.html',
   styleUrls: ['./accessories.component.css']
 })
-export class AccessoriesComponent implements OnInit {
+export class AccessoriesComponent implements OnInit, OnDestroy {
 
   // Products data
   allProducts: Product[] = [];

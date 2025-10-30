@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -55,7 +55,7 @@ interface Filters {
 })
 export class PhonesComponent implements OnInit {
   Math = Math;
-  
+
   allProducts: Product[] = [];
   filteredProducts: Product[] = [];
   paginatedProducts: Product[] = [];
@@ -81,7 +81,8 @@ export class PhonesComponent implements OnInit {
   constructor(
     private router: Router,
     private apiService: ApiService,
-    private cartService: CartService
+    private cartService: CartService,
+    @Inject(PLATFORM_ID) private platformId: any
   ) { }
 
   ngOnInit(): void {
@@ -180,11 +181,15 @@ export class PhonesComponent implements OnInit {
     }
 
     if (url.startsWith('/')) {
-      // FIXED: Safe window access for SSR
-      if (window.location.origin) {
+      if (isPlatformBrowser(this.platformId)) {
         return `${window.location.origin}${url}`;
+      } else {
+        // For SSR, you can either:
+        // 1. Return relative URL (will work when hydrated in browser)
+        return url;
+        // 2. Or use your actual domain
+        // return `https://your-domain.com${url}`;
       }
-      return url; // Return as-is for SSR
     }
 
     return this.apiService.getProductImageUrl(url);

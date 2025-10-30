@@ -192,12 +192,14 @@ export class PaymentComponent implements OnInit {
       this.handleError('Missing payment info or user data');
       return;
     }
+    
 
     console.log('🔄 Creating order...');
     this.currentStep = 'creating_order';
 
     const orderData = {
       user_id: this.currentUser.user_id,
+      cart_id: this.paymentInfo.cartId,
       address_id: this.paymentInfo.addressId,
       total_amount: this.paymentInfo.finalTotal,
       status: 'pending',

@@ -331,6 +331,7 @@
                 <th>Price</th>
                 <th>Stock</th>
                 <th>Status</th>
+                <th>Rating</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -358,9 +359,15 @@
                     {{product.stock}}
                   </span>
                 </td>
+                
                 <td>
                   <span class="status-badge" [class]="product.status === 'active' ? 'delivered' : 'cancelled'">
                     {{product.status || 'active'}}
+                  </span>
+                </td>
+                <td>
+                  <span class="rating">
+                    {{product.rating}}
                   </span>
                 </td>
                 <td>
@@ -402,6 +409,7 @@
                   <label>Stock</label>
                   <input type="number" [(ngModel)]="editingProduct.stock" name="editStock" class="form-input">
                 </div>
+
               </div>
               <div class="form-actions">
                 <button type="button" class="btn btn-secondary" (click)="editingProduct = null">Cancel</button>
@@ -464,16 +472,7 @@
                 <td>{{order.user_name || order.customer?.name || 'Unknown'}}</td>
                 <td>{{order.product_name || order.items?.[0]?.productName || 'Unknown'}}</td>
                 <td>{{formatCurrency(order.total_amount || order.total || 0)}}</td>
-                <td>
-                  <select [(ngModel)]="order.status" (ngModelChange)="updateOrderStatus(order.id, order.status)"
-                    class="status-select">
-                    <option value="pending">Pending</option>
-                    <option value="processing">Processing</option>
-                    <option value="shipped">Shipped</option>
-                    <option value="delivered">Delivered</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </td>
+                <td>{{order.status | titlecase }}</td>
                 <td>{{formatDate(order.created_at || order.orderDate)}}</td>
                 <td>
                   <button class="btn-small btn-primary" (click)="onOrderClick(order.order_id)">View</button>
@@ -602,7 +601,7 @@
               </thead>
               <tbody>
                 <tr *ngFor="let item of orderDetails.items">
-                  <td>{{item.product_name || item.productName || 'Unknown Product'}}</td>
+                  <td>{{item.product_id || item.productName || 'Unknown Product'}}</td>
                   <td>{{item.quantity}}</td>
                   <td>{{formatCurrency(item.price || item.unit_price || 0)}}</td>
                   <td style="font-weight: 600;">{{formatCurrency((item.price || item.unit_price || 0) * item.quantity)}}
@@ -630,11 +629,11 @@
             style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; padding: 1.5rem;">
             <div>
               <label class="profile-label">Payment Method</label>
-              <div class="profile-value">{{orderDetails.payment.payment_method || 'N/A'}}</div>
+              <div class="profile-value">{{orderDetails.payment.method || 'N/A'}}</div>
             </div>
             <div>
               <label class="profile-label">Transaction ID</label>
-              <div class="profile-value">{{orderDetails.payment.transaction_id || 'N/A'}}</div>
+              <div class="profile-value">{{orderDetails.payment.transaction_reference || 'N/A'}}</div>
             </div>
             <div>
               <label class="profile-label">Amount Paid</label>

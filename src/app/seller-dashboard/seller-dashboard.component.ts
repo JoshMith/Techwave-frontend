@@ -511,6 +511,74 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
       });
   }
 
+  // Product filters/state for the UI filters block
+  productSearch = '';
+  productFilterCategory = '';
+  productFilterMinPrice: number | null = null;
+  productFilterMaxPrice: number | null = null;
+  productFilterStatus = '';
+  private filteredProductsList: any[] = [];
+
+  // Exposed property used by the template
+  get filteredProducts(): any[] {
+    return this.filteredProductsList;
+  }
+
+  // Apply filters to this.products and update filteredProductsList
+  filterProducts(): void {
+    const search = (this.productSearch || '').trim().toLowerCase();
+    const category = this.productFilterCategory;
+    const min = this.productFilterMinPrice !== null && this.productFilterMinPrice !== undefined
+      ? Number(this.productFilterMinPrice)
+      : null;
+    const max = this.productFilterMaxPrice !== null && this.productFilterMaxPrice !== undefined
+      ? Number(this.productFilterMaxPrice)
+      : null;
+    const status = (this.productFilterStatus || '').toLowerCase();
+
+    let filtered = Array.isArray(this.products) ? [...this.products] : [];
+
+    if (search) {
+      filtered = filtered.filter((p: any) => {
+        const title = (p.title || p.name || '').toString().toLowerCase();
+        const desc = (p.description || p.desc || '').toString().toLowerCase();
+        return title.includes(search) || desc.includes(search);
+      });
+    }
+
+    if (category) {
+      filtered = filtered.filter((p: any) =>
+        (p.category_id || p.category || '').toString() === category.toString()
+      );
+    }
+
+    if (min !== null && !Number.isNaN(min)) {
+      filtered = filtered.filter((p: any) => Number(p.price || p.sale_price || 0) >= min);
+    }
+
+    if (max !== null && !Number.isNaN(max)) {
+      filtered = filtered.filter((p: any) => Number(p.price || p.sale_price || 0) <= max);
+    }
+
+    if (status) {
+      filtered = filtered.filter((p: any) => {
+        const st = (p.status || (p.isActive === false ? 'inactive' : 'active') || '').toString().toLowerCase();
+        return st === status;
+      });
+    }
+
+    this.filteredProductsList = filtered;
+  }
+
+  clearProductFilters(): void {
+    this.productSearch = '';
+    this.productFilterCategory = '';
+    this.productFilterMinPrice = null;
+    this.productFilterMaxPrice = null;
+    this.productFilterStatus = '';
+    this.filteredProductsList = Array.isArray(this.products) ? [...this.products] : [];
+  }
+
   private loadCategories(): void {
     this.apiService.getCategories()
       .pipe(takeUntil(this.destroy$))
@@ -1079,6 +1147,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           console.error('Error loading order:', error);
+          alert(`Error Loading Order: ${error.error.message || 'Unknown error'}`);
           this.isLoadingOrderDetails = false;
         }
       });

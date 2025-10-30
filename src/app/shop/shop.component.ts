@@ -1,10 +1,11 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { Router } from '@angular/router';
-import { Observable, forkJoin, map, switchMap } from 'rxjs';
+import { Subscription, forkJoin, map, switchMap } from 'rxjs';
 import { ApiService } from '../services/api.service'; // Import the API service
+import { CartService } from '../services/cart.service';
 
 // Define the Product interface matching the API structure
 interface Product {
@@ -54,8 +55,13 @@ interface SpecialOffer {
 export class ShopComponent implements OnInit {
   constructor(
     private router: Router,
-    private apiService: ApiService // Inject the API service
+    private apiService: ApiService, // Inject the API service
+    private cartService: CartService,
+    @Inject(PLATFORM_ID) private platformId: any,
   ) { }
+
+  private cartSubscription?: Subscription;
+  addingToCart = false;
 
   // All products data - will be populated from API
   allProducts: Product[] = [];
@@ -98,7 +104,16 @@ export class ShopComponent implements OnInit {
   // Cart
   cartCount = 0;
 
+  ngOnDestroy(): void {
+    if (this.cartSubscription) {
+      this.cartSubscription.unsubscribe();
+    }
+  }
+
   ngOnInit(): void {
+    this.cartSubscription = this.cartService.cartState$.subscribe(state => {
+      this.cartCount = state.item_count;
+    });
     this.loadProducts();
   }
 
@@ -204,7 +219,15 @@ export class ShopComponent implements OnInit {
     }
 
     if (url.startsWith('/')) {
-      return `${window.location.origin}${url}`;
+      if (isPlatformBrowser(this.platformId)) {
+        return `${window.location.origin}${url}`;
+      } else {
+        // For SSR, you can either:
+        // 1. Return relative URL (will work when hydrated in browser)
+        return url;
+        // 2. Or use your actual domain
+        // return `https://your-domain.com${url}`;
+      }
     }
 
     return this.apiService.getProductImageUrl(url);
@@ -394,10 +417,30 @@ export class ShopComponent implements OnInit {
   }
 
   // Add to cart functionality
-  addToCart(product: Product) {
-    console.log(`Added to cart: ${product.title}`);
-    this.cartCount++;
-    alert(`Added ${product.title} to your cart!`);
+  addToCart(product: Product): void {
+    if (this.addingToCart) return;
+
+    if (product.stock < 1) {
+      alert('This product is out of stock.');
+      return;
+    }
+
+    this.addingToCart = true;
+
+    this.cartService.addToCart(product.product_id, 1).subscribe({
+      next: (response) => {
+        this.addingToCart = false;
+        const message = response.message === 'Cart item quantity updated'
+          ? `${product.title} quantity updated in cart!`
+          : `${product.title} added to cart!`;
+        alert(message);
+      },
+      error: (err) => {
+        this.addingToCart = false;
+        const errorMessage = err.error?.message || 'Failed to add item to cart';
+        alert(errorMessage);
+      }
+    });
   }
 
   // View product details

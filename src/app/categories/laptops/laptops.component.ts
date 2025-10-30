@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Observable, forkJoin, map, switchMap, Subscription } from 'rxjs';
@@ -69,7 +69,8 @@ export class LaptopsComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router, 
     private apiService: ApiService,
-    private cartService: CartService
+    private cartService: CartService,
+    @Inject(PLATFORM_ID) private platformId: any
   ) { }
 
   ngOnInit(): void {
@@ -164,15 +165,23 @@ export class LaptopsComponent implements OnInit, OnDestroy {
     if (!url) return this.getFallbackImage();
 
     if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
+        return url;
     }
 
     if (url.startsWith('/')) {
-      return `${window.location.origin}${url}`;
+        if (isPlatformBrowser(this.platformId)) {
+            return `${window.location.origin}${url}`;
+        } else {
+            // For SSR, you can either:
+            // 1. Return relative URL (will work when hydrated in browser)
+            return url;
+            // 2. Or use your actual domain
+            // return `https://your-domain.com${url}`;
+        }
     }
 
     return this.apiService.getProductImageUrl(url);
-  }
+}
 
   private extractBrands(): void {
     const brands = new Set(

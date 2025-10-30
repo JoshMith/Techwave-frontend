@@ -21,6 +21,7 @@ import { LoginComponent } from './auth/login/login.component';
 import { ForgotPwdComponent } from './auth/forgot-pwd/forgot-pwd.component';
 import { SignupComponent } from './auth/signup/signup.component';
 import { AddProductComponent } from './add-product/add-product.component';
+import { OrdersComponent } from './checkout/orders/orders.component';
 
 export const routes: Routes = [
     { path: '', redirectTo: 'homepage', pathMatch: 'full' },
@@ -40,6 +41,7 @@ export const routes: Routes = [
     { path: 'cart', component: CartComponent },
     { path: 'checkout/details', component: DetailsComponent },
     { path: 'checkout/payment', component: PaymentComponent },
+    { path: 'checkout/orders', component: OrdersComponent },
     
     { path: 'profile', component: ProfileComponent },
     { path: 'seller-dashboard', component: SellerDashboardComponent },
