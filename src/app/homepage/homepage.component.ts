@@ -3,6 +3,7 @@ import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService } from '../services/api.service';
+import { CartService } from '../services/cart.service';
 import { finalize } from 'rxjs/operators';
 
 interface Category {
@@ -18,6 +19,11 @@ interface Category {
   key?: string;
 }
 
+interface GuestUser {
+  session_id: string;
+  created_at: string;
+}
+
 @Component({
   selector: 'app-homepage',
   imports: [CommonModule],
@@ -30,6 +36,7 @@ export class HomepageComponent implements OnInit {
   constructor(
     private router: Router,
     private apiService: ApiService,
+    private cartService: CartService,
     @Inject(PLATFORM_ID) private platformId: any
   ) { 
     this.isBrowser = isPlatformBrowser(this.platformId);
@@ -42,14 +49,24 @@ export class HomepageComponent implements OnInit {
   // Cart related
   cartCount = 0;
   currentUser: any = null;
-  currentCart: any = null;
+  guestUser: GuestUser | null = null;
 
   ngOnInit(): void {
     this.loadCategories();
     if (this.isBrowser) {
       this.loadCurrentUser();
-      this.loadOrCreateCart();
+      this.loadGuestUser();
+      this.subscribeToCartState();
     }
+  }
+
+  /**
+   * Subscribe to cart state from CartService
+   */
+  private subscribeToCartState(): void {
+    this.cartService.cartState$.subscribe(state => {
+      this.cartCount = state.item_count;
+    });
   }
 
   /**
@@ -108,7 +125,6 @@ export class HomepageComponent implements OnInit {
       });
     });
   }
-
 
   /**
    * Handle category card clicks
@@ -186,85 +202,64 @@ export class HomepageComponent implements OnInit {
     alert('Search functionality is not implemented yet.');
   }
 
+  /**
+   * Load authenticated user from localStorage
+   */
   private loadCurrentUser(): void {
-    const userStr = localStorage.getItem('currentUser');
-    if (userStr) {
-      this.currentUser = JSON.parse(userStr);
-    }
-  }
-
-  private loadOrCreateCart(): void {
-    if (this.currentUser?.user_id) {
-      // Load cart for authenticated user
-      this.apiService.getCartByUserId(this.currentUser.user_id).subscribe({
-        next: (cart) => {
-          this.currentCart = cart;
-          this.updateCartCount();
-        },
-        error: (err) => {
-          if (err.status === 404) {
-            // Create new cart for user
-            this.createCart(this.currentUser.user_id, null);
-          }
-        }
-      });
-    } else {
-      // Load or create cart for guest
-      const sessionId = this.getOrCreateSessionId();
-      this.apiService.getCartBySessionId(sessionId).subscribe({
-        next: (cart) => {
-          this.currentCart = cart;
-          this.updateCartCount();
-        },
-        error: (err) => {
-          if (err.status === 404) {
-            // Create new cart for guest
-            this.createCart(null, sessionId);
-          }
-        }
-      });
-    }
-  }
-
-  private createCart(userId: number | null, sessionId: string | null): void {
-    const cartData = userId ? { user_id: userId } : { session_id: sessionId };
-
-    this.apiService.createCart(cartData).subscribe({
-      next: (response) => {
-        this.currentCart = response.cart;
-        this.cartCount = 0;
-      },
-      error: (err) => {
-        console.error('Failed to create cart:', err);
+    if (!this.isBrowser) return;
+    
+    try {
+      const userStr = localStorage.getItem('currentUser');
+      if (userStr) {
+        this.currentUser = JSON.parse(userStr);
+        console.log('✅ User loaded in homepage:', this.currentUser?.user_id);
       }
-    });
-  }
-
-  private getOrCreateSessionId(): string {
-    let sessionId = localStorage.getItem('guestSessionId');
-    if (!sessionId) {
-      sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem('guestSessionId', sessionId);
+    } catch (error) {
+      console.error('❌ Failed to load user from localStorage:', error);
     }
-    return sessionId;
   }
 
-  private updateCartCount(): void {
-    if (!this.currentCart?.cart_id) return;
-
-    this.apiService.getCartSummary(this.currentCart.cart_id.toString()).subscribe({
-      next: (summary) => {
-        this.cartCount = summary.totalItems;
-      },
-      error: (err) => {
-        console.error('Failed to update cart count:', err);
+  /**
+   * Load or create guest user session
+   */
+  private loadGuestUser(): void {
+    if (!this.isBrowser) return;
+    
+    try {
+      const guestStr = localStorage.getItem('guestUser');
+      
+      if (guestStr) {
+        this.guestUser = JSON.parse(guestStr);
+        console.log('✅ Guest user loaded in homepage:', this.guestUser?.session_id);
+      } else if (!this.currentUser) {
+        // Create new guest user if no authenticated user
+        this.guestUser = this.createGuestUser();
+        localStorage.setItem('guestUser', JSON.stringify(this.guestUser));
+        console.log('🆕 New guest user created in homepage:', this.guestUser.session_id);
       }
-    });
+    } catch (error) {
+      console.warn('⚠️ Failed to load/create guest user:', error);
+    }
   }
 
+  /**
+   * Create a new guest user with unique session ID
+   */
+  private createGuestUser(): GuestUser {
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substring(2, 11);
+    const session_id = `session_${timestamp}_${randomStr}`;
+    
+    return {
+      session_id,
+      created_at: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Navigate to cart
+   */
   goToCart(): void {
     this.router.navigate(['/cart']);
   }
 }
-
-  

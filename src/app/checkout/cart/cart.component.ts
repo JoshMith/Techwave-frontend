@@ -32,6 +32,11 @@ interface Cart {
   created_at?: string;
 }
 
+interface GuestUser {
+  session_id: string;
+  created_at: string;
+}
+
 @Component({
   selector: 'app-cart',
   standalone: true,
@@ -49,6 +54,7 @@ export class CartComponent implements OnInit, OnDestroy {
   loading = false;
   error: string | null = null;
   currentUser: any = null;
+  guestUser: GuestUser | null = null;
   isBrowser: boolean;
   isGuest: boolean = true;
 
@@ -74,6 +80,7 @@ export class CartComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     if (this.isBrowser) {
       this.loadCurrentUser();
+      this.loadGuestUser();
       this.subscribeToCartState();
       this.loadCart();
     } else {
@@ -102,7 +109,7 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Load current user
+   * Load current authenticated user
    */
   private loadCurrentUser(): void {
     if (!this.isBrowser) return;
@@ -120,6 +127,23 @@ export class CartComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error('❌ Failed to load user from localStorage:', error);
       this.isGuest = true;
+    }
+  }
+
+  /**
+   * Load guest user from localStorage
+   */
+  private loadGuestUser(): void {
+    if (!this.isBrowser || this.currentUser) return;
+    
+    try {
+      const guestStr = localStorage.getItem('guestUser');
+      if (guestStr) {
+        this.guestUser = JSON.parse(guestStr);
+        console.log('✅ Guest user loaded:', this.guestUser?.session_id);
+      }
+    } catch (error) {
+      console.error('❌ Failed to load guest user:', error);
     }
   }
 
@@ -436,7 +460,8 @@ export class CartComponent implements OnInit, OnDestroy {
       subtotal: this.subtotal,
       shipping: this.shipping,
       tax: this.tax,
-      isGuest: this.isGuest
+      isGuest: this.isGuest,
+      guestUser: this.guestUser
     };
 
     // Store in localStorage for persistence
@@ -543,6 +568,7 @@ export class CartComponent implements OnInit, OnDestroy {
     console.group('🛒 Cart Debug Info');
     console.log('isBrowser:', this.isBrowser);
     console.log('currentUser:', this.currentUser);
+    console.log('guestUser:', this.guestUser);
     console.log('isGuest:', this.isGuest);
     console.log('cart:', this.cart);
     console.log('cartItems:', this.cartItems);
@@ -551,7 +577,7 @@ export class CartComponent implements OnInit, OnDestroy {
     console.log('total:', this.total);
     
     if (this.isBrowser) {
-      console.log('guestSessionId:', localStorage.getItem('guestSessionId'));
+      console.log('guestUser from localStorage:', localStorage.getItem('guestUser'));
       console.log('currentUser from localStorage:', localStorage.getItem('currentUser'));
     }
     console.groupEnd();

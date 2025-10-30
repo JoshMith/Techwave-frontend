@@ -21,6 +21,11 @@ interface Cart {
   created_at: string;
 }
 
+interface GuestUser {
+  session_id: string;
+  created_at: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -38,6 +43,7 @@ export class CartService {
   public cartState$ = this.cartStateSubject.asObservable();
   private currentCart: Cart | null = null;
   private currentUser: any = null;
+  private guestUser: GuestUser | null = null;
   private initializationPromise: Promise<boolean> | null = null;
 
   constructor(
@@ -48,14 +54,14 @@ export class CartService {
     
     if (this.isBrowser) {
       this.loadCurrentUser();
-      // Don't auto-initialize - let components call ensureCartReady when needed
+      this.loadGuestUser();
     } else {
       this.setLoading(false);
     }
   }
 
   /**
-   * Safe localStorage access for current user
+   * Load authenticated user from localStorage
    */
   private loadCurrentUser(): void {
     if (!this.isBrowser) return;
@@ -65,15 +71,65 @@ export class CartService {
       if (userStr) {
         this.currentUser = JSON.parse(userStr);
         this.updateCartState({ isGuest: false });
-        console.log('✅ User loaded:', this.currentUser?.user_id);
-      } else {
-        console.log('ℹ️ No user found - operating as guest');
-        this.updateCartState({ isGuest: true });
+        console.log('✅ Authenticated user loaded:', this.currentUser?.user_id);
       }
     } catch (error) {
       console.warn('⚠️ Failed to load user from localStorage:', error);
-      this.updateCartState({ isGuest: true });
     }
+  }
+
+  /**
+   * Load or create guest user session
+   */
+  private loadGuestUser(): void {
+    if (!this.isBrowser) return;
+    
+    try {
+      const guestStr = localStorage.getItem('guestUser');
+      
+      if (guestStr) {
+        this.guestUser = JSON.parse(guestStr);
+        console.log('✅ Guest user loaded:', this.guestUser?.session_id);
+      } else {
+        // Create new guest user
+        this.guestUser = this.createGuestUser();
+        localStorage.setItem('guestUser', JSON.stringify(this.guestUser));
+        console.log('🆕 New guest user created:', this.guestUser.session_id);
+      }
+      
+      // Update cart state to reflect guest status
+      if (!this.currentUser) {
+        this.updateCartState({ isGuest: true });
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to load/create guest user:', error);
+      // Create temporary guest user
+      this.guestUser = this.createGuestUser();
+    }
+  }
+
+  /**
+   * Create a new guest user with unique session ID
+   */
+  private createGuestUser(): GuestUser {
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substring(2, 11);
+    const session_id = `session_${timestamp}_${randomStr}`;
+    
+    return {
+      session_id,
+      created_at: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Get current session ID (guest or authenticated)
+   */
+  private getSessionId(): string | null {
+    if (this.currentUser?.user_id) {
+      return null; // Authenticated users don't need session_id
+    }
+    return this.guestUser?.session_id || null;
   }
 
   /**
@@ -146,7 +202,20 @@ export class CartService {
    */
   private loadGuestCart(): Promise<boolean> {
     return new Promise((resolve) => {
-      const sessionId = this.getOrCreateSessionId();
+      // Ensure guest user exists
+      if (!this.guestUser) {
+        this.loadGuestUser();
+      }
+
+      const sessionId = this.guestUser?.session_id;
+      
+      if (!sessionId) {
+        console.error('❌ No session ID available for guest');
+        this.handleError('Failed to create guest session');
+        resolve(false);
+        return;
+      }
+
       console.log('🛒 Loading guest cart with session:', sessionId);
       
       this.apiService.getCartBySessionId(sessionId).subscribe({
@@ -229,28 +298,6 @@ export class CartService {
     });
     this.refreshCartSummary();
     this.setLoading(false);
-  }
-
-  /**
-   * Safe session ID creation
-   */
-  private getOrCreateSessionId(): string {
-    if (!this.isBrowser) {
-      return 'temp_session_ssr';
-    }
-    
-    try {
-      let sessionId = localStorage.getItem('guestSessionId');
-      if (!sessionId) {
-        sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('guestSessionId', sessionId);
-        console.log('🆕 New guest session created:', sessionId);
-      }
-      return sessionId;
-    } catch (error) {
-      console.warn('⚠️ Failed to create session ID:', error);
-      return 'temp_session_' + Date.now();
-    }
   }
 
   /**
@@ -366,10 +413,17 @@ export class CartService {
   }
 
   /**
+   * Get guest user info
+   */
+  public getGuestUser(): GuestUser | null {
+    return this.guestUser;
+  }
+
+  /**
    * Check if operating as guest
    */
   public isGuestUser(): boolean {
-    return this.cartStateSubject.value.isGuest;
+    return !this.currentUser && !!this.guestUser;
   }
 
   /**
@@ -448,10 +502,12 @@ export class CartService {
     if (!this.isBrowser) return;
 
     try {
-      const sessionId = localStorage.getItem('guestSessionId');
-      if (!sessionId) {
+      const guestUser = this.getGuestUser();
+      
+      if (!guestUser?.session_id) {
         console.log('ℹ️ No guest session to merge');
         this.currentUser = { user_id: userId };
+        this.updateCartState({ isGuest: false });
         await this.initializeCart();
         return;
       }
@@ -459,7 +515,7 @@ export class CartService {
       console.log('🔄 Merging guest cart for user:', userId);
 
       // Get guest cart
-      this.apiService.getCartBySessionId(sessionId).subscribe({
+      this.apiService.getCartBySessionId(guestUser.session_id).subscribe({
         next: (guestCart) => {
           // Try to get user cart
           this.apiService.getCartByUserId(userId.toString()).subscribe({
@@ -476,12 +532,15 @@ export class CartService {
                 }).subscribe({
                   next: () => {
                     console.log('✅ Guest cart converted to user cart');
-                    localStorage.removeItem('guestSessionId');
+                    this.cleanupGuestSession();
                     this.currentUser = { user_id: userId };
+                    this.updateCartState({ isGuest: false });
                     this.initializeCart();
                   },
                   error: (err) => {
                     console.error('❌ Failed to convert cart:', err);
+                    this.currentUser = { user_id: userId };
+                    this.updateCartState({ isGuest: false });
                     this.initializeCart();
                   }
                 });
@@ -492,12 +551,14 @@ export class CartService {
         error: () => {
           console.log('ℹ️ No guest cart to merge');
           this.currentUser = { user_id: userId };
+          this.updateCartState({ isGuest: false });
           this.initializeCart();
         }
       });
     } catch (error) {
       console.warn('⚠️ Failed to merge guest cart:', error);
       this.currentUser = { user_id: userId };
+      this.updateCartState({ isGuest: false });
       this.initializeCart();
     }
   }
@@ -521,7 +582,7 @@ export class CartService {
           this.apiService.deleteCart(guestCartId.toString()).subscribe({
             next: () => {
               console.log('✅ Guest cart merged and deleted');
-              localStorage.removeItem('guestSessionId');
+              this.cleanupGuestSession();
               this.initializeCart();
             },
             error: (err) => console.error('❌ Failed to delete guest cart:', err)
@@ -539,6 +600,28 @@ export class CartService {
   }
 
   /**
+   * Clean up guest session after login or merge
+   */
+  private cleanupGuestSession(): void {
+    if (!this.isBrowser) return;
+    
+    try {
+      localStorage.removeItem('guestUser');
+      this.guestUser = null;
+      console.log('✅ Guest session cleaned up');
+    } catch (error) {
+      console.warn('⚠️ Failed to cleanup guest session:', error);
+    }
+  }
+
+  /**
+   * Get guest session ID (for compatibility)
+   */
+  public getGuestSessionId(): string | null {
+    return this.guestUser?.session_id || null;
+  }
+
+  /**
    * Debug cart status
    */
   public debugCartStatus(): void {
@@ -546,21 +629,29 @@ export class CartService {
     console.log('isBrowser:', this.isBrowser);
     console.log('currentCart:', this.currentCart);
     console.log('currentUser:', this.currentUser);
+    console.log('guestUser:', this.guestUser);
     console.log('cartState:', this.cartStateSubject.value);
     
     if (this.isBrowser) {
-      console.log('guestSessionId:', localStorage.getItem('guestSessionId'));
+      console.log('guestUser (localStorage):', localStorage.getItem('guestUser'));
       console.log('currentUser (localStorage):', localStorage.getItem('currentUser'));
     }
     console.groupEnd();
   }
 
   /**
-   * Logout - clear cart data
+   * Logout - clear user data but keep guest session
    */
   public logout(): void {
     this.currentUser = null;
     this.currentCart = null;
+    
+    // Create new guest user for post-logout session
+    if (this.isBrowser) {
+      this.guestUser = this.createGuestUser();
+      localStorage.setItem('guestUser', JSON.stringify(this.guestUser));
+    }
+    
     this.updateCartState({
       cart_id: null,
       item_count: 0,
@@ -571,10 +662,11 @@ export class CartService {
     if (this.isBrowser) {
       try {
         localStorage.removeItem('currentUser');
-        // Keep guestSessionId for future guest sessions
       } catch (error) {
         console.warn('⚠️ Failed to clear localStorage:', error);
       }
     }
+    
+    console.log('✅ Logged out, new guest session created');
   }
 }
