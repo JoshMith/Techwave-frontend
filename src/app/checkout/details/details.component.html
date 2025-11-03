@@ -156,7 +156,7 @@
               <div class="delivery-info"></div>
               <span class="delivery-name">{{option.name}}</span>
               <span class="delivery-estimate">{{option.estimate}}</span>
-              <span class="delivery-cost">{{option.cost | currency:'KES'}}</span>
+              <span class="delivery-cost">{{option.cost | currency:'KSh '}}</span>
             </div>
           </div>
         </div>
@@ -178,7 +178,7 @@
               <p class="item-quantity">Qty: {{item.quantity}}</p>
             </div>
             <div class="item-price">
-              {{item.subtotal | currency:'KES'}}
+              {{item.subtotal | currency:'KSh '}}
             </div>
           </div>
         </div>
@@ -187,23 +187,23 @@
         <div class="price-breakdown">
           <div class="price-row">
             <span>Subtotal</span>
-            <span>{{orderData.subtotal | currency:'KES'}}</span>
+            <span>{{orderData.subtotal | currency:'KSh '}}</span>
           </div>
           <div class="price-row">
             <span>Shipping</span>
-            <span>{{selectedDeliveryOption.cost | currency:'KES'}}</span>
+            <span>{{selectedDeliveryOption.cost | currency:'KSh '}}</span>
           </div>
           <div class="price-row">
             <span>Tax (16% VAT)</span>
-            <span>{{orderData.tax | currency:'KES'}}</span>
+            <span>{{orderData.tax | currency:'KSh '}}</span>
           </div>
           <div *ngIf="orderData.couponDiscount > 0" class="price-row discount">
             <span>Discount</span>
-            <span>-{{orderData.couponDiscount | currency:'KES'}}</span>
+            <span>-{{orderData.couponDiscount | currency:'KSh '}}</span>
           </div>
           <div class="price-row total">
             <strong>Total</strong>
-            <strong>{{finalTotal | currency:'KES'}}</strong>
+            <strong>{{finalTotal | currency:'KSh '}}</strong>
           </div>
         </div>
 

@@ -103,7 +103,7 @@ export class DetailsComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.isBrowser) {
-      console.log('🔄 DetailsComponent initialized - starting user load');
+      // console.log('🔄 DetailsComponent initialized - starting user load');
       this.loadCurrentUser();
     }
   }
@@ -128,7 +128,7 @@ export class DetailsComponent implements OnInit {
       this.currentUser = userData;
       this.isGuest = false;
 
-      console.log('✅ User loaded, loading profile and addresses...');
+      // console.log('✅ User loaded, loading profile and addresses...');
       
       // Load user profile and addresses FIRST, then checkout data
       this.loadUserProfileAndAddresses(userData.user_id);
@@ -149,7 +149,7 @@ export class DetailsComponent implements OnInit {
         this.currentUser = { ...this.currentUser, ...user };
         this.contactInfo.email = user.email || '';
         this.contactInfo.phone = user.phone || '';
-        console.log('✅ User profile loaded, now loading addresses...');
+        // console.log('✅ User profile loaded, now loading addresses...');
         
         // Now load addresses, then checkout data
         this.loadAddresses(() => {
@@ -181,7 +181,7 @@ export class DetailsComponent implements OnInit {
     this.isLoadingAddresses = true;
     this.addressError = null;
 
-    console.log('🔄 Loading addresses for user:', this.currentUser.user_id);
+    // console.log('🔄 Loading addresses for user:', this.currentUser.user_id);
 
     this.apiService.getAddressByUserId(this.currentUser.user_id.toString()).subscribe({
       next: (res: any) => {
@@ -189,17 +189,17 @@ export class DetailsComponent implements OnInit {
           ? res
           : (res?.addresses || res?.data || []);
 
-        console.log('✅ Addresses loaded:', addresses);
+        // console.log('✅ Addresses loaded:', addresses);
         this.addresses = addresses;
 
         // Auto-select default address
         const defaultAddress = addresses.find((addr: Address) => addr.is_default);
         if (defaultAddress) {
           this.selectedAddressId = defaultAddress.address_id;
-          console.log('✅ Auto-selected default address:', this.selectedAddressId);
+          // console.log('✅ Auto-selected default address:', this.selectedAddressId);
         } else if (addresses.length > 0) {
           this.selectedAddressId = addresses[0].address_id;
-          console.log('✅ Auto-selected first address:', this.selectedAddressId);
+          // console.log('✅ Auto-selected first address:', this.selectedAddressId);
         } else {
           console.log('ℹ️ No addresses found, showing address form');
           this.showAddressForm = true;
@@ -223,8 +223,8 @@ export class DetailsComponent implements OnInit {
    * Load checkout data from navigation state or localStorage
    */
   loadCheckoutData(): void {
-    console.log('🔄 Loading checkout data...');
-    console.log('📌 Current selectedAddressId:', this.selectedAddressId);
+    // console.log('🔄 Loading checkout data...');
+    // console.log('📌 Current selectedAddressId:', this.selectedAddressId);
     
     // Try navigation state first
     const navigation = this.router.getCurrentNavigation();
@@ -243,8 +243,8 @@ export class DetailsComponent implements OnInit {
    * Process checkout data - FIXED to use current selectedAddressId
    */
   private processCheckoutData(data: any): void {
-    console.log('🔄 Processing checkout data...');
-    console.log('📌 Using selectedAddressId:', this.selectedAddressId);
+    // console.log('🔄 Processing checkout data...');
+    // console.log('📌 Using selectedAddressId:', this.selectedAddressId);
 
     // Normalize items and compute subtotals
     const items: OrderItem[] = (data.items || []).map((it: any) => {
@@ -293,8 +293,8 @@ export class DetailsComponent implements OnInit {
       localStorage.setItem('checkout_data', JSON.stringify(this.orderData));
     }
 
-    console.log('✅ Checkout data loaded with addressId:', this.orderData.addressId);
-    console.log('✅ Full orderData:', this.orderData);
+    // console.log('✅ Checkout data loaded with addressId:', this.orderData.addressId);
+    // console.log('✅ Full orderData:', this.orderData);
   }
 
   /**

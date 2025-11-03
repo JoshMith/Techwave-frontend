@@ -1,6 +1,5 @@
 import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
-import { catchError, tap, switchMap, take } from 'rxjs/operators';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { isPlatformBrowser } from '@angular/common';
 
@@ -91,19 +90,16 @@ export class CartService {
         this.guestUser = JSON.parse(guestStr);
         console.log('✅ Guest user loaded:', this.guestUser?.session_id);
       } else {
-        // Create new guest user
         this.guestUser = this.createGuestUser();
         localStorage.setItem('guestUser', JSON.stringify(this.guestUser));
         console.log('🆕 New guest user created:', this.guestUser.session_id);
       }
       
-      // Update cart state to reflect guest status
       if (!this.currentUser) {
         this.updateCartState({ isGuest: true });
       }
     } catch (error) {
       console.warn('⚠️ Failed to load/create guest user:', error);
-      // Create temporary guest user
       this.guestUser = this.createGuestUser();
     }
   }
@@ -123,20 +119,9 @@ export class CartService {
   }
 
   /**
-   * Get current session ID (guest or authenticated)
-   */
-  private getSessionId(): string | null {
-    if (this.currentUser?.user_id) {
-      return null; // Authenticated users don't need session_id
-    }
-    return this.guestUser?.session_id || null;
-  }
-
-  /**
    * Initialize cart with proper error handling
    */
   public initializeCart(): Promise<boolean> {
-    // Return existing promise if already initializing
     if (this.initializationPromise) {
       return this.initializationPromise;
     }
@@ -146,7 +131,6 @@ export class CartService {
       return Promise.resolve(false);
     }
 
-    // If cart already exists, just verify it's still valid
     if (this.currentCart?.cart_id) {
       console.log('✅ Cart already initialized:', this.currentCart.cart_id);
       this.refreshCartSummary();
@@ -186,7 +170,6 @@ export class CartService {
         error: (err) => {
           console.warn('⚠️ User cart not found:', err.status);
           if (err.status === 404) {
-            // Create new cart for user
             this.createCartForUser(this.currentUser.user_id).then(resolve);
           } else {
             this.handleError('Failed to load user cart');
@@ -202,7 +185,6 @@ export class CartService {
    */
   private loadGuestCart(): Promise<boolean> {
     return new Promise((resolve) => {
-      // Ensure guest user exists
       if (!this.guestUser) {
         this.loadGuestUser();
       }
@@ -227,7 +209,6 @@ export class CartService {
         error: (err) => {
           console.warn('⚠️ Guest cart not found:', err.status);
           if (err.status === 404) {
-            // Create new cart for guest
             this.createCartForGuest(sessionId).then(resolve);
           } else {
             this.handleError('Failed to load guest cart');
@@ -309,13 +290,11 @@ export class CartService {
       return false;
     }
 
-    // If cart exists and is valid, return true
     if (this.currentCart?.cart_id) {
       console.log('✅ Cart already ready:', this.currentCart.cart_id);
       return true;
     }
 
-    // Initialize cart and wait for completion
     console.log('🔄 Ensuring cart is ready...');
     return await this.initializeCart();
   }
@@ -331,7 +310,6 @@ export class CartService {
         return;
       }
 
-      // Ensure cart is ready
       this.ensureCartReady().then(isReady => {
         if (!isReady || !this.currentCart?.cart_id) {
           observer.error({ message: 'Failed to initialize cart. Please try again.' });
@@ -350,7 +328,10 @@ export class CartService {
         this.apiService.addCartItem(cartItemData).subscribe({
           next: (response) => {
             console.log('✅ Item added to cart:', response);
+            
+            // Refresh cart summary immediately after adding
             this.refreshCartSummary();
+            
             observer.next(response);
             observer.complete();
           },
@@ -375,22 +356,82 @@ export class CartService {
   }
 
   /**
-   * Refresh cart summary
+   * Refresh cart summary - ENHANCED with debouncing
    */
+  private refreshTimeout: any = null;
+  
   public refreshCartSummary(): void {
     if (!this.currentCart?.cart_id) {
       console.log('⚠️ No cart to refresh');
       return;
     }
 
+    // Clear any pending refresh
+    if (this.refreshTimeout) {
+      clearTimeout(this.refreshTimeout);
+    }
+
+    // Debounce refresh to avoid excessive API calls
+    this.refreshTimeout = setTimeout(() => {
+      console.log('🔄 Refreshing cart summary for cart:', this.currentCart!.cart_id);
+      
+      this.apiService.getCartSummary(this.currentCart!.cart_id.toString()).subscribe({
+        next: (summary) => {
+          const newState = {
+            cart_id: this.currentCart!.cart_id,
+            item_count: summary.totalItems || 0,
+            total_amount: summary.subtotal || 0,
+            isGuest: !this.currentCart!.user_id
+          };
+          
+          this.updateCartState(newState);
+          console.log('✅ Cart summary refreshed:', newState);
+        },
+        error: (err) => {
+          console.error('❌ Failed to refresh cart summary:', err);
+          
+          // If cart not found, reset
+          if (err.status === 404) {
+            console.log('🔄 Cart not found, resetting...');
+            this.currentCart = null;
+            this.updateCartState({
+              cart_id: null,
+              item_count: 0,
+              total_amount: 0
+            });
+          }
+        }
+      });
+    }, 300); // 300ms debounce
+  }
+
+  /**
+   * Force immediate refresh (no debouncing)
+   */
+  public forceRefreshCartSummary(): void {
+    if (this.refreshTimeout) {
+      clearTimeout(this.refreshTimeout);
+      this.refreshTimeout = null;
+    }
+    
+    if (!this.currentCart?.cart_id) {
+      console.log('⚠️ No cart to refresh');
+      return;
+    }
+
+    console.log('🔄 Force refreshing cart summary for cart:', this.currentCart.cart_id);
+    
     this.apiService.getCartSummary(this.currentCart.cart_id.toString()).subscribe({
       next: (summary) => {
-        this.updateCartState({
+        const newState = {
           cart_id: this.currentCart!.cart_id,
           item_count: summary.total_items || 0,
-          total_amount: summary.subtotal || 0
-        });
-        console.log('✅ Cart summary refreshed:', summary);
+          total_amount: summary.subtotal || 0,
+          isGuest: !this.currentCart!.user_id
+        };
+        
+        this.updateCartState(newState);
+        console.log('✅ Cart summary force refreshed:', newState);
       },
       error: (err) => {
         console.error('❌ Failed to refresh cart summary:', err);
@@ -431,11 +472,14 @@ export class CartService {
    */
   private updateCartState(updates: Partial<CartState>): void {
     const currentState = this.cartStateSubject.value;
-    this.cartStateSubject.next({
+    const newState = {
       ...currentState,
       ...updates,
       isLoading: false
-    });
+    };
+    
+    console.log('📊 Updating cart state:', newState);
+    this.cartStateSubject.next(newState);
   }
 
   /**
@@ -496,132 +540,6 @@ export class CartService {
   }
 
   /**
-   * Merge guest cart after login
-   */
-  public async mergeGuestCartOnLogin(userId: number): Promise<void> {
-    if (!this.isBrowser) return;
-
-    try {
-      const guestUser = this.getGuestUser();
-      
-      if (!guestUser?.session_id) {
-        console.log('ℹ️ No guest session to merge');
-        this.currentUser = { user_id: userId };
-        this.updateCartState({ isGuest: false });
-        await this.initializeCart();
-        return;
-      }
-
-      console.log('🔄 Merging guest cart for user:', userId);
-
-      // Get guest cart
-      this.apiService.getCartBySessionId(guestUser.session_id).subscribe({
-        next: (guestCart) => {
-          // Try to get user cart
-          this.apiService.getCartByUserId(userId.toString()).subscribe({
-            next: (userCart) => {
-              // Merge items from guest to user cart
-              this.mergeCartItems(guestCart.cart_id, userCart.cart_id);
-            },
-            error: (err) => {
-              if (err.status === 404) {
-                // User has no cart, convert guest cart to user cart
-                this.apiService.updateCart(guestCart.cart_id.toString(), {
-                  user_id: userId,
-                  session_id: null
-                }).subscribe({
-                  next: () => {
-                    console.log('✅ Guest cart converted to user cart');
-                    this.cleanupGuestSession();
-                    this.currentUser = { user_id: userId };
-                    this.updateCartState({ isGuest: false });
-                    this.initializeCart();
-                  },
-                  error: (err) => {
-                    console.error('❌ Failed to convert cart:', err);
-                    this.currentUser = { user_id: userId };
-                    this.updateCartState({ isGuest: false });
-                    this.initializeCart();
-                  }
-                });
-              }
-            }
-          });
-        },
-        error: () => {
-          console.log('ℹ️ No guest cart to merge');
-          this.currentUser = { user_id: userId };
-          this.updateCartState({ isGuest: false });
-          this.initializeCart();
-        }
-      });
-    } catch (error) {
-      console.warn('⚠️ Failed to merge guest cart:', error);
-      this.currentUser = { user_id: userId };
-      this.updateCartState({ isGuest: false });
-      this.initializeCart();
-    }
-  }
-
-  /**
-   * Merge cart items
-   */
-  private mergeCartItems(guestCartId: number, userCartId: number): void {
-    this.apiService.getCartItemsByCartId(guestCartId.toString()).subscribe({
-      next: (guestItems) => {
-        const addPromises = guestItems.map((item: any) =>
-          this.apiService.addCartItem({
-            cart_id: userCartId,
-            product_id: item.product_id,
-            quantity: item.quantity
-          }).toPromise()
-        );
-
-        Promise.all(addPromises).then(() => {
-          // Delete guest cart after successful merge
-          this.apiService.deleteCart(guestCartId.toString()).subscribe({
-            next: () => {
-              console.log('✅ Guest cart merged and deleted');
-              this.cleanupGuestSession();
-              this.initializeCart();
-            },
-            error: (err) => console.error('❌ Failed to delete guest cart:', err)
-          });
-        }).catch(err => {
-          console.error('❌ Failed to merge cart items:', err);
-          this.initializeCart();
-        });
-      },
-      error: (err) => {
-        console.error('❌ Failed to get guest cart items:', err);
-        this.initializeCart();
-      }
-    });
-  }
-
-  /**
-   * Clean up guest session after login or merge
-   */
-  private cleanupGuestSession(): void {
-    if (!this.isBrowser) return;
-    
-    try {
-      localStorage.removeItem('guestUser');
-      this.guestUser = null;
-      console.log('✅ Guest session cleaned up');
-    } catch (error) {
-      console.warn('⚠️ Failed to cleanup guest session:', error);
-    }
-  }
-
-  /**
-   * Get guest session ID (for compatibility)
-   */
-  public getGuestSessionId(): string | null {
-    return this.guestUser?.session_id || null;
-  }
-
-  /**
    * Debug cart status
    */
   public debugCartStatus(): void {
@@ -646,7 +564,6 @@ export class CartService {
     this.currentUser = null;
     this.currentCart = null;
     
-    // Create new guest user for post-logout session
     if (this.isBrowser) {
       this.guestUser = this.createGuestUser();
       localStorage.setItem('guestUser', JSON.stringify(this.guestUser));

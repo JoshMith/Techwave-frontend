@@ -32,11 +32,6 @@ interface Cart {
   created_at?: string;
 }
 
-interface GuestUser {
-  session_id: string;
-  created_at: string;
-}
-
 @Component({
   selector: 'app-cart',
   standalone: true,
@@ -54,7 +49,6 @@ export class CartComponent implements OnInit, OnDestroy {
   loading = false;
   error: string | null = null;
   currentUser: any = null;
-  guestUser: GuestUser | null = null;
   isBrowser: boolean;
   isGuest: boolean = true;
 
@@ -80,9 +74,8 @@ export class CartComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     if (this.isBrowser) {
       this.loadCurrentUser();
-      this.loadGuestUser();
       this.subscribeToCartState();
-      this.loadCart();
+      this.initializeCart();
     } else {
       this.loading = false;
     }
@@ -95,15 +88,26 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Subscribe to cart state changes
+   * Subscribe to cart state changes from service
    */
   private subscribeToCartState(): void {
     this.cartSubscription = this.cartService.cartState$.subscribe(state => {
+      console.log('🔄 Cart state updated:', state);
+      
+      // Update local state from service
       this.cartCount = state.item_count;
       this.isGuest = state.isGuest;
       
       if (state.error) {
         this.error = state.error;
+      }
+
+      // If cart_id changed, reload items
+      if (state.cart_id && state.cart_id !== this.cart?.cart_id) {
+        this.cart = this.cart || {} as Cart;
+        this.cart.cart_id = state.cart_id;
+        this.cart.item_count = state.item_count;
+        this.cart.total_amount = state.total_amount;
       }
     });
   }
@@ -131,26 +135,9 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Load guest user from localStorage
+   * Initialize cart using CartService
    */
-  private loadGuestUser(): void {
-    if (!this.isBrowser || this.currentUser) return;
-    
-    try {
-      const guestStr = localStorage.getItem('guestUser');
-      if (guestStr) {
-        this.guestUser = JSON.parse(guestStr);
-        console.log('✅ Guest user loaded:', this.guestUser?.session_id);
-      }
-    } catch (error) {
-      console.error('❌ Failed to load guest user:', error);
-    }
-  }
-
-  /**
-   * Load cart with improved error handling
-   */
-  async loadCart(): Promise<void> {
+  async initializeCart(): Promise<void> {
     this.loading = true;
     this.error = null;
 
@@ -159,14 +146,14 @@ export class CartComponent implements OnInit, OnDestroy {
       return;
     }
 
-    console.log('🛒 Starting cart loading process...');
+    console.log('🛒 Starting cart initialization...');
 
     try {
-      // Ensure cart is ready
+      // Use CartService to ensure cart is ready
       const isReady = await this.cartService.ensureCartReady();
       
       if (!isReady) {
-        this.showErrorAndCreateEmpty('Unable to load cart. Creating a new cart...');
+        this.showErrorAndCreateEmpty('Unable to initialize cart. Please refresh the page.');
         return;
       }
 
@@ -178,20 +165,35 @@ export class CartComponent implements OnInit, OnDestroy {
         return;
       }
 
-      this.cart = currentCart as Cart;
-      console.log('✅ Cart loaded:', this.cart);
+      this.cart = {
+        cart_id: currentCart.cart_id,
+        user_id: currentCart.user_id,
+        session_id: currentCart.session_id,
+        status: currentCart.status,
+        item_count: 0,
+        total_amount: 0,
+        created_at: currentCart.created_at
+      };
+
+      console.log('✅ Cart initialized:', this.cart);
 
       // Load cart items
       await this.loadCartItems(this.cart.cart_id);
 
     } catch (error) {
-      console.error('❌ Error loading cart:', error);
-      this.handleError('Failed to load cart. Please try again.');
+      console.error('❌ Error initializing cart:', error);
+      this.handleError('Failed to initialize cart. Please try again.');
+    }
+  }
+
+  loadCart(): void {
+    if (this.cart && this.cart.cart_id) {
+      this.loadCartItems(this.cart.cart_id);
     }
   }
 
   /**
-   * Load cart items
+   * Load cart items and update summary
    */
   private async loadCartItems(cartId: number): Promise<void> {
     console.log('🛒 Loading cart items for cart:', cartId);
@@ -201,6 +203,10 @@ export class CartComponent implements OnInit, OnDestroy {
         console.log('✅ Cart items loaded:', items.length, 'items');
         this.cartItems = this.processCartItems(items);
         this.cartCount = this.cartItems.length;
+        
+        // Update cart summary from service
+        this.cartService.refreshCartSummary();
+        
         this.loading = false;
         this.error = null;
       },
@@ -214,7 +220,7 @@ export class CartComponent implements OnInit, OnDestroy {
           this.loading = false;
           this.error = null;
         } else {
-          this.handleError('Failed to load cart items. Some items may not be displayed.');
+          this.handleError('Failed to load cart items.');
           this.loading = false;
         }
       }
@@ -234,26 +240,24 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Show error and create empty cart state
-   */
-  private showErrorAndCreateEmpty(message: string): void {
-    this.error = message;
-    this.cartItems = [];
-    this.cartCount = 0;
-    this.loading = false;
-    
-    // Try to create a cart
-    setTimeout(() => {
-      this.error = null;
-    }, 3000);
-  }
-
-  /**
-   * Calculate subtotal
+   * Calculate subtotal from items
    */
   get subtotal(): number {
     if (!this.cartItems || this.cartItems.length === 0) return 0;
-    return this.cartItems.reduce((sum, item) => sum + (item.subtotal || 0), 0);
+
+    const total = this.cartItems.reduce((sum, item) => {
+      const price = item.current_sale_price ?? item.current_price ?? item.unit_price ?? 0;
+      const qty = item.quantity ?? 0;
+      const itemSubtotal = qty * price;
+
+      // keep item.subtotal in sync
+      item.subtotal = Number(itemSubtotal || 0);
+
+      return sum + item.subtotal;
+    }, 0);
+
+    // round to 2 decimals
+    return Math.round(total * 100) / 100;
   }
 
   /**
@@ -269,7 +273,7 @@ export class CartComponent implements OnInit, OnDestroy {
    * Calculate tax
    */
   get tax(): number {
-    return this.subtotal * 0.16; // 16% VAT
+    return this.subtotal * 0; // 16% VAT
   }
 
   /**
@@ -280,7 +284,7 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Update item quantity
+   * Update item quantity with service sync
    */
   updateQuantity(item: CartItem, change: number): void {
     if (!this.isBrowser) {
@@ -302,51 +306,41 @@ export class CartComponent implements OnInit, OnDestroy {
 
     console.log(`🔄 Updating quantity for item ${item.cart_item_id}: ${item.quantity} → ${newQuantity}`);
 
+    // Store old quantity for rollback
+    const oldQuantity = item.quantity;
+    const oldSubtotal = item.subtotal;
+
+    // Optimistic update
+    item.quantity = newQuantity;
+    item.subtotal = item.quantity * (item.current_sale_price || item.unit_price);
+
     this.apiService.updateCartItem(item.cart_item_id.toString(), { quantity: newQuantity }).subscribe({
       next: (response) => {
         console.log('✅ Quantity updated successfully');
-        item.quantity = newQuantity;
-        item.subtotal = item.quantity * (item.current_sale_price || item.unit_price);
         
-        // Update cart summary
-        this.updateCartSummary();
-      },
-      error: (err) => {
-        console.error('❌ Failed to update quantity:', err);
-        const errorMessage = err.error?.message || 'Failed to update quantity';
-        alert(errorMessage);
+        // Update cart summary via service
+        this.cartService.refreshCartSummary();
         
-        // Reload cart to sync state
+        // Reload items to ensure consistency
         if (this.cart) {
           this.loadCartItems(this.cart.cart_id);
         }
-      }
-    });
-  }
-
-  /**
-   * Update cart summary
-   */
-  private updateCartSummary(): void {
-    if (!this.cart?.cart_id) return;
-
-    this.apiService.getCartSummary(this.cart.cart_id.toString()).subscribe({
-      next: (summary) => {
-        if (this.cart) {
-          this.cart.item_count = summary.total_items;
-          this.cart.total_amount = summary.subtotal;
-        }
-        // Also refresh the cart service state
-        this.cartService.refreshCartSummary();
       },
       error: (err) => {
-        console.error('Failed to update cart summary:', err);
+        console.error('❌ Failed to update quantity:', err);
+        
+        // Rollback optimistic update
+        item.quantity = oldQuantity;
+        item.subtotal = oldSubtotal;
+        
+        const errorMessage = err.error?.message || 'Failed to update quantity';
+        alert(errorMessage);
       }
     });
   }
 
   /**
-   * Remove item from cart
+   * Remove item from cart with service sync
    */
   removeItem(item: CartItem): void {
     if (!this.isBrowser) {
@@ -363,11 +357,13 @@ export class CartComponent implements OnInit, OnDestroy {
     this.apiService.removeCartItem(item.cart_item_id.toString()).subscribe({
       next: () => {
         console.log('✅ Item removed successfully');
+        
+        // Remove from local array
         this.cartItems = this.cartItems.filter(i => i.cart_item_id !== item.cart_item_id);
         this.cartCount = this.cartItems.length;
         
-        // Update cart summary
-        this.updateCartSummary();
+        // Update cart summary via service
+        this.cartService.refreshCartSummary();
         
         alert(`"${item.product_title}" removed from cart`);
       },
@@ -418,16 +414,6 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Remove applied coupon
-   */
-  removeCoupon(): void {
-    this.couponDiscount = 0;
-    this.couponApplied = false;
-    this.couponCode = '';
-    alert('Coupon removed');
-  }
-
-  /**
    * Proceed to checkout
    */
   proceedToCheckout(): void {
@@ -449,9 +435,9 @@ export class CartComponent implements OnInit, OnDestroy {
       return;
     }
 
-    console.log('🚀 Proceeding to checkout with cart:', this.cart?.cart_id);
+    // console.log('🚀 Proceeding to checkout with cart:', this.cart?.cart_id);
 
-    // Prepare checkout data to pass to details page
+    // Prepare checkout data
     const checkoutData = {
       cartId: this.cart?.cart_id,
       total: this.total,
@@ -461,54 +447,18 @@ export class CartComponent implements OnInit, OnDestroy {
       shipping: this.shipping,
       tax: this.tax,
       isGuest: this.isGuest,
-      guestUser: this.guestUser
+      guestUser: this.cartService.getGuestUser()
     };
 
-    // Store in localStorage for persistence
+    // Store in localStorage
     if (this.isBrowser) {
       localStorage.setItem('checkout_data', JSON.stringify(checkoutData));
     }
 
-    // Navigate to checkout details page
-    // Guest users can proceed without logging in
+    // Navigate to checkout
     this.router.navigate(['/checkout/details'], {
       state: checkoutData
     });
-  }
-
-  /**
-   * Continue shopping
-   */
-  continueShopping(): void {
-    this.router.navigate(['/shop']);
-  }
-
-  /**
-   * Check if cart is empty
-   */
-  get isCartEmpty(): boolean {
-    return this.cartItems.length === 0;
-  }
-
-  /**
-   * Get display price for an item
-   */
-  getItemPrice(item: CartItem): number {
-    return item.current_sale_price || item.unit_price;
-  }
-
-  /**
-   * Calculate item subtotal
-   */
-  getItemSubtotal(item: CartItem): number {
-    return item.quantity * this.getItemPrice(item);
-  }
-
-  /**
-   * Get product image URL
-   */
-  getProductImage(item: CartItem): string {
-    return item.image_url || 'assets/images/placeholder-product.png';
   }
 
   /**
@@ -527,7 +477,10 @@ export class CartComponent implements OnInit, OnDestroy {
         this.cartCount = 0;
         this.couponApplied = false;
         this.couponDiscount = 0;
+        
+        // Update service
         this.cartService.refreshCartSummary();
+        
         alert('Cart cleared successfully');
       },
       error: (err) => {
@@ -538,11 +491,17 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Retry loading cart
+   * Show error and create empty cart state
    */
-  retryLoadCart(): void {
-    console.log('🔄 Manual retry requested by user');
-    this.loadCart();
+  private showErrorAndCreateEmpty(message: string): void {
+    this.error = message;
+    this.cartItems = [];
+    this.cartCount = 0;
+    this.loading = false;
+    
+    setTimeout(() => {
+      this.error = null;
+    }, 3000);
   }
 
   /**
@@ -555,35 +514,17 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Clear error
+   * Get display price for an item
    */
-  clearError(): void {
-    this.error = null;
+  getItemPrice(item: CartItem): number {
+    return item.current_sale_price || item.unit_price;
   }
 
   /**
-   * Debug cart status
+   * Check if cart is empty
    */
-  debugCart(): void {
-    console.group('🛒 Cart Debug Info');
-    console.log('isBrowser:', this.isBrowser);
-    console.log('currentUser:', this.currentUser);
-    console.log('guestUser:', this.guestUser);
-    console.log('isGuest:', this.isGuest);
-    console.log('cart:', this.cart);
-    console.log('cartItems:', this.cartItems);
-    console.log('cartCount:', this.cartCount);
-    console.log('subtotal:', this.subtotal);
-    console.log('total:', this.total);
-    
-    if (this.isBrowser) {
-      console.log('guestUser from localStorage:', localStorage.getItem('guestUser'));
-      console.log('currentUser from localStorage:', localStorage.getItem('currentUser'));
-    }
-    console.groupEnd();
-    
-    // Also debug cart service
-    this.cartService.debugCartStatus();
+  get isCartEmpty(): boolean {
+    return this.cartItems.length === 0;
   }
 
   // Navigation methods
@@ -596,11 +537,22 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   goToCart(): void {
-    // Already on cart page - refresh
-    this.loadCart();
+    this.initializeCart();
   }
 
   goToHome(): void {
     this.router.navigate(['/']);
+  }
+
+  debugCart(): void {
+    console.group('🛒 Cart Component Debug');
+    console.log('cartItems:', this.cartItems);
+    console.log('cartCount:', this.cartCount);
+    console.log('subtotal:', this.subtotal);
+    console.log('total:', this.total);
+    console.log('cart:', this.cart);
+    console.groupEnd();
+    
+    this.cartService.debugCartStatus();
   }
 }
