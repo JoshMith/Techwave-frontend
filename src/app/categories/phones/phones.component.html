@@ -233,12 +233,13 @@
                                     </span>
                                 </div>
                                 <span class="rating-count">({{ product.review_count }})</span>
+                                <span class="product-price">KSh {{ getDisplayPrice(product) | number:'1.0-0' }}</span>
                             </div>
                             <div class="product-footer">
-                                <span class="product-price">KSh {{ getDisplayPrice(product) | number:'1.0-0' }}</span>
-                                <button class="add-to-cart-btn" (click)="addToCart(product)">
+                                <button class="add-to-cart" (click)="addToCart(product)">
                                     Add to Cart
                                 </button>
+                                  <button class="view-details" (click)="viewProductDetails(product)">View Details</button>
                             </div>
                         </div>
                     </div>

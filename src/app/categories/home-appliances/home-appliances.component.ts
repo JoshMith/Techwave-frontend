@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { Observable, forkJoin, map, switchMap, Subscription } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { CartService } from '../../services/cart.service';
+import { ProductService } from '../../services/product.service';
 
 interface Product {
   product_id: number;
@@ -24,8 +25,8 @@ interface Product {
   };
   rating: number;
   review_count: number;
-  category_name: string;
-  seller_name: string;
+  category_id: number;
+  seller_id: number;
   images: ProductImage[];
 }
 
@@ -53,7 +54,7 @@ export class HomeAppliancesComponent implements OnInit, OnDestroy {
   selectedBrands: string[] = [];
   applianceTypes = ['TV', 'Refrigerator', 'Washing Machine', 'Microwave', 'Air Conditioner'];
   selectedTypes: string[] = [];
-  
+
   sortOptions = [
     { value: 'popularity', label: 'Popularity' },
     { value: 'price-low', label: 'Price: Low to High' },
@@ -71,6 +72,7 @@ export class HomeAppliancesComponent implements OnInit, OnDestroy {
     private router: Router,
     private apiService: ApiService,
     private cartService: CartService,
+    private productService: ProductService,
     @Inject(PLATFORM_ID) private platformId: any
   ) { }
 
@@ -82,7 +84,7 @@ export class HomeAppliancesComponent implements OnInit, OnDestroy {
 
     this.loadProducts();
   }
-  
+
   ngOnDestroy(): void {
     if (this.cartSubscription) {
       this.cartSubscription.unsubscribe();
@@ -102,7 +104,7 @@ export class HomeAppliancesComponent implements OnInit, OnDestroy {
     this.cartService.addToCart(product.product_id, 1).subscribe({
       next: (response) => {
         this.addingToCart = false;
-        const message = response.message === 'Cart item quantity updated' 
+        const message = response.message === 'Cart item quantity updated'
           ? `${product.title} quantity updated in cart!`
           : `${product.title} added to cart!`;
         alert(message);
@@ -166,23 +168,23 @@ export class HomeAppliancesComponent implements OnInit, OnDestroy {
     if (!url) return this.getFallbackImage();
 
     if (url.startsWith('http://') || url.startsWith('https://')) {
-        return url;
+      return url;
     }
 
     if (url.startsWith('/')) {
-        if (isPlatformBrowser(this.platformId)) {
-            return `${window.location.origin}${url}`;
-        } else {
-            // For SSR, you can either:
-            // 1. Return relative URL (will work when hydrated in browser)
-            return url;
-            // 2. Or use your actual domain
-            // return `https://your-domain.com${url}`;
-        }
+      if (isPlatformBrowser(this.platformId)) {
+        return `${window.location.origin}${url}`;
+      } else {
+        // For SSR, you can either:
+        // 1. Return relative URL (will work when hydrated in browser)
+        return url;
+        // 2. Or use your actual domain
+        // return `https://your-domain.com${url}`;
+      }
     }
 
     return this.apiService.getProductImageUrl(url);
-}
+  }
 
   private extractBrands(): void {
     const brands = new Set(
@@ -221,14 +223,14 @@ export class HomeAppliancesComponent implements OnInit, OnDestroy {
         return false;
       }
 
-      if (this.selectedBrands.length > 0 && 
-          !this.selectedBrands.some(brand => product.title.startsWith(brand))) {
+      if (this.selectedBrands.length > 0 &&
+        !this.selectedBrands.some(brand => product.title.startsWith(brand))) {
         return false;
       }
 
       if (this.selectedTypes.length > 0) {
         const productType = product.specs.type || product.title.split(' ')[1] || '';
-        const matchesType = this.selectedTypes.some(type => 
+        const matchesType = this.selectedTypes.some(type =>
           productType.toLowerCase().includes(type.toLowerCase()));
         if (!matchesType) return false;
       }
@@ -306,5 +308,9 @@ export class HomeAppliancesComponent implements OnInit, OnDestroy {
 
   onSearch(): void {
     alert('Search functionality is not implemented yet.');
+  }
+  viewProductDetails(product: Product): void {
+    this.productService.setSelectedProduct(product);
+    this.router.navigate(['/product', product.product_id]);
   }
 }

@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { Observable, Subscription, forkJoin, map, switchMap } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { CartService } from '../../services/cart.service';
+import { ProductService } from '../../services/product.service';
 
 interface Product {
   product_id: number;
@@ -18,14 +19,14 @@ interface Product {
     type?: string;
     platform?: string;
     resolution?: string;
-    storage?: string;
+    storage?: any;
     features?: string;
     [key: string]: any;
   };
   rating: number;
   review_count: number;
-  category_name: string;
-  seller_name: string;
+  category_id: number;
+  seller_id: number;
   images: ProductImage[];
 }
 
@@ -73,7 +74,9 @@ export class GamingComponent implements OnInit {
   constructor(
     private router: Router,
     private apiService: ApiService,
-    private cartService: CartService
+    private cartService: CartService,
+    private productService: ProductService,
+    
   ) { }
 
   ngOnInit(): void {
@@ -313,6 +316,9 @@ export class GamingComponent implements OnInit {
   onSearch(): void {
     alert('Search functionality is not implemented yet.');
   }
-
+  viewProductDetails(product: Product): void {
+    this.productService.setSelectedProduct(product);
+    this.router.navigate(['/product', product.product_id]);
+  }
 
 }

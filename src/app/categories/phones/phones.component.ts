@@ -5,6 +5,8 @@ import { Router } from '@angular/router';
 import { forkJoin, map, switchMap, Subscription } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { CartService } from '../../services/cart.service';
+import { ProductService } from '../../services/product.service';
+
 
 interface Product {
   product_id: number;
@@ -16,7 +18,7 @@ interface Product {
   specs: {
     brand: string;
     storage?: number;
-    ram?: number;
+    ram?: any;
     has5G?: boolean;
     [key: string]: any;
   };
@@ -82,6 +84,7 @@ export class PhonesComponent implements OnInit {
     private router: Router,
     private apiService: ApiService,
     private cartService: CartService,
+    private productService: ProductService,
     @Inject(PLATFORM_ID) private platformId: any
   ) { }
 
@@ -380,5 +383,14 @@ export class PhonesComponent implements OnInit {
     if (specs.has5G) parts.push('5G');
     if (specs.ram) parts.push(`${specs.ram}GB RAM`);
     return parts.join(', ');
+  }
+
+  /**
+ * Navigate to product details page
+ * @param product - The product to view
+ */
+  viewProductDetails(product: Product): void {
+    this.productService.setSelectedProduct(product);
+    this.router.navigate(['/product', product.product_id]);
   }
 }

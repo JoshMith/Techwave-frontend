@@ -208,7 +208,10 @@
                                 <span class="rating-value">{{ product.rating | number:'1.1-1' }}</span>
                                 <span class="review-count">({{ product.review_count }})</span>
                             </div>
-                            <button class="add-to-cart" (click)="addToCart(product)">Add to Cart</button>
+                            <div>
+                                <button class="add-to-cart" (click)="addToCart(product)">Add to Cart</button>
+                                <button class="view-details" (click)="viewProductDetails(product)">View Details</button>
+                            </div>
                         </div>
                     </div>
                 </div>

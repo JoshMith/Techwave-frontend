@@ -121,11 +121,9 @@
             <h3>Price Range</h3>
             <div class="price-range">
               <div class="price-inputs">
-                <input type="number" [(ngModel)]="priceRange.min" (change)="applyFilters()"
-                  aria-label="Minimum price">
+                <input type="number" [(ngModel)]="priceRange.min" (change)="applyFilters()" aria-label="Minimum price">
                 <span>-</span>
-                <input type="number" [(ngModel)]="priceRange.max" (change)="applyFilters()"
-                  aria-label="Maximum price">
+                <input type="number" [(ngModel)]="priceRange.max" (change)="applyFilters()" aria-label="Maximum price">
               </div>
               <button class="apply-btn" (click)="applyFilters()">Apply</button>
             </div>
@@ -197,7 +195,10 @@
                 <span class="rating-value">{{product.rating | number:'1.1-1'}}</span>
                 <span class="review-count">({{product.review_count}})</span>
               </div>
-              <button class="add-to-cart" (click)="addToCart(product)">Add to Cart</button>
+              <div>
+                <button class="add-to-cart" (click)="addToCart(product)">Add to Cart</button>
+                <button class="view-details" (click)="viewProductDetails(product)">View Details</button>
+              </div>
             </div>
           </div>
         </div>

@@ -1,117 +1,25 @@
-<!-- Header Navigation -->
-<header class="header">
-  <nav class="nav-container">
-    <div class="nav-items">
-      <a href="#" class="nav-link">Home</a>
-      <a href="/shop" class="nav-link">Shop</a>
-      <div class="dropdown">
-        <a class="nav-link dropdown-trigger">
-          Categories
-          <svg class="dropdown-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
-            xmlns="http://www.w3.org/2000/svg">
-            <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-              stroke-linejoin="round" />
-          </svg>
-        </a>
-        <div class="dropdown-menu">
-          <a href="/categories/Phones" class="dropdown-link" (click)="onCategoryClick('Phones')">
-            <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
-              xmlns="http://www.w3.org/2000/svg">
-              <rect x="5" y="2" width="14" height="20" rx="2" ry="2" stroke="currentColor" stroke-width="2" />
-              <line x1="12" y1="18" x2="12.01" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round" />
-            </svg>
-            Phones
-          </a>
-          <a href="/categories/Laptops" class="dropdown-link" (click)="onCategoryClick('Laptops')">
-            <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
-              xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="4" width="20" height="12" rx="2" ry="2" stroke="currentColor" stroke-width="2" />
-              <line x1="2" y1="20" x2="22" y2="20" stroke="currentColor" stroke-width="2" />
-            </svg>
-            Laptops
-          </a>
-          <a href="/categories/Accessories" class="dropdown-link" (click)="onCategoryClick('Accessories')">
-            <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
-              xmlns="http://www.w3.org/2000/svg">
-              <path d="M3 18V15C3 13.3431 4.34315 12 6 12C7.65686 12 9 13.3431 9 15V18" stroke="currentColor"
-                stroke-width="2" />
-              <path d="M21 18V15C21 13.3431 19.6569 12 18 12C16.3431 12 15 13.3431 15 15V18" stroke="currentColor"
-                stroke-width="2" />
-              <path
-                d="M9 9C9 6.79086 10.7909 5 13 5H11C8.79086 5 7 6.79086 7 9V12H15V9C15 6.79086 16.2091 5 18.5 5H16.5C14.2909 5 12.5 6.79086 12.5 9"
-                stroke="currentColor" stroke-width="2" />
-            </svg>
-            Accessories
-          </a>
-          <a href="/categories/Home Appliances" class="dropdown-link" (click)="onCategoryClick('Home Appliances')">
-            <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
-              xmlns="http://www.w3.org/2000/svg">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="2" />
-              <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
-              <path d="M12 1V3" stroke="currentColor" stroke-width="2" />
-              <path d="M21 12H23" stroke="currentColor" stroke-width="2" />
-              <path d="M12 21V23" stroke="currentColor" stroke-width="2" />
-              <path d="M1 12H3" stroke="currentColor" stroke-width="2" />
-            </svg>
-            Home Appliances
-          </a>
-          <a href="/categories/Gaming" class="dropdown-link" (click)="onCategoryClick('Gaming')">
-            <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
-              xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="6" width="20" height="12" rx="4" ry="4" stroke="currentColor" stroke-width="2" />
-              <circle cx="8" cy="12" r="2" stroke="currentColor" stroke-width="2" />
-              <path d="M16 10L18 12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round" />
-            </svg>
-            Gaming
-          </a>
-          <a href="/categories/Audio & Sound" class="dropdown-link" (click)="onCategoryClick('Audio & Sound')">
-            <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
-              xmlns="http://www.w3.org/2000/svg">
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" stroke="currentColor" stroke-width="2" />
-              <path d="M19.07 4.93C20.98 6.84 20.98 10.16 19.07 12.07M15.54 8.46C16.17 9.09 16.17 10.09 15.54 10.72"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-            Audio & Sound
-          </a>
-        </div>
-      </div>
-      <a href="/deals" class="nav-link">Deals</a>
-      <a href="/signup" class="nav-link">Signup</a>
-    </div>
-    <div class="cart-icon-container">
-      <button class="cart-icon" aria-label="Cart" (click)="goToCart()" title="Cart">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path
-            d="M6 2L3 6V20C3 20.5304 3.21071 21.0391 3.58579 21.4142C3.96086 21.7893 4.46957 22 5 22H19C19.5304 22 20.0391 21.7893 20.4142 21.4142C20.7893 21.0391 21 20.5304 21 20V6L18 2H6Z"
-            stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-          <path d="M3 6H21" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-          <path
-            d="M16 10C16 11.0609 15.5786 12.0783 14.8284 12.8284C14.0783 13.5786 13.0609 14 12 14C10.9391 14 9.92172 13.5786 9.17157 12.8284C8.42143 12.0783 8 11.0609 8 10"
-            stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-        <span class="cart-count" *ngIf="cartCount > 0">{{ cartCount }}</span>
-      </button>
-    </div>
-    <div class="search-bar-container">
-      <input type="text" class="search-input" placeholder="Search products, brands, or categories..." />
-      <button class="search-btn" aria-label="Search" (click)="onSearch(searchQuery)" title="Search">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path
-            d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z"
-            stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-      </button>
-    </div>
-  </nav>
-</header>
+<!-- Loading State -->
+<div *ngIf="isLoading" class="loading-container">
+  <div class="loading-spinner"></div>
+  <p>Loading product details...</p>
+</div>
 
-<!-- Main Container -->
-<div class="main-container">
+<!-- Error State -->
+<div *ngIf="errorMessage && !isLoading" class="error-container">
+  <h2>Error Loading Product</h2>
+  <p>{{ errorMessage }}</p>
+  <button class="retry-btn" (click)="loadProduct(getCurrentProductId())">Try Again</button>
+</div>
+
+<!-- Main Content -->
+<div *ngIf="!isLoading && !errorMessage && product" class="main-container">
   <!-- Breadcrumb -->
   <div class="breadcrumb">
-    <a href="#">Home</a> / <a href="#">Phones</a> / <a href="#">Samsung</a> / Galaxy A54
+    <a routerLink="/">Home</a> / 
+    <a [routerLink]="['/categories', categoryRoute]">
+      {{ breadcrumbCategory }}
+    </a> / 
+    <span>{{ product.title }}</span>
   </div>
 
   <!-- Product Header -->
@@ -119,9 +27,9 @@
     <!-- Product Images -->
     <div class="product-images">
       <div class="main-image">
-        <img [src]="mainImageSrc" alt="Samsung Galaxy A54">
+        <img [src]="mainImageSrc" [alt]="product.title">
       </div>
-      <div class="thumbnail-grid">
+      <div class="thumbnail-grid" *ngIf="thumbnails.length > 0">
         <div *ngFor="let thumbnail of thumbnails" class="thumbnail" [class.active]="thumbnail.active"
           (click)="changeImage(thumbnail)">
           <img [src]="thumbnail.thumbnailSrc" [alt]="thumbnail.altText">
@@ -131,50 +39,42 @@
 
     <!-- Product Details -->
     <div class="product-details">
-      <h1 class="product-title">Samsung Galaxy A54 5G</h1>
-      <div class="product-brand">Samsung</div>
+      <h1 class="product-title">{{ product.title }}</h1>
+      <div class="product-brand" *ngIf="product.specs.brand">{{ product.specs.brand }}</div>
+      <div class="product-battery" *ngIf="product.specs.battery">{{ product.specs.battery}}</div>
 
       <div class="rating-section">
         <div class="stars">
-          <span class="star" *ngFor="let star of getStars(4.2)">{{ star ? '★' : '☆' }}</span>
+          <span class="star" *ngFor="let star of getStars(product.rating)">{{ star ? '★' : '☆' }}</span>
         </div>
-        <span class="rating-text">4.2 (42 reviews)</span>
+        <span class="rating-text">{{ product.rating.toFixed(1) }} ({{ product.review_count }} reviews)</span>
       </div>
 
       <div class="price-section">
-        <span class="current-price">KSh 34,900</span>
-        <span class="original-price">KSh 39,900</span>
-        <span class="savings">Save KSh 5,000</span>
+        <span class="current-price">{{ formatPrice(getDisplayPrice()) }}</span>
+        <span *ngIf="isOnSale()" class="original-price">{{ formatPrice(product.price) }}</span>
+        <span *ngIf="isOnSale()" class="savings">Save {{ formatPrice(getSavings()) }}</span>
       </div>
 
-      <div class="specs-list">
+      <div class="specs-preview" *ngIf="product.specs">
         <h3 class="specs-title">Key Specifications</h3>
-        <div class="spec-item">
-          <span class="spec-label">Display</span>
-          <span class="spec-value">6.4" Super AMOLED</span>
-        </div>
-        <div class="spec-item">
-          <span class="spec-label">Storage</span>
-          <span class="spec-value">128GB</span>
-        </div>
-        <div class="spec-item">
-          <span class="spec-label">RAM</span>
-          <span class="spec-value">8GB</span>
-        </div>
-        <div class="spec-item">
-          <span class="spec-label">Camera</span>
-          <span class="spec-value">50MP Triple Camera</span>
-        </div>
-        <div class="spec-item">
-          <span class="spec-label">Connectivity</span>
-          <span class="spec-value">5G Ready</span>
-        </div>
+        <div class="specs-summary">{{ productService.formatSpecs(product.specs) }}</div>
+      </div>
+
+      <div class="stock-info">
+        <span [class]="product.stock > 0 ? 'in-stock' : 'out-of-stock'">
+          {{ product.stock > 0 ? 'In Stock' : 'Out of Stock' }}
+        </span>
       </div>
 
       <div class="action-buttons">
-        <button class="add-to-cart-btn" (click)="addToCart()">{{cartButtonText}}</button>
+        <button class="add-to-cart-btn" (click)="addToCart()" [disabled]="product.stock < 1 || addingToCart">
+          {{ cartButtonText }}
+        </button>
         <button class="wishlist-btn" [style.background]="isWishlisted ? '#3b82f6' : 'white'"
-          [style.color]="isWishlisted ? 'white' : '#3b82f6'" (click)="toggleWishlist()">♥</button>
+          [style.color]="isWishlisted ? 'white' : '#3b82f6'" (click)="toggleWishlist()">
+          {{ isWishlisted ? '♥' : '♡' }}
+        </button>
       </div>
 
       <div class="delivery-info">
@@ -206,24 +106,15 @@
         (click)="showTab('description')">Description</button>
       <button class="tab-btn" [class.active]="activeTab === 'specifications'"
         (click)="showTab('specifications')">Specifications</button>
-      <button class="tab-btn" [class.active]="activeTab === 'reviews'" (click)="showTab('reviews')">Reviews</button>
+      <button class="tab-btn" [class.active]="activeTab === 'reviews'" (click)="showTab('reviews')">Reviews ({{
+        reviews.length }})</button>
     </div>
 
     <!-- Description Tab -->
     <div id="description" class="tab-content" [class.hidden]="activeTab !== 'description'">
       <div class="description">
         <h3>Product Description</h3>
-        <p>The Samsung Galaxy A54 5G delivers premium experiences at an accessible price point. With its stunning
-          6.4-inch Super AMOLED display, you'll enjoy vibrant colors and sharp details whether you're streaming videos,
-          browsing photos, or playing games.</p>
-
-        <p>Capture life's moments with the versatile triple camera system featuring a 50MP main camera, 12MP ultra-wide
-          lens, and 5MP macro camera. The advanced image processing ensures your photos look professional in any
-          lighting condition.</p>
-
-        <p>Stay connected with 5G connectivity and enjoy all-day performance with the powerful Exynos 1380 processor and
-          8GB of RAM. The 5000mAh battery keeps you going from morning to night, and when you do need to charge, 25W
-          fast charging gets you back up and running quickly.</p>
+        <p>{{ product.description }}</p>
       </div>
     </div>
 
@@ -232,49 +123,49 @@
       <div class="specs-list">
         <h3 class="specs-title">Detailed Specifications</h3>
         <div class="spec-item" *ngFor="let spec of specifications">
-          <span class="spec-label">{{spec.label}}</span>
-          <span class="spec-value">{{spec.value}}</span>
+          <span class="spec-label">{{ spec.label }}</span>
+          <span class="spec-value">{{ spec.value }}</span>
         </div>
       </div>
     </div>
 
     <!-- Reviews Tab -->
     <div id="reviews" class="tab-content" [class.hidden]="activeTab !== 'reviews'">
-      <div class="reviews-summary">
+      <div class="reviews-summary" *ngIf="reviews.length > 0">
         <div class="rating-overview">
-          <div class="average-rating">4.2</div>
+          <div class="average-rating">{{ product.rating.toFixed(1) }}</div>
           <div class="stars">
-            <span class="star">★</span>
-            <span class="star">★</span>
-            <span class="star">★</span>
-            <span class="star">★</span>
-            <span class="star">★</span>
+            <span class="star" *ngFor="let star of getStars(product.rating)">{{ star ? '★' : '☆' }}</span>
           </div>
-          <div>Based on 42 reviews</div>
+          <div>Based on {{ product.review_count }} reviews</div>
         </div>
         <div class="rating-breakdown">
           <div class="rating-bar" *ngFor="let rating of [5,4,3,2,1]">
-            <span>{{rating}} ★</span>
+            <span>{{ rating }} ★</span>
             <div class="bar">
               <div class="bar-fill" [style.width.%]="getRatingPercentage(rating)"></div>
             </div>
-            <span>{{[20,13,6,2,1][rating-1]}}</span>
+            <span>{{ getRatingPercentage(rating) | number:'1.0-0' }}%</span>
           </div>
         </div>
+      </div>
+
+      <div *ngIf="reviews.length === 0" class="no-reviews">
+        <p>No reviews yet for this product.</p>
       </div>
 
       <div class="individual-review" *ngFor="let review of reviews">
         <div class="review-header">
           <div>
-            <div class="reviewer-name">{{review.reviewerName}}</div>
+            <div class="reviewer-name">{{ review.user_name || 'Anonymous' }}</div>
             <div class="stars">
               <span class="star" *ngFor="let star of getStars(review.rating)">{{ star ? '★' : '☆' }}</span>
             </div>
           </div>
-          <div class="review-date">{{review.date}}</div>
+          <div class="review-date">{{ review.created_at | date:'mediumDate' }}</div>
         </div>
         <div class="review-text">
-          {{review.text}}
+          {{ review.comment }}
         </div>
       </div>
     </div>

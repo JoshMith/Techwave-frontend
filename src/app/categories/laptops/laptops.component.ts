@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { Observable, forkJoin, map, switchMap, Subscription } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { CartService } from '../../services/cart.service';
+import { ProductService } from '../../services/product.service';
 
 interface Product {
   product_id: number;
@@ -70,6 +71,7 @@ export class LaptopsComponent implements OnInit, OnDestroy {
     private router: Router, 
     private apiService: ApiService,
     private cartService: CartService,
+    private productService: ProductService,
     @Inject(PLATFORM_ID) private platformId: any
   ) { }
 
@@ -312,4 +314,10 @@ export class LaptopsComponent implements OnInit, OnDestroy {
   onSearch(): void {
     alert('Search functionality is not implemented yet.');
   }
+
+  viewProductDetails(product: Product): void {
+    this.productService.setSelectedProduct(product);
+    this.router.navigate(['/product', product.product_id]);
+  }
+  
 }
