@@ -27,12 +27,14 @@
     <!-- Product Images -->
     <div class="product-images">
       <div class="main-image">
-        <img [src]="mainImageSrc" [alt]="product.title">
+        <img [src]="mainImageSrc" [alt]="product.title" (error)="onImageError($event)">
       </div>
-      <div class="thumbnail-grid" *ngIf="thumbnails.length > 0">
-        <div *ngFor="let thumbnail of thumbnails" class="thumbnail" [class.active]="thumbnail.active"
-          (click)="changeImage(thumbnail)">
-          <img [src]="thumbnail.thumbnailSrc" [alt]="thumbnail.altText">
+      <div class="thumbnail-grid" *ngIf="thumbnails.length > 1">
+        <div *ngFor="let thumbnail of thumbnails" 
+             class="thumbnail" 
+             [class.active]="thumbnail.active"
+             (click)="changeImage(thumbnail)">
+          <img [src]="thumbnail.thumbnailSrc" [alt]="thumbnail.altText" (error)="onImageError($event)">
         </div>
       </div>
     </div>
@@ -40,14 +42,13 @@
     <!-- Product Details -->
     <div class="product-details">
       <h1 class="product-title">{{ product.title }}</h1>
-      <div class="product-brand" *ngIf="product.specs.brand">{{ product.specs.brand }}</div>
-      <div class="product-battery" *ngIf="product.specs.battery">{{ product.specs.battery}}</div>
+      <div class="product-brand" *ngIf="product.specs?.brand">Brand: {{ product.specs.brand }}</div>
 
       <div class="rating-section">
         <div class="stars">
           <span class="star" *ngFor="let star of getStars(product.rating)">{{ star ? '★' : '☆' }}</span>
         </div>
-        <span class="rating-text">{{ product.rating.toFixed(1) }} ({{ product.review_count }} reviews)</span>
+        <span class="rating-text">{{ product.rating }} ({{ product.review_count }} reviews)</span>
       </div>
 
       <div class="price-section">
@@ -56,23 +57,32 @@
         <span *ngIf="isOnSale()" class="savings">Save {{ formatPrice(getSavings()) }}</span>
       </div>
 
-      <div class="specs-preview" *ngIf="product.specs">
+      <div class="specs-preview" *ngIf="specifications.length > 0">
         <h3 class="specs-title">Key Specifications</h3>
-        <div class="specs-summary">{{ productService.formatSpecs(product.specs) }}</div>
+        <div class="specs-summary">
+          <div *ngFor="let spec of specifications.slice(0, 4)" style="margin-bottom: 0.5rem;">
+            <strong>{{ spec.label }}:</strong> {{ spec.value }}
+          </div>
+        </div>
       </div>
 
       <div class="stock-info">
         <span [class]="product.stock > 0 ? 'in-stock' : 'out-of-stock'">
-          {{ product.stock > 0 ? 'In Stock' : 'Out of Stock' }}
+          {{ product.stock > 0 ? ('In Stock (' + product.stock + ' available)') : 'Out of Stock' }}
         </span>
       </div>
 
       <div class="action-buttons">
-        <button class="add-to-cart-btn" (click)="addToCart()" [disabled]="product.stock < 1 || addingToCart">
+        <button class="add-to-cart-btn" 
+                (click)="addToCart()" 
+                [disabled]="product.stock < 1 || addingToCart">
           {{ cartButtonText }}
         </button>
-        <button class="wishlist-btn" [style.background]="isWishlisted ? '#3b82f6' : 'white'"
-          [style.color]="isWishlisted ? 'white' : '#3b82f6'" (click)="toggleWishlist()">
+        <button class="wishlist-btn" 
+                [style.background]="isWishlisted ? '#3b82f6' : 'white'"
+                [style.color]="isWishlisted ? 'white' : '#3b82f6'" 
+                (click)="toggleWishlist()"
+                title="Add to Wishlist">
           {{ isWishlisted ? '♥' : '♡' }}
         </button>
       </div>
@@ -102,12 +112,21 @@
   <!-- Product Tabs -->
   <div class="product-tabs">
     <div class="tabs-nav">
-      <button class="tab-btn" [class.active]="activeTab === 'description'"
-        (click)="showTab('description')">Description</button>
-      <button class="tab-btn" [class.active]="activeTab === 'specifications'"
-        (click)="showTab('specifications')">Specifications</button>
-      <button class="tab-btn" [class.active]="activeTab === 'reviews'" (click)="showTab('reviews')">Reviews ({{
-        reviews.length }})</button>
+      <button class="tab-btn" 
+              [class.active]="activeTab === 'description'"
+              (click)="showTab('description')">
+        Description
+      </button>
+      <button class="tab-btn" 
+              [class.active]="activeTab === 'specifications'"
+              (click)="showTab('specifications')">
+        Specifications
+      </button>
+      <button class="tab-btn" 
+              [class.active]="activeTab === 'reviews'" 
+              (click)="showTab('reviews')">
+        Reviews ({{ reviews.length }})
+      </button>
     </div>
 
     <!-- Description Tab -->
@@ -126,11 +145,70 @@
           <span class="spec-label">{{ spec.label }}</span>
           <span class="spec-value">{{ spec.value }}</span>
         </div>
+        <div *ngIf="specifications.length === 0" class="no-reviews">
+          <p>No detailed specifications available for this product.</p>
+        </div>
       </div>
     </div>
 
     <!-- Reviews Tab -->
     <div id="reviews" class="tab-content" [class.hidden]="activeTab !== 'reviews'">
+      <!-- Add Review Button -->
+      <div class="review-header-section">
+        <button class="write-review-btn" (click)="toggleReviewForm()" *ngIf="!showReviewForm">
+          Write a Review
+        </button>
+      </div>
+
+      <!-- Review Form -->
+      <div class="review-form-container" *ngIf="showReviewForm">
+        <h3>Write Your Review</h3>
+        <form class="review-form" (ngSubmit)="submitReview()">
+          <div class="form-group">
+            <label for="rating">Your Rating *</label>
+            <div class="star-rating">
+              <span *ngFor="let star of [1,2,3,4,5]" 
+                    class="star-input"
+                    [class.filled]="star <= getDisplayRating()"
+                    (click)="setRating(star)"
+                    (mouseenter)="setHoverRating(star)"
+                    (mouseleave)="clearHoverRating()">
+                ★
+              </span>
+            </div>
+            <small *ngIf="reviewForm.rating > 0">You rated this {{ reviewForm.rating }} star(s)</small>
+          </div>
+
+          <div class="form-group">
+            <label for="comment">Your Review *</label>
+            <textarea 
+              id="comment"
+              [(ngModel)]="reviewForm.comment"
+              name="comment"
+              rows="5"
+              placeholder="Share your thoughts about this product..."
+              required
+              [disabled]="submittingReview">
+            </textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" 
+                    class="cancel-btn" 
+                    (click)="toggleReviewForm()"
+                    [disabled]="submittingReview">
+              Cancel
+            </button>
+            <button type="submit" 
+                    class="submit-review-btn"
+                    [disabled]="submittingReview || reviewForm.rating === 0 || !reviewForm.comment.trim()">
+              {{ submittingReview ? 'Submitting...' : 'Submit Review' }}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Reviews Summary -->
       <div class="reviews-summary" *ngIf="reviews.length > 0">
         <div class="rating-overview">
           <div class="average-rating">{{ product.rating.toFixed(1) }}</div>
@@ -150,22 +228,26 @@
         </div>
       </div>
 
-      <div *ngIf="reviews.length === 0" class="no-reviews">
-        <p>No reviews yet for this product.</p>
+      <div *ngIf="reviews.length === 0 && !showReviewForm" class="no-reviews">
+        <p>No reviews yet for this product. Be the first to review!</p>
       </div>
 
-      <div class="individual-review" *ngFor="let review of reviews">
-        <div class="review-header">
-          <div>
-            <div class="reviewer-name">{{ review.user_name || 'Anonymous' }}</div>
-            <div class="stars">
-              <span class="star" *ngFor="let star of getStars(review.rating)">{{ star ? '★' : '☆' }}</span>
+      <!-- Individual Reviews -->
+      <div class="reviews-list" *ngIf="reviews.length > 0">
+        <h3>Customer Reviews</h3>
+        <div class="individual-review" *ngFor="let review of reviews">
+          <div class="review-header">
+            <div>
+              <div class="reviewer-name">{{ review.user_name || 'Anonymous' }}</div>
+              <div class="stars">
+                <span class="star" *ngFor="let star of getStars(review.rating)">{{ star ? '★' : '☆' }}</span>
+              </div>
             </div>
+            <div class="review-date">{{ review.created_at | date:'mediumDate' }}</div>
           </div>
-          <div class="review-date">{{ review.created_at | date:'mediumDate' }}</div>
-        </div>
-        <div class="review-text">
-          {{ review.comment }}
+          <div class="review-text">
+            {{ review.comment }}
+          </div>
         </div>
       </div>
     </div>

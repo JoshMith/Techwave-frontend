@@ -4,7 +4,9 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { ProductService, Product, Review } from '../services/product.service';
 import { CartService } from '../services/cart.service';
+import { ApiService } from '../services/api.service';
 import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 
 interface Thumbnail {
   imageSrc: string;
@@ -20,7 +22,7 @@ interface Specification {
 
 @Component({
   selector: 'app-product',
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './product.component.html',
   styleUrls: ['./product.component.css']
 })
@@ -29,7 +31,8 @@ export class ProductComponent implements OnInit, OnDestroy {
     private router: Router,
     public route: ActivatedRoute,
     public productService: ProductService,
-    private cartService: CartService
+    private cartService: CartService,
+    private apiService: ApiService
   ) { }
 
   // Loading and error states
@@ -48,6 +51,15 @@ export class ProductComponent implements OnInit, OnDestroy {
   mainImageSrc: string = '';
   cartButtonText: string = 'Add to Cart';
   addingToCart = false;
+
+  // Review form state
+  showReviewForm: boolean = false;
+  submittingReview: boolean = false;
+  reviewForm = {
+    rating: 0,
+    comment: ''
+  };
+  hoverRating: number = 0;
 
   thumbnails: Thumbnail[] = [];
   specifications: Specification[] = [];
@@ -100,14 +112,12 @@ export class ProductComponent implements OnInit, OnDestroy {
         this.setupProductDisplay();
         this.isLoading = false;
         
-        // Log success for debugging
-        console.log('Product loaded successfully:', product);
-        console.log('Reviews loaded:', reviews.length);
+        // console.log('Product loaded successfully:', product);
+        // console.log('Reviews loaded:', reviews.length);
       },
       error: (err) => {
         console.error('Error loading product:', err);
         
-        // More specific error messages based on error type
         if (err.status === 404) {
           this.errorMessage = 'Product not found. Please check the product ID.';
         } else if (err.status === 401) {
@@ -131,11 +141,9 @@ export class ProductComponent implements OnInit, OnDestroy {
     this.setupProductDisplay();
     this.isLoading = false;
     
-    // Try to load reviews separately without blocking the display
     this.loadReviewsOnly(product.product_id.toString());
   }
 
-  
   /**
    * Load reviews only (non-blocking)
    */
@@ -147,7 +155,7 @@ export class ProductComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.warn('Could not load reviews:', err);
-        this.reviews = []; // Ensure reviews is always an array
+        this.reviews = [];
       }
     });
   }
@@ -158,13 +166,8 @@ export class ProductComponent implements OnInit, OnDestroy {
   private setupProductDisplay(): void {
     if (!this.product) return;
 
-    // Setup images
     this.setupImages();
-    
-    // Setup specifications
     this.setupSpecifications();
-
-    // Setup category route
     this.setupCategoryRoute();
   }
 
@@ -209,11 +212,9 @@ export class ProductComponent implements OnInit, OnDestroy {
     this.specifications = [];
     const specs = this.product.specs;
 
-    // Add common specifications
     if (specs.brand) this.specifications.push({ label: 'Brand', value: specs.brand });
     if (specs.model) this.specifications.push({ label: 'Model', value: specs.model });
     
-    // Phone specs
     if (specs.display) this.specifications.push({ label: 'Display', value: specs.display });
     if (specs.screen) this.specifications.push({ label: 'Screen Size', value: specs.screen });
     if (specs.storage) this.specifications.push({ label: 'Storage', value: specs.storage });
@@ -221,18 +222,15 @@ export class ProductComponent implements OnInit, OnDestroy {
     if (specs.camera) this.specifications.push({ label: 'Camera', value: specs.camera });
     if (specs.battery) this.specifications.push({ label: 'Battery', value: specs.battery });
     
-    // Laptop specs
     if (specs.processor) this.specifications.push({ label: 'Processor', value: specs.processor });
     if (specs.os) this.specifications.push({ label: 'Operating System', value: specs.os });
     if (specs.graphics) this.specifications.push({ label: 'Graphics', value: specs.graphics });
     
-    // General specs
     if (specs.connectivity) this.specifications.push({ label: 'Connectivity', value: specs.connectivity });
     if (specs.color) this.specifications.push({ label: 'Color', value: specs.color });
     if (specs.weight) this.specifications.push({ label: 'Weight', value: specs.weight });
     if (specs.dimensions) this.specifications.push({ label: 'Dimensions', value: specs.dimensions });
     
-    // Add any other specs dynamically
     for (const key in specs) {
       if (specs.hasOwnProperty(key) && 
           !['brand', 'model', 'display', 'screen', 'storage', 'ram', 'camera', 'battery', 
@@ -318,6 +316,112 @@ export class ProductComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Toggle review form visibility
+   */
+  toggleReviewForm(): void {
+    this.showReviewForm = !this.showReviewForm;
+    if (!this.showReviewForm) {
+      this.resetReviewForm();
+    }
+  }
+
+  /**
+   * Set rating for review
+   */
+  setRating(rating: number): void {
+    this.reviewForm.rating = rating;
+  }
+
+  /**
+   * Set hover rating
+   */
+  setHoverRating(rating: number): void {
+    this.hoverRating = rating;
+  }
+
+  /**
+   * Clear hover rating
+   */
+  clearHoverRating(): void {
+    this.hoverRating = 0;
+  }
+
+  /**
+   * Get display rating (hover or selected)
+   */
+  getDisplayRating(): number {
+    return this.hoverRating || this.reviewForm.rating;
+  }
+
+  /**
+   * Submit review
+   */
+  submitReview(): void {
+    if (!this.product) return;
+
+    // Validate review
+    if (this.reviewForm.rating === 0) {
+      alert('Please select a rating');
+      return;
+    }
+
+    if (!this.reviewForm.comment.trim()) {
+      alert('Please enter a comment');
+      return;
+    }
+
+    this.submittingReview = true;
+
+    const reviewData = {
+      product_id: this.product.product_id,
+      rating: this.reviewForm.rating,
+      comment: this.reviewForm.comment.trim()
+    };
+
+    this.apiService.createReview(reviewData).subscribe({
+      next: (response) => {
+        console.log('Review submitted successfully:', response);
+        alert('Thank you for your review!');
+        
+        // Reload reviews
+        this.loadReviewsOnly(this.product!.product_id.toString());
+        
+        // Reset and hide form
+        this.resetReviewForm();
+        this.showReviewForm = false;
+        this.submittingReview = false;
+
+        // Reload product to get updated rating
+        this.loadProduct(this.product!.product_id.toString());
+      },
+      error: (err) => {
+        console.error('Error submitting review:', err);
+        
+        if (err.status === 401) {
+          alert('Please log in to submit a review');
+        } else if (err.error?.message) {
+          alert(err.error.message);
+        } else {
+          alert('Failed to submit review. Please try again.');
+        }
+        
+        this.submittingReview = false;
+      }
+    });
+  }
+
+  /**
+   * Reset review form
+   */
+  resetReviewForm(): void {
+    this.reviewForm = {
+      rating: 0,
+      comment: ''
+    };
+    this.hoverRating = 0;
+  }
+
+  /**
    * Get stars array for rating display
    */
   getStars(rating: number): number[] {
@@ -391,5 +495,12 @@ export class ProductComponent implements OnInit, OnDestroy {
    */
   getCurrentProductId(): string {
     return this.route.snapshot.params['id'];
+  }
+
+  /**
+   * Handle image error
+   */
+  onImageError(event: any): void {
+    event.target.src = this.getFallbackImage();
   }
 }
