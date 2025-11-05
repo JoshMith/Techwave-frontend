@@ -144,7 +144,7 @@ export class ProductService {
    */
   private processImages(images: any[]): ProductImage[] {
     if (!images || !Array.isArray(images)) return [];
-
+ 
     return images.map(img => ({
       image_url: this.ensureAbsoluteUrl(img.image_url),
       alt_text: img.alt_text || 'Product image',

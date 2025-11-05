@@ -280,12 +280,54 @@
               </div>
             </div>
 
-            <div class="form-group">
-              <label for="productSpecs">Product Specifications</label>
-              <textarea id="productSpecs" [(ngModel)]="newProduct.specs" name="productSpecs" class="form-textarea"
-                rows="4" placeholder="Enter technical specifications, features, etc. (optional)"></textarea>
-              <small style="color: #6b7280; font-size: 0.8rem;">Optional: Add technical details, dimensions, features,
-                etc.</small>
+            <!-- Product Images Section -->
+            <div class="form-section">
+              <h3 class="section-title">Product Images</h3>
+
+              <div class="form-group full-width">
+                <label class="form-label required">Upload Images</label>
+                <div class="image-upload-area" (click)="fileInput.click()" (dragover)="onDragOver($event)"
+                  (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
+                  <div class="upload-icon">📷</div>
+                  <div class="upload-text">Click to upload or drag and drop</div>
+                  <div class="upload-subtext">PNG, JPG up to 5MB each. First image will be the main photo.</div>
+                  <input #fileInput type="file" class="file-input" multiple accept="image/*"
+                    (change)="onFileSelected($event)">
+                </div>
+                <div id="imagePreview" class="image-preview">
+                  <div *ngFor="let image of uploadedImages; let i = index" class="image-preview-item">
+                    <img [src]="image.url" [alt]="image.name" class="preview-image">
+                    <button type="button" class="remove-image" (click)="removeImage(i)">×</button>
+                  </div>
+                </div>
+                <span class="help-text">Add multiple angles - front, back, sides, ports, and any accessories
+                  included</span>
+                <div *ngIf="uploadedImages.length === 0 && productForm.touched" class="error-message">
+                  At least one image is required
+                </div>
+              </div>
+            </div>
+
+            <!-- Technical Specifications Section -->
+            <div class="form-section">
+              <h3 class="section-title">Technical Specifications</h3>
+
+              <div class="form-group full-width">
+                <label class="form-label">Specifications</label>
+                <div class="specs-container">
+                  <div id="specsContainer">
+                    <div *ngFor="let spec of specs; let i = index" class="spec-row">
+                      <input type="text" class="spec-key" [(ngModel)]="newProduct.spec.key"
+                        [ngModelOptions]="{standalone: true}" placeholder="Feature name (e.g., Storage)">
+                      <input type="text" class="spec-value" [(ngModel)]="newProduct.spec.value"
+                        [ngModelOptions]="{standalone: true}" placeholder="Value (e.g., 128GB)">
+                      <button type="button" class="remove-spec-btn" (click)="removeSpecification(i)">×</button>
+                    </div>
+                  </div>
+                  <button type="button" class="add-spec-btn" (click)="addSpecification()">+ Add Specification</button>
+                </div>
+                <span class="help-text">Add key specifications like storage, RAM, display size, etc.</span>
+              </div>
             </div>
 
             <div class="form-actions">
@@ -359,7 +401,7 @@
                     {{product.stock}}
                   </span>
                 </td>
-                
+
                 <td>
                   <span class="status-badge" [class]="product.status === 'active' ? 'delivered' : 'cancelled'">
                     {{product.status || 'active'}}

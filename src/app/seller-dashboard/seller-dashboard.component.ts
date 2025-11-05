@@ -53,7 +53,7 @@ interface Product {
   price: number;
   sale_price?: number;
   stock: number;
-  specs?: string;
+  specs?: { key: string, value: string }[] | string;
   status?: string;
 }
 
@@ -707,6 +707,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
       this.productError = 'Sale price must be less than regular price';
       return false;
     }
+
     return true;
   }
 
@@ -720,6 +721,16 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
       stock: 0,
       specs: ''
     };
+  }
+
+  addSpecification(): void {
+    this.specs.push({ key: '', value: '' });
+  }
+
+  removeSpecification(index: number): void {
+    if (this.specs.length > 1) {
+      this.specs.splice(index, 1);
+    }
   }
 
   // Orders management methods
