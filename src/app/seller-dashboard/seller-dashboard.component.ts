@@ -186,8 +186,15 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     price: 0,
     sale_price: undefined,
     stock: 0,
-    specs: ''
+    specs: []
   };
+  
+  // NEW: Specifications array for add product form
+  specs: { key: string, value: string }[] = [{ key: '', value: '' }];
+  
+  // NEW: Images array for add product form
+  uploadedImages: { file: File, url: string, name: string }[] = [];
+  
   editingProduct: Product | null = null;
   productError: string | null = null;
   productSuccess: string | null = null;
@@ -273,6 +280,9 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     switch (view) {
       case 'add-product':
         this.loadCategories();
+        this.resetNewProduct();
+        this.specs = [{ key: '', value: '' }];
+        this.uploadedImages = [];
         break;
       case 'manage-orders':
         this.loadAllOrders();
@@ -384,7 +394,6 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
       const user = JSON.parse(userString);
       const userId = user.id || user.user_id;
 
-      // Get all sellers and find the one matching the current user
       this.apiService.getSellers()
         .pipe(takeUntil(this.destroy$))
         .subscribe({
@@ -392,7 +401,6 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
             const userSeller = sellers.find((s: any) => s.user_id === userId);
 
             if (userSeller) {
-              // console.log('Found seller profile:', userSeller);
               this.sellerProfile = userSeller;
               this.profileForm = {
                 business_name: userSeller.business_name || '',
@@ -400,7 +408,6 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
                 business_license: userSeller.business_license || ''
               };
             } else {
-              // No seller profile exists yet
               this.sellerProfile = null;
             }
             this.profileLoading = false;
@@ -446,7 +453,6 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     this.profileSuccess = null;
 
     if (this.sellerProfile && this.sellerProfile.seller_id) {
-      // Update existing profile
       this.apiService.updateSeller(this.sellerProfile.seller_id.toString(), this.profileForm)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
@@ -462,7 +468,6 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
           }
         });
     } else {
-      // Create new profile
       this.apiService.createSeller(this.profileForm)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
@@ -511,7 +516,6 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
       });
   }
 
-  // Product filters/state for the UI filters block
   productSearch = '';
   productFilterCategory = '';
   productFilterMinPrice: number | null = null;
@@ -519,12 +523,10 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   productFilterStatus = '';
   private filteredProductsList: any[] = [];
 
-  // Exposed property used by the template
   get filteredProducts(): any[] {
     return this.filteredProductsList;
   }
 
-  // Apply filters to this.products and update filteredProductsList
   filterProducts(): void {
     const search = (this.productSearch || '').trim().toLowerCase();
     const category = this.productFilterCategory;
@@ -592,42 +594,139 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
       });
   }
 
+  // NEW: Image handling methods
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      Array.from(input.files).forEach(file => {
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            this.uploadedImages.push({
+              file: file,
+              url: e.target?.result as string,
+              name: file.name
+            });
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    const uploadArea = event.currentTarget as HTMLElement;
+    uploadArea.classList.add('dragover');
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    const uploadArea = event.currentTarget as HTMLElement;
+    uploadArea.classList.remove('dragover');
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    const uploadArea = event.currentTarget as HTMLElement;
+    uploadArea.classList.remove('dragover');
+
+    if (event.dataTransfer?.files) {
+      Array.from(event.dataTransfer.files).forEach(file => {
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            this.uploadedImages.push({
+              file: file,
+              url: e.target?.result as string,
+              name: file.name
+            });
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+  }
+
+  removeImage(index: number): void {
+    this.uploadedImages.splice(index, 1);
+  }
+
+  addSpecification(): void {
+    this.specs.push({ key: '', value: '' });
+  }
+
+  removeSpecification(index: number): void {
+    if (this.specs.length > 1) {
+      this.specs.splice(index, 1);
+    }
+  }
+
   onAddProduct(): void {
+    // Validate images
+    if (this.uploadedImages.length === 0) {
+      this.productError = 'Please upload at least one product image';
+      return;
+    }
+
+    // Filter and validate specifications
+    const validSpecs = this.specs.filter(spec => 
+      spec.key.trim() !== '' && spec.value.trim() !== ''
+    );
+
+    // Convert specs to JSON string
+    const specsJson = JSON.stringify(validSpecs);
+
+    // Update newProduct with specs
+    this.newProduct.specs = specsJson;
+
     if (this.validateProduct(this.newProduct)) {
       try {
         const userString = localStorage.getItem('currentUser');
         const sellerString = sessionStorage.getItem('sellerData');
-        window.addEventListener('beforeunload', () => {
-          sessionStorage.removeItem('sellerData');
-        }); // Clear seller data on page unload
+        
         if (userString) {
           const user = JSON.parse(userString);
           const seller = sellerString ? JSON.parse(sellerString) : null;
 
-          const productData = {
-            seller_id: seller?.seller_id,
-            category_id: this.newProduct.category_id,
-            title: this.newProduct.title,
-            description: this.newProduct.description,
-            price: this.newProduct.price,
-            sale_price: this.newProduct.sale_price || null,
-            stock: this.newProduct.stock || 0,
-            specs: this.newProduct.specs || null
-          };
+          // Create FormData for file upload
+          const formData = new FormData();
+          
+          formData.append('seller_id', seller?.seller_id || '');
+          formData.append('category_id', this.newProduct.category_id);
+          formData.append('title', this.newProduct.title);
+          formData.append('description', this.newProduct.description);
+          formData.append('price', this.newProduct.price.toString());
+          formData.append('sale_price', this.newProduct.sale_price?.toString() || '');
+          formData.append('stock', this.newProduct.stock.toString());
+          formData.append('specs', specsJson);
 
-          // console.log('Creating product with data:', productData);
+          // Append all images
+          this.uploadedImages.forEach((image, index) => {
+            formData.append('images', image.file, image.file.name);
+          });
 
-          this.apiService.createProduct(productData)
+          console.log('Creating product with specs:', validSpecs);
+          console.log('Number of images:', this.uploadedImages.length);
+
+          this.apiService.createProduct(formData)
             .pipe(takeUntil(this.destroy$))
             .subscribe({
               next: (response) => {
                 this.productSuccess = 'Product added successfully!';
                 this.resetNewProduct();
+                this.specs = [{ key: '', value: '' }];
+                this.uploadedImages = [];
                 this.loadSellerData();
+                
+                // Auto-navigate to products view after 2 seconds
+                setTimeout(() => {
+                  this.navigateTo('products');
+                }, 2000);
               },
               error: (error) => {
                 console.error('Error creating product:', error);
-                this.productError = 'Failed to create product. Please try again.';
+                this.productError = error.error?.message || 'Failed to create product. Please try again.';
               }
             });
         } else {
@@ -656,9 +755,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
           },
           error: (error) => {
             console.error('Error updating product:', error);
-            setTimeout(() => {
-              this.productError = 'Failed to update product. Please try again.';
-            }, 10000);
+            this.productError = 'Failed to update product. Please try again.';
           }
         });
     }
@@ -719,18 +816,8 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
       price: 0,
       sale_price: undefined,
       stock: 0,
-      specs: ''
+      specs: []
     };
-  }
-
-  addSpecification(): void {
-    this.specs.push({ key: '', value: '' });
-  }
-
-  removeSpecification(index: number): void {
-    if (this.specs.length > 1) {
-      this.specs.splice(index, 1);
-    }
   }
 
   // Orders management methods
@@ -1110,14 +1197,12 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     this.isLoadingOrderDetails = true;
     this.orderDetails = {};
 
-    // Get the order first
     this.apiService.getOrderById(orderId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (order) => {
           this.selectedOrder = order;
 
-          // Load related data
           const userId = order.user_id;
           const addressId = order.address_id;
 
@@ -1135,13 +1220,11 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
               this.orderDetails.user = data.user;
               this.orderDetails.address = data.address;
 
-              // Filter order items for this order
               const allItems = data.orderItems.data || data.orderItems || [];
               this.orderDetails.items = allItems.filter((item: any) =>
                 item.order_id === orderId || item.order_id === order.order_id
               );
 
-              // Find payment for this order
               const allPayments = data.payment.data || data.payment || [];
               this.orderDetails.payment = allPayments.find((payment: any) =>
                 payment.order_id === orderId || payment.order_id === order.order_id
