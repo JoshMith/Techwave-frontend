@@ -188,13 +188,13 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     stock: 0,
     specs: []
   };
-  
+
   // NEW: Specifications array for add product form
   specs: { key: string, value: string }[] = [{ key: '', value: '' }];
-  
+
   // NEW: Images array for add product form
   uploadedImages: { file: File, url: string, name: string }[] = [];
-  
+
   editingProduct: Product | null = null;
   productError: string | null = null;
   productSuccess: string | null = null;
@@ -255,6 +255,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     payment?: any;
   } = {};
   isLoadingOrderDetails = false;
+  isSubmittingProduct = false;
 
   constructor(private apiService: ApiService) { }
 
@@ -663,81 +664,220 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   }
 
   onAddProduct(): void {
-    // Validate images
-    if (this.uploadedImages.length === 0) {
-      this.productError = 'Please upload at least one product image';
+    // Clear previous messages
+    this.clearMessages();
+
+    // Validate basic product info (images are optional for product creation)
+    if (!this.validateProduct(this.newProduct)) {
       return;
     }
 
+    // Check if images are provided (warn but don't block)
+    const hasImages = this.uploadedImages.length > 0;
+    if (!hasImages) {
+      console.warn('⚠️ No images provided - product will be created without images');
+    }
+
     // Filter and validate specifications
-    const validSpecs = this.specs.filter(spec => 
+    const validSpecs = this.specs.filter(spec =>
       spec.key.trim() !== '' && spec.value.trim() !== ''
     );
 
+    // Convert specs array to flat JSON object
+    let specsObject: any = null;
+    if (validSpecs.length > 0) {
+      specsObject = {};
+      validSpecs.forEach(spec => {
+        specsObject[spec.key.trim()] = spec.value.trim();
+      });
+    }
+    
+
     // Convert specs to JSON string
-    const specsJson = JSON.stringify(validSpecs);
+    const specsJson = specsObject ? JSON.stringify(specsObject) : null;
 
-    // Update newProduct with specs
-    this.newProduct.specs = specsJson;
+    this.isSubmittingProduct = true;
 
-    if (this.validateProduct(this.newProduct)) {
-      try {
-        const userString = localStorage.getItem('currentUser');
-        const sellerString = sessionStorage.getItem('sellerData');
-        
-        if (userString) {
-          const user = JSON.parse(userString);
-          const seller = sellerString ? JSON.parse(sellerString) : null;
+    try {
+      const userString = localStorage.getItem('currentUser');
+      const sellerString = sessionStorage.getItem('sellerData');
 
-          // Create FormData for file upload
-          const formData = new FormData();
-          
-          formData.append('seller_id', seller?.seller_id || '');
-          formData.append('category_id', this.newProduct.category_id);
-          formData.append('title', this.newProduct.title);
-          formData.append('description', this.newProduct.description);
-          formData.append('price', this.newProduct.price.toString());
-          formData.append('sale_price', this.newProduct.sale_price?.toString() || '');
-          formData.append('stock', this.newProduct.stock.toString());
-          formData.append('specs', specsJson);
-
-          // Append all images
-          this.uploadedImages.forEach((image, index) => {
-            formData.append('images', image.file, image.file.name);
-          });
-
-          console.log('Creating product with specs:', validSpecs);
-          console.log('Number of images:', this.uploadedImages.length);
-
-          this.apiService.createProduct(formData)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-              next: (response) => {
-                this.productSuccess = 'Product added successfully!';
-                this.resetNewProduct();
-                this.specs = [{ key: '', value: '' }];
-                this.uploadedImages = [];
-                this.loadSellerData();
-                
-                // Auto-navigate to products view after 2 seconds
-                setTimeout(() => {
-                  this.navigateTo('products');
-                }, 2000);
-              },
-              error: (error) => {
-                console.error('Error creating product:', error);
-                this.productError = error.error?.message || 'Failed to create product. Please try again.';
-              }
-            });
-        } else {
-          this.productError = 'User session expired. Please log in again.';
-        }
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        this.productError = 'Invalid user session. Please log in again.';
+      if (!userString) {
+        this.productError = 'User session expired. Please log in again.';
+        this.isSubmittingProduct = false;
+        return;
       }
+
+      const user = JSON.parse(userString);
+      const seller = sellerString ? JSON.parse(sellerString) : null;
+
+      // Prepare product data (WITHOUT images)
+      const productData = {
+        seller_id: seller?.seller_id,
+        category_id: this.newProduct.category_id,
+        title: this.newProduct.title,
+        description: this.newProduct.description,
+        price: this.newProduct.price,
+        sale_price: this.newProduct.sale_price || null,
+        stock: this.newProduct.stock || 0,
+        specs: specsJson
+      };
+
+      console.log('📦 Creating product:', productData);
+
+      // STEP 1: Create the product first
+      this.apiService.createProduct(productData)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (productResponse) => {
+            console.log('✅ Product created successfully:', productResponse);
+
+            const createdProduct = productResponse.product || productResponse;
+            const productId = createdProduct.product_id || createdProduct.id;
+
+            // STEP 2: Upload images if available (independent operation)
+            if (hasImages && productId) {
+              this.uploadProductImages(productId, createdProduct.title);
+            } else {
+              // No images to upload - just show success
+              this.handleProductCreationSuccess(createdProduct.title, false);
+            }
+          },
+          error: (error) => {
+            console.error('❌ Failed to create product:', error);
+            this.productError = error.error?.message || 'Failed to create product. Please try again.';
+            this.isSubmittingProduct = false;
+          }
+        });
+
+    } catch (error) {
+      console.error('❌ Error in product creation:', error);
+      this.productError = 'An unexpected error occurred. Please try again.';
+      this.isSubmittingProduct = false;
     }
   }
+
+  /**
+   * Upload images for a product (separate API call)
+   */
+  private uploadProductImages(productId: string | number, productTitle: string): void {
+    console.log('📸 Uploading images for product:', productId);
+
+    // Create FormData for image upload
+    const formData = new FormData();
+    formData.append('product_id', productId.toString());
+
+    // Append all images
+    this.uploadedImages.forEach((image, index) => {
+      formData.append('images', image.file, image.file.name);
+      // Set first image as primary
+      if (index === 0) {
+        formData.append('is_primary', 'true');
+      }
+    });
+
+    this.apiService.uploadProductImages(formData)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (imageResponse) => {
+          console.log('✅ Images uploaded successfully:', imageResponse);
+          this.handleProductCreationSuccess(productTitle, true);
+        },
+        error: (imageError) => {
+          console.error('⚠️ Failed to upload images:', imageError);
+          // Product was created successfully, but images failed
+          this.handleProductCreationSuccess(productTitle, false, imageError.error?.message);
+        }
+      });
+  }
+
+  /**
+   * Handle successful product creation with appropriate messaging
+   */
+  private handleProductCreationSuccess(
+    productTitle: string,
+    imagesUploaded: boolean,
+    imageError?: string
+  ): void {
+    this.isSubmittingProduct = false;
+
+    // Construct success message
+    if (imagesUploaded) {
+      this.productSuccess = `✅ Product "${productTitle}" created successfully with images!`;
+    } else if (imageError) {
+      this.productSuccess = `✅ Product "${productTitle}" created successfully, but images failed to upload: ${imageError}. You can add images later.`;
+    } else {
+      this.productSuccess = `✅ Product "${productTitle}" created successfully! You can add images later.`;
+    }
+
+    // Reset form
+    this.resetNewProduct();
+    this.specs = [{ key: '', value: '' }];
+    this.uploadedImages = [];
+
+    // Reload dashboard data
+    this.loadSellerData();
+
+    // Auto-navigate to products view after 3 seconds
+    setTimeout(() => {
+      if (this.currentView === 'add-product') {
+        this.navigateTo('products');
+      }
+    }, 3000);
+  }
+
+  /**
+   * Validate product data (images are now optional)
+   */
+  private validateProduct(product: Product): boolean {
+    if (!product.title.trim()) {
+      this.productError = 'Product title is required';
+      return false;
+    }
+    if (product.title.length > 200) {
+      this.productError = 'Product title must be 200 characters or less';
+      return false;
+    }
+    if (!product.description.trim()) {
+      this.productError = 'Product description is required';
+      return false;
+    }
+    if (product.price <= 0) {
+      this.productError = 'Product price must be greater than 0';
+      return false;
+    }
+    if (!product.category_id) {
+      this.productError = 'Please select a category';
+      return false;
+    }
+    if (product.stock < 0) {
+      this.productError = 'Stock cannot be negative';
+      return false;
+    }
+    if (product.sale_price && product.sale_price >= product.price) {
+      this.productError = 'Sale price must be less than regular price';
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Reset product form
+   */
+  private resetNewProduct(): void {
+    this.newProduct = {
+      category_id: '',
+      title: '',
+      description: '',
+      price: 0,
+      sale_price: undefined,
+      stock: 0,
+      specs: []
+    };
+    this.isSubmittingProduct = false;
+  }
+
 
   onEditProduct(product: any): void {
     this.editingProduct = { ...product };
@@ -777,47 +917,6 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
           }
         });
     }
-  }
-
-  private validateProduct(product: Product): boolean {
-    if (!product.title.trim()) {
-      this.productError = 'Product title is required';
-      return false;
-    }
-    if (!product.description.trim()) {
-      this.productError = 'Product description is required';
-      return false;
-    }
-    if (product.price <= 0) {
-      this.productError = 'Product price must be greater than 0';
-      return false;
-    }
-    if (!product.category_id) {
-      this.productError = 'Please select a category';
-      return false;
-    }
-    if (product.stock < 0) {
-      this.productError = 'Stock cannot be negative';
-      return false;
-    }
-    if (product.sale_price && product.sale_price >= product.price) {
-      this.productError = 'Sale price must be less than regular price';
-      return false;
-    }
-
-    return true;
-  }
-
-  private resetNewProduct(): void {
-    this.newProduct = {
-      category_id: '',
-      title: '',
-      description: '',
-      price: 0,
-      sale_price: undefined,
-      stock: 0,
-      specs: []
-    };
   }
 
   // Orders management methods

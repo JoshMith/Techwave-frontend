@@ -144,6 +144,7 @@ export class ProductComponent implements OnInit, OnDestroy {
     this.loadReviewsOnly(product.product_id.toString());
   }
 
+
   /**
    * Load reviews only (non-blocking)
    */
@@ -182,6 +183,14 @@ export class ProductComponent implements OnInit, OnDestroy {
       this.breadcrumbCategory = 'Products';
       this.categoryRoute = 'products';
     }
+  }
+
+  /** * Navigate back to product listing
+   */
+  goBack(): void {
+    // Return to previous page or product listing dynamically
+    // Here is the format: http://localhost:4200/categories/Phones
+    this.router.navigate([`/categories/${this.categoryRoute}`]);
   }
 
   /**

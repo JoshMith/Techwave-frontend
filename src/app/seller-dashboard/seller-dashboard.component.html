@@ -282,10 +282,10 @@
 
             <!-- Product Images Section -->
             <div class="form-section">
-              <h3 class="section-title">Product Images *</h3>
+              <h3 class="section-title">Product Images (Optional)</h3>
 
               <div class="form-group full-width">
-                <label class="form-label required">Upload Images</label>
+                <label class="form-label">Upload Images</label>
                 <div class="image-upload-area" (click)="fileInput.click()" (dragover)="onDragOver($event)"
                   (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
                   <div class="upload-icon">📷</div>
@@ -294,16 +294,18 @@
                   <input #fileInput type="file" class="file-input" multiple accept="image/*"
                     (change)="onFileSelected($event)">
                 </div>
-                <div id="imagePreview" class="image-preview">
+                <div id="imagePreview" class="image-preview" *ngIf="uploadedImages.length > 0">
                   <div *ngFor="let image of uploadedImages; let i = index" class="image-preview-item">
                     <img [src]="image.url" [alt]="image.name" class="preview-image">
                     <button type="button" class="remove-image" (click)="removeImage(i)">×</button>
                   </div>
                 </div>
-                <span class="help-text">Add multiple angles - front, back, sides, ports, and any accessories
-                  included</span>
-                <div *ngIf="uploadedImages.length === 0" class="error-message">
-                  At least one image is required
+                <span class="help-text">
+                  💡 Images are optional. You can add product without images and upload them later.
+                  <br>Add multiple angles - front, back, sides, ports, and any accessories included.
+                </span>
+                <div *ngIf="uploadedImages.length === 0" class="info-message">
+                  ℹ️ No images selected. Product will be created without images.
                 </div>
               </div>
             </div>
@@ -338,6 +340,7 @@
         </div>
       </div>
     </div>
+
     <!-- ===== MANAGE PRODUCTS VIEW ===== -->
     <div *ngIf="currentView === 'products'">
       <div class="page-header">

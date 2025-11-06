@@ -16,10 +16,14 @@
   <!-- Breadcrumb -->
   <div class="breadcrumb">
     <a routerLink="/">Home</a> / 
-    <a [routerLink]="['/categories', categoryRoute]">
+    <a [routerLink]="['/categories/', categoryRoute]">
       {{ breadcrumbCategory }}
     </a> / 
     <span>{{ product.title }}</span>
+  </div>
+  
+  <div class="back">
+    <button class="back-btn" (click)="goBack()">← Back to Products</button>
   </div>
 
   <!-- Product Header -->
@@ -211,7 +215,7 @@
       <!-- Reviews Summary -->
       <div class="reviews-summary" *ngIf="reviews.length > 0">
         <div class="rating-overview">
-          <div class="average-rating">{{ product.rating.toFixed(1) }}</div>
+          <div class="average-rating">{{ product.rating }}</div>
           <div class="stars">
             <span class="star" *ngFor="let star of getStars(product.rating)">{{ star ? '★' : '☆' }}</span>
           </div>
