@@ -189,10 +189,10 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     specs: []
   };
 
-  // NEW: Specifications array for add product form
+  // Specifications array for add product form
   specs: { key: string, value: string }[] = [{ key: '', value: '' }];
 
-  // NEW: Images array for add product form
+  // Images array for add product form
   uploadedImages: { file: File, url: string, name: string }[] = [];
 
   editingProduct: Product | null = null;
@@ -596,50 +596,54 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   }
 
   // NEW: Image handling methods
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      Array.from(input.files).forEach(file => {
+  onFileSelected(event: any): void {
+    const files: FileList = event.target.files;
+    if (files && files.length > 0) {
+      Array.from(files).forEach(file => {
         if (file.type.startsWith('image/')) {
           const reader = new FileReader();
-          reader.onload = (e) => {
+          reader.onload = (e: any) => {
             this.uploadedImages.push({
               file: file,
-              url: e.target?.result as string,
+              url: e.target.result,
               name: file.name
             });
           };
           reader.readAsDataURL(file);
         }
       });
+
+      // Reset the input
+      event.target.value = '';
     }
   }
 
   onDragOver(event: DragEvent): void {
     event.preventDefault();
-    const uploadArea = event.currentTarget as HTMLElement;
-    uploadArea.classList.add('dragover');
+    event.stopPropagation();
+    (event.currentTarget as HTMLElement).classList.add('drag-over');
   }
 
   onDragLeave(event: DragEvent): void {
     event.preventDefault();
-    const uploadArea = event.currentTarget as HTMLElement;
-    uploadArea.classList.remove('dragover');
+    event.stopPropagation();
+    (event.currentTarget as HTMLElement).classList.remove('drag-over');
   }
 
   onDrop(event: DragEvent): void {
     event.preventDefault();
-    const uploadArea = event.currentTarget as HTMLElement;
-    uploadArea.classList.remove('dragover');
+    event.stopPropagation();
+    (event.currentTarget as HTMLElement).classList.remove('drag-over');
 
-    if (event.dataTransfer?.files) {
-      Array.from(event.dataTransfer.files).forEach(file => {
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      Array.from(files).forEach(file => {
         if (file.type.startsWith('image/')) {
           const reader = new FileReader();
-          reader.onload = (e) => {
+          reader.onload = (e: any) => {
             this.uploadedImages.push({
               file: file,
-              url: e.target?.result as string,
+              url: e.target.result,
               name: file.name
             });
           };
@@ -663,167 +667,112 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Add product with images
+   */
   onAddProduct(): void {
-    // Clear previous messages
-    this.clearMessages();
-
-    // Validate basic product info (images are optional for product creation)
-    if (!this.validateProduct(this.newProduct)) {
+    // Validate images
+    if (this.uploadedImages.length === 0) {
+      this.productError = 'At least one product image is required';
       return;
     }
 
-    // Check if images are provided (warn but don't block)
-    const hasImages = this.uploadedImages.length > 0;
-    if (!hasImages) {
-      console.warn('⚠️ No images provided - product will be created without images');
+    if (!this.validateProduct(this.newProduct)) {
+      return;
     }
-
-    // Filter and validate specifications
-    const validSpecs = this.specs.filter(spec =>
-      spec.key.trim() !== '' && spec.value.trim() !== ''
-    );
-
-    // Convert specs array to flat JSON object
-    let specsObject: any = null;
-    if (validSpecs.length > 0) {
-      specsObject = {};
-      validSpecs.forEach(spec => {
-        specsObject[spec.key.trim()] = spec.value.trim();
-      });
-    }
-    
-
-    // Convert specs to JSON string
-    const specsJson = specsObject ? JSON.stringify(specsObject) : null;
-
-    this.isSubmittingProduct = true;
 
     try {
       const userString = localStorage.getItem('currentUser');
       const sellerString = sessionStorage.getItem('sellerData');
 
-      if (!userString) {
-        this.productError = 'User session expired. Please log in again.';
-        this.isSubmittingProduct = false;
-        return;
-      }
+      if (userString) {
+        const user = JSON.parse(userString);
+        const seller = sellerString ? JSON.parse(sellerString) : null;
 
-      const user = JSON.parse(userString);
-      const seller = sellerString ? JSON.parse(sellerString) : null;
-
-      // Prepare product data (WITHOUT images)
-      const productData = {
-        seller_id: seller?.seller_id,
-        category_id: this.newProduct.category_id,
-        title: this.newProduct.title,
-        description: this.newProduct.description,
-        price: this.newProduct.price,
-        sale_price: this.newProduct.sale_price || null,
-        stock: this.newProduct.stock || 0,
-        specs: specsJson
-      };
-
-      console.log('📦 Creating product:', productData);
-
-      // STEP 1: Create the product first
-      this.apiService.createProduct(productData)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (productResponse) => {
-            console.log('✅ Product created successfully:', productResponse);
-
-            const createdProduct = productResponse.product || productResponse;
-            const productId = createdProduct.product_id || createdProduct.id;
-
-            // STEP 2: Upload images if available (independent operation)
-            if (hasImages && productId) {
-              this.uploadProductImages(productId, createdProduct.title);
-            } else {
-              // No images to upload - just show success
-              this.handleProductCreationSuccess(createdProduct.title, false);
-            }
-          },
-          error: (error) => {
-            console.error('❌ Failed to create product:', error);
-            this.productError = error.error?.message || 'Failed to create product. Please try again.';
-            this.isSubmittingProduct = false;
+        // Convert specs array to JSON object
+        const specsObject: { [key: string]: any } = {};
+        this.specs.forEach(spec => {
+          if (spec.key && spec.value) {
+            specsObject[spec.key] = spec.value;
           }
         });
 
+        const productData = {
+          seller_id: seller?.seller_id,
+          category_id: this.newProduct.category_id,
+          title: this.newProduct.title,
+          description: this.newProduct.description,
+          price: this.newProduct.price,
+          sale_price: this.newProduct.sale_price || null,
+          stock: this.newProduct.stock || 0,
+          specs: JSON.stringify(specsObject)
+        };
+
+        console.log('Creating product with data:', productData);
+
+        // First create the product
+        this.apiService.createProduct(productData)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: (response) => {
+              const productId = response.productId;
+              console.log('Product created:', productId);
+
+              // Now upload the images
+              this.uploadImages(productId);
+            },
+            error: (error) => {
+              console.error('Error creating product:', error);
+              this.productError = 'Failed to create product. Please try again.';
+            }
+          });
+      } else {
+        this.productError = 'User session expired. Please log in again.';
+      }
     } catch (error) {
-      console.error('❌ Error in product creation:', error);
-      this.productError = 'An unexpected error occurred. Please try again.';
-      this.isSubmittingProduct = false;
+      console.error('Error parsing user data:', error);
+      this.productError = 'Invalid user session. Please log in again.';
     }
   }
 
   /**
-   * Upload images for a product (separate API call)
+   * Upload images for a product
    */
-  private uploadProductImages(productId: string | number, productTitle: string): void {
-    console.log('📸 Uploading images for product:', productId);
-
-    // Create FormData for image upload
+  private uploadImages(productId: number): void {
     const formData = new FormData();
-    formData.append('product_id', productId.toString());
 
-    // Append all images
+    // Append all image files
     this.uploadedImages.forEach((image, index) => {
-      formData.append('images', image.file, image.file.name);
-      // Set first image as primary
-      if (index === 0) {
-        formData.append('is_primary', 'true');
-      }
+      formData.append('images', image.file);
     });
 
-    this.apiService.uploadProductImages(formData)
+    // Set first image as primary
+    formData.append('setPrimary', 'true');
+    formData.append('altText', this.newProduct.title);
+
+    console.log('Uploading images for product:', productId);
+
+    this.apiService.uploadProductImages(productId.toString(), formData)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (imageResponse) => {
-          console.log('✅ Images uploaded successfully:', imageResponse);
-          this.handleProductCreationSuccess(productTitle, true);
+        next: (response) => {
+          console.log('Images uploaded successfully:', response);
+          this.productSuccess = 'Product and images added successfully!';
+          this.resetNewProduct();
+          this.uploadedImages = [];
+          this.specs = [{ key: '', value: '' }];
+          this.loadSellerData();
+
+          // Clear success message after 5 seconds
+          setTimeout(() => {
+            this.productSuccess = null;
+          }, 5000);
         },
-        error: (imageError) => {
-          console.error('⚠️ Failed to upload images:', imageError);
-          // Product was created successfully, but images failed
-          this.handleProductCreationSuccess(productTitle, false, imageError.error?.message);
+        error: (error) => {
+          console.error('Error uploading images:', error);
+          this.productError = 'Product created but failed to upload images. Please try adding images later.';
         }
       });
-  }
-
-  /**
-   * Handle successful product creation with appropriate messaging
-   */
-  private handleProductCreationSuccess(
-    productTitle: string,
-    imagesUploaded: boolean,
-    imageError?: string
-  ): void {
-    this.isSubmittingProduct = false;
-
-    // Construct success message
-    if (imagesUploaded) {
-      this.productSuccess = `✅ Product "${productTitle}" created successfully with images!`;
-    } else if (imageError) {
-      this.productSuccess = `✅ Product "${productTitle}" created successfully, but images failed to upload: ${imageError}. You can add images later.`;
-    } else {
-      this.productSuccess = `✅ Product "${productTitle}" created successfully! You can add images later.`;
-    }
-
-    // Reset form
-    this.resetNewProduct();
-    this.specs = [{ key: '', value: '' }];
-    this.uploadedImages = [];
-
-    // Reload dashboard data
-    this.loadSellerData();
-
-    // Auto-navigate to products view after 3 seconds
-    setTimeout(() => {
-      if (this.currentView === 'add-product') {
-        this.navigateTo('products');
-      }
-    }, 3000);
   }
 
   /**

@@ -130,7 +130,7 @@ export class LaptopsComponent implements OnInit, OnDestroy {
         this.extractBrands();
 
         const imageRequests = products.map(product =>
-          this.apiService.getProductImages(product.product_id.toString()).pipe(
+          this.apiService.serveProductImages(product.product_id.toString()).pipe(
             map(images => ({
               ...product,
               images: this.processImages(images)
@@ -163,27 +163,14 @@ export class LaptopsComponent implements OnInit, OnDestroy {
     }));
   }
 
-  private ensureAbsoluteUrl(url: string): string {
-    if (!url) return this.getFallbackImage();
-
+ private ensureAbsoluteUrl(url: string): string {
     if (url.startsWith('http://') || url.startsWith('https://')) {
-        return url;
+      return url;
     }
-
-    if (url.startsWith('/')) {
-        if (isPlatformBrowser(this.platformId)) {
-            return `${window.location.origin}${url}`;
-        } else {
-            // For SSR, you can either:
-            // 1. Return relative URL (will work when hydrated in browser)
-            return url;
-            // 2. Or use your actual domain
-            // return `https://your-domain.com${url}`;
-        }
-    }
-
-    return this.apiService.getProductImageUrl(url);
-}
+    // Assuming API base URL is set in environment
+    const apiBaseUrl = this.apiService.getApiBaseUrl();
+    return `${apiBaseUrl}/${url}`;
+  }
 
   private extractBrands(): void {
     const brands = new Set(

@@ -130,7 +130,7 @@ export class AccessoriesComponent implements OnInit, OnDestroy {
 
         // Fetch images for each product
         const imageRequests = products.map(product =>
-          this.apiService.getProductImages(product.product_id.toString()).pipe(
+          this.apiService.serveProductImages(product.product_id.toString()).pipe(
             map(images => ({
               ...product,
               images: this.processImages(images)
@@ -164,21 +164,12 @@ export class AccessoriesComponent implements OnInit, OnDestroy {
   }
 
   private ensureAbsoluteUrl(url: string): string {
-    if (!url) return this.getFallbackImage();
-
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
-
-    if (typeof window !== 'undefined') {
-
-      if (url.startsWith('/')) {
-        return `${window.location.origin}${url}`;
-      }
-
-      return this.apiService.getProductImageUrl(url);
-    }
-    return url;
+    // Assuming API base URL is set in environment
+    const apiBaseUrl = this.apiService.getApiBaseUrl();
+    return `${apiBaseUrl}/${url}`;
   }
 
   private extractBrands(): void {

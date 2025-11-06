@@ -91,7 +91,7 @@ export class ProductService {
     return this.apiService.getProductById(productId).pipe(
       switchMap((product: Product) => {
         // Fetch images for the product
-        return this.apiService.getProductImages(productId).pipe(
+        return this.apiService.serveProductImages(productId).pipe(
           map(images => ({
             ...product,
             images: this.processImages(images)
@@ -157,19 +157,11 @@ export class ProductService {
    */
   private ensureAbsoluteUrl(url: string): string {
     if (!url) return this.getFallbackImage();
-
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
-
-    if (url.startsWith('/')) {
-      if (typeof window !== 'undefined') {
-        return `${window.location.origin}${url}`;
-      }
-      return url;
-    }
-
-    return this.apiService.getProductImageUrl(url);
+    // Assuming the backend serves images from the /public directory
+    return `${this.apiService['apiUrl']}/${url}`;
   }
 
   /**

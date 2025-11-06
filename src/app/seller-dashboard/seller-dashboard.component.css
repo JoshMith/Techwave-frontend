@@ -250,46 +250,130 @@ body {
   gap: 1.5rem;
 }
 
+
 /* Image Upload Styles */
 .image-upload-area {
-  border: 2px dashed #d1d5db;
+  border: 2px dashed #cbd5e1;
   border-radius: 8px;
-  padding: 3rem;
+  padding: 2rem;
   text-align: center;
-  transition: all 0.3s ease;
   cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  background: #f9fafb;
+  transition: all 0.3s ease;
+  background: #f8fafc;
 }
 
-.image-upload-area:hover {
-  border-color: #3b82f6;
-  background: #f0f9ff;
-}
-
-.image-upload-area.dragover {
+.image-upload-area:hover,
+.image-upload-area.drag-over {
   border-color: #3b82f6;
   background: #eff6ff;
-  transform: scale(1.02);
 }
 
 .upload-icon {
   font-size: 3rem;
-  color: #9ca3af;
   margin-bottom: 1rem;
 }
 
 .upload-text {
-  color: #374151;
   font-size: 1.1rem;
-  font-weight: 500;
+  font-weight: 600;
+  color: #1f2937;
   margin-bottom: 0.5rem;
 }
 
 .upload-subtext {
-  color: #6b7280;
   font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.file-input {
+  display: none;
+}
+
+.image-preview {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.image-preview-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid #e5e7eb;
+}
+
+.preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-image {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  transition: background 0.2s;
+}
+
+.remove-image:hover {
+  background: #dc2626;
+}
+
+.help-text {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.error-message {
+  color: #dc2626;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.form-label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.form-label.required::after {
+  content: " *";
+  color: #ef4444;
+}
+
+.section-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.form-section {
+  margin-bottom: 2rem;
+}
+
+.full-width {
+  grid-column: 1 / -1;
 }
 
 .file-input {

@@ -17,6 +17,10 @@ export class ApiService {
 
   constructor(private http: HttpClient) { }
 
+  getApiBaseUrl(): string {
+    return this.apiUrl;
+  }
+
   // ========== Auth Routes ==========
   register(userData: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/auth/register`, userData, this.httpOptions);
@@ -167,31 +171,46 @@ export class ApiService {
   }
 
   // ========== Product Image Routes ==========
-  getProductImages(productId: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}/product-images/${productId}`, this.httpOptions);
+  serveProductImages(productId: string): Observable<any> {
+      return this.http.get(`${this.apiUrl}/product-images/product/${productId}`, this.httpOptions);
   }
 
-  getProductImageUrl(filename: string): string {
-    return `${this.apiUrl}/public/uploads/products/${filename}`;
+  getImageFile(filename: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/product-images/file/${filename}`, this.httpOptions);
   }
 
-  uploadProductImages(images: FormData): Observable<any> {
-    // Note: For file uploads, we need different headers
+  /**
+   * Upload product images - FIXED VERSION
+   * @param productId - The product ID
+   * @param formData - FormData containing image files
+   */
+  uploadProductImages(productId: string, formData: FormData): Observable<any> {
+    // For file uploads, we need to let the browser set the Content-Type with boundary
     const uploadOptions = {
-      headers: new HttpHeaders({
-        // 'Content-Type' is omitted for FormData as it will be set automatically
-      }),
       withCredentials: true
+      // DO NOT set Content-Type header for FormData - browser will set it automatically
     };
-    return this.http.post(`${this.apiUrl}/product-images`, images, uploadOptions);
+
+    return this.http.post(
+      `${this.apiUrl}/product-images/upload/${productId}`,
+      formData,
+      uploadOptions
+    );
   }
 
-  updateProductImage(productId: string, imageId: string, imageData: any): Observable<any> {
-    return this.http.put(`${this.apiUrl}/product-images/${productId}/images/${imageId}`, imageData, this.httpOptions);
+  updateProductImage(imageId: string, imageData: any): Observable<any> {
+    return this.http.put(
+      `${this.apiUrl}/product-images/${imageId}`,
+      imageData,
+      this.httpOptions
+    );
   }
 
-  deleteProductImage(productId: string, imageId: string): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/product-images/${productId}/images/${imageId}`, this.httpOptions);
+  deleteProductImage(imageId: string): Observable<any> {
+    return this.http.delete(
+      `${this.apiUrl}/product-images/${imageId}`,
+      this.httpOptions
+    );
   }
 
   // ========== Product Offer Routes ==========
