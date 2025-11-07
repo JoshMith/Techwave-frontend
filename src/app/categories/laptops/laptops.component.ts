@@ -2,7 +2,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Observable, forkJoin, map, switchMap, Subscription } from 'rxjs';
+import { Observable, forkJoin, map, switchMap, Subscription, catchError, of } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { CartService } from '../../services/cart.service';
 import { ProductService } from '../../services/product.service';
@@ -68,7 +68,7 @@ export class LaptopsComponent implements OnInit, OnDestroy {
   private cartSubscription?: Subscription;
 
   constructor(
-    private router: Router, 
+    private router: Router,
     private apiService: ApiService,
     private cartService: CartService,
     private productService: ProductService,
@@ -103,7 +103,7 @@ export class LaptopsComponent implements OnInit, OnDestroy {
     this.cartService.addToCart(product.product_id, 1).subscribe({
       next: (response) => {
         this.addingToCart = false;
-        const message = response.message === 'Cart item quantity updated' 
+        const message = response.message === 'Cart item quantity updated'
           ? `${product.title} quantity updated in cart!`
           : `${product.title} added to cart!`;
         alert(message);
@@ -124,26 +124,50 @@ export class LaptopsComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.errorMessage = null;
 
-    this.apiService.getProductsByCategoryName('laptops').pipe(
-      switchMap((products: Product[]) => {
+    this.apiService.getProductsByCategoryName('Laptops').subscribe({
+      next: (products: Product[]) => {
+        // Store products first
         this.allProducts = products;
         this.extractBrands();
 
+        // Create image requests for all products with individual error handling
         const imageRequests = products.map(product =>
-          this.apiService.serveProductImages(product.product_id.toString()).pipe(
-            map(images => ({
+          this.apiService.serveProductImagesSafe(product.product_id.toString()).pipe(
+            map(imagesResponse => ({
               ...product,
-              images: this.processImages(images)
-            }))
+              images: this.processImages(imagesResponse)
+            })),
+            catchError(error => {
+              console.warn(`Failed to load images for product ${product.product_id}:`, error);
+              return of({
+                ...product,
+                images: []
+              });
+            })
           )
         );
-        return forkJoin(imageRequests);
-      })
-    ).subscribe({
-      next: (productsWithImages: Product[]) => {
-        this.allProducts = productsWithImages;
-        this.applyFilters();
-        this.loading = false;
+
+        // Wait for all image requests (or their fallbacks)
+        if (imageRequests.length > 0) {
+          forkJoin(imageRequests).subscribe({
+            next: (productsWithImages: Product[]) => {
+              this.allProducts = productsWithImages;
+              this.applyFilters();
+              this.loading = false;
+            },
+            error: (err) => {
+              // This should rarely happen due to individual catchError above
+              console.error('Unexpected error in image loading:', err);
+              this.allProducts = products.map(p => ({ ...p, images: [] }));
+              this.applyFilters();
+              this.loading = false;
+            }
+          });
+        } else {
+          // No products, just finish loading
+          this.applyFilters();
+          this.loading = false;
+        }
       },
       error: (err) => {
         console.error('Error loading products:', err);
@@ -153,23 +177,46 @@ export class LaptopsComponent implements OnInit, OnDestroy {
     });
   }
 
-  private processImages(images: any[]): ProductImage[] {
-    if (!images || !Array.isArray(images)) return [];
+  private processImages(imagesResponse: any): ProductImage[] {
+    // Handle different response formats
+    let images: any[] = [];
 
-    return images.map(img => ({
-      image_url: this.ensureAbsoluteUrl(img.image_url),
-      alt_text: img.alt_text || 'Product image',
-      is_primary: img.is_primary || false
-    }));
+    if (Array.isArray(imagesResponse)) {
+      images = imagesResponse;
+    } else if (imagesResponse?.images && Array.isArray(imagesResponse.images)) {
+      images = imagesResponse.images;
+    }
+
+    if (!images || images.length === 0) {
+      return [];
+    }
+
+    return images.map(img => {
+      // Use full_url if available, otherwise construct from image_url
+      const imageUrl = img.full_url || img.image_url;
+
+      return {
+        image_url: this.ensureAbsoluteUrl(imageUrl),
+        alt_text: img.alt_text || 'Product image',
+        is_primary: img.is_primary || false
+      };
+    });
   }
 
- private ensureAbsoluteUrl(url: string): string {
+  private ensureAbsoluteUrl(url: string): string {
+    if (!url) return this.getFallbackImage();
+
+    // If already absolute, return as is
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
-    // Assuming API base URL is set in environment
+
+    // Remove leading slash if present
+    const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
+
+    // Construct absolute URL
     const apiBaseUrl = this.apiService.getApiBaseUrl();
-    return `${apiBaseUrl}/${url}`;
+    return `${apiBaseUrl}/${cleanUrl}`;
   }
 
   private extractBrands(): void {
@@ -209,28 +256,28 @@ export class LaptopsComponent implements OnInit, OnDestroy {
         return false;
       }
 
-      if (this.selectedBrands.length > 0 && 
-          (!product.specs.brand || !this.selectedBrands.includes(product.specs.brand))) {
+      if (this.selectedBrands.length > 0 &&
+        (!product.specs.brand || !this.selectedBrands.includes(product.specs.brand))) {
         return false;
       }
 
       if (this.selectedFeatures.includes('Windows') &&
-          (!product.specs.os || !product.specs.os.toLowerCase().includes('windows'))) {
+        (!product.specs.os || !product.specs.os.toLowerCase().includes('windows'))) {
         return false;
       }
 
       if (this.selectedFeatures.includes('MacOS') &&
-          (!product.specs.os || !product.specs.os.toLowerCase().includes('mac'))) {
+        (!product.specs.os || !product.specs.os.toLowerCase().includes('mac'))) {
         return false;
       }
 
       if (this.selectedFeatures.includes('8GB+ RAM') &&
-          (!product.specs.ram || !product.specs.ram.includes('8'))) {
+        (!product.specs.ram || !product.specs.ram.includes('8'))) {
         return false;
       }
 
       if (this.selectedFeatures.includes('SSD Storage') &&
-          (!product.specs.storage || !product.specs.storage.toLowerCase().includes('ssd'))) {
+        (!product.specs.storage || !product.specs.storage.toLowerCase().includes('ssd'))) {
         return false;
       }
 
@@ -274,11 +321,11 @@ export class LaptopsComponent implements OnInit, OnDestroy {
       return null;
     }
     const image = product.images.find(img => img.is_primary) || product.images[0];
-    return this.ensureAbsoluteUrl(image.image_url);
+    return image ? this.ensureAbsoluteUrl(image.image_url) : null;
   }
 
   private getFallbackImage(): string {
-    return 'assets/images/laptop-placeholder.png';
+    return '/images/laptop-placeholder.jpg';
   }
 
   onImageError(event: any): void {
@@ -306,5 +353,5 @@ export class LaptopsComponent implements OnInit, OnDestroy {
     this.productService.setSelectedProduct(product);
     this.router.navigate(['/product', product.product_id]);
   }
-  
+
 }

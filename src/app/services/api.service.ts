@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { catchError, map, Observable, of } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -171,8 +171,20 @@ export class ApiService {
   }
 
   // ========== Product Image Routes ==========
-  serveProductImages(productId: string): Observable<any> {
-      return this.http.get(`${this.apiUrl}/product-images/product/${productId}`, this.httpOptions);
+  serveProductImagesSafe(productId: string): Observable<any[]> {
+    return this.http.get(`${this.apiUrl}/product-images/product/${productId}`, this.httpOptions).pipe(
+      map((response: any) => {
+        // Handle the response format from your API
+        if (response && response.success && Array.isArray(response.images)) {
+          return response.images;
+        }
+        return [];
+      }),
+      catchError(error => {
+        // console.warn(`No images found for product ${productId}:`, error.message);
+        return of([]);
+      })
+    );
   }
 
   getImageFile(filename: string): Observable<any> {

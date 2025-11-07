@@ -3,7 +3,7 @@ import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { Router } from '@angular/router';
-import { Subscription, forkJoin, map, switchMap } from 'rxjs';
+import { Subscription, catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { ApiService } from '../services/api.service'; // Import the API service
 import { CartService } from '../services/cart.service';
 
@@ -76,7 +76,7 @@ export class ShopComponent implements OnInit {
   maxPrice: number = 200000;
   sortOption: string = 'featured';
   isLoading: boolean = true; // Loading state
-  errorMessage: string = ''; // Error message
+  errorMessage: any; // Error message
 
   // Filter options
   categories: string[] = ['all'];
@@ -119,58 +119,57 @@ export class ShopComponent implements OnInit {
 
   private loadProducts(): void {
     this.isLoading = true;
-    this.errorMessage = '';
+    this.errorMessage = null;
 
-    // Get products from all categories
-    const categories = ['Phones', 'Laptops', 'Accessories', 'Home Appliances', 'Gaming', 'Audio & Sound'];
-    const requests = categories.map(category =>
-      this.apiService.getProductsByCategoryName(category)
-    );
-
-    forkJoin(requests).pipe(
-      switchMap((productsByCategory: Product[][]) => {
-        // Flatten the array and get random products (max 3 per category)
-        const allProducts = productsByCategory.flat();
-
-        // Get random products (limit to 15 total)
-        const shuffled = [...allProducts].sort(() => 0.5 - Math.random());
-        this.allProducts = shuffled.slice(0, 15);
-
-        // Extract categories and brands
+    this.apiService.getProductsByCategoryName('Gaming').subscribe({
+      next: (products: Product[]) => {
+        // Store products first
+        this.allProducts = products;
         this.extractCategoriesAndBrands();
 
-        // Update featured categories counts
-        this.updateFeaturedCategoriesCount();
-
-        // Fetch images for each product
-        const imageRequests = this.allProducts.map(product =>
-          this.apiService.serveProductImages(product.product_id.toString()).pipe(
-            map(images => ({
+        // Create image requests for all products with individual error handling
+        const imageRequests = products.map(product =>
+          this.apiService.serveProductImagesSafe(product.product_id.toString()).pipe(
+            map(imagesResponse => ({
               ...product,
-              images: this.processImages(images)
-            }))
+              images: this.processImages(imagesResponse)
+            })),
+            catchError(error => {
+              console.warn(`Failed to load images for product ${product.product_id}:`, error);
+              return of({
+                ...product,
+                images: []
+              });
+            })
           )
         );
 
-        return forkJoin(imageRequests);
-      })
-    ).subscribe({
-      next: (productsWithImages: Product[]) => {
-        this.allProducts = productsWithImages;
-        this.products = [...this.allProducts];
-        this.filteredProducts = [...this.allProducts];
-        this.isLoading = false;
-
-        // Load special offers
-        this.loadSpecialOffers();
+        // Wait for all image requests (or their fallbacks)
+        if (imageRequests.length > 0) {
+          forkJoin(imageRequests).subscribe({
+            next: (productsWithImages: Product[]) => {
+              this.allProducts = productsWithImages;
+              this.applyFilters();
+              this.isLoading = false;
+            },
+            error: (err) => {
+              // This should rarely happen due to individual catchError above
+              console.error('Unexpected error in image loading:', err);
+              this.allProducts = products.map(p => ({ ...p, images: [] }));
+              this.applyFilters();
+              this.isLoading = false;
+            }
+          });
+        } else {
+          // No products, just finish loading
+          this.applyFilters();
+          this.isLoading = false;
+        }
       },
       error: (err) => {
         console.error('Error loading products:', err);
         this.errorMessage = 'Failed to load products. Please try again later.';
         this.isLoading = false;
-
-        // Fallback to sample data if API fails
-        this.loadSampleData();
       }
     });
   }
@@ -201,27 +200,46 @@ export class ShopComponent implements OnInit {
     });
   }
 
-  private processImages(images: any[]): ProductImage[] {
-    if (!images || !Array.isArray(images)) return [];
+  private processImages(imagesResponse: any): ProductImage[] {
+    // Handle different response formats
+    let images: any[] = [];
 
-    return images.map(img => ({
-      image_url: this.ensureAbsoluteUrl(img.image_url),
-      alt_text: img.alt_text || 'Product image',
-      is_primary: img.is_primary || false
-    }));
+    if (Array.isArray(imagesResponse)) {
+      images = imagesResponse;
+    } else if (imagesResponse?.images && Array.isArray(imagesResponse.images)) {
+      images = imagesResponse.images;
+    }
+
+    if (!images || images.length === 0) {
+      return [];
+    }
+
+    return images.map(img => {
+      // Use full_url if available, otherwise construct from image_url
+      const imageUrl = img.full_url || img.image_url;
+
+      return {
+        image_url: this.ensureAbsoluteUrl(imageUrl),
+        alt_text: img.alt_text || 'Product image',
+        is_primary: img.is_primary || false
+      };
+    });
   }
 
   private ensureAbsoluteUrl(url: string): string {
+    if (!url) return this.getFallbackImage();
+
+    // If already absolute, return as is
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
-    // Assuming API base URL is set in environment
-    const apiBaseUrl = this.apiService.getApiBaseUrl();
-    return `${apiBaseUrl}/${url}`;
-  }
 
-  private getFallbackImage(): string {
-    return 'assets/images/product-placeholder.png';
+    // Remove leading slash if present
+    const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
+
+    // Construct absolute URL
+    const apiBaseUrl = this.apiService.getApiBaseUrl();
+    return `${apiBaseUrl}/${cleanUrl}`;
   }
 
   // Process special offers from API response
@@ -443,7 +461,11 @@ export class ShopComponent implements OnInit {
       return null;
     }
     const image = product.images.find(img => img.is_primary) || product.images[0];
-    return this.ensureAbsoluteUrl(image.image_url);
+    return image ? this.ensureAbsoluteUrl(image.image_url) : null;
+  }
+
+  private getFallbackImage(): string {
+    return 'assets/images/gaming-placeholder.png';
   }
 
   onImageError(event: any): void {

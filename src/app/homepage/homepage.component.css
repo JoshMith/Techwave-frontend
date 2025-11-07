@@ -44,6 +44,11 @@
   gap: 2rem;
 }
 
+img {
+  border-radius: 27px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
 .nav-link {
   color: white;
   text-decoration: none;

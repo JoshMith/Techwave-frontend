@@ -187,10 +187,11 @@
                 <div class="product-grid">
                     <div *ngFor="let product of filteredProducts" class="product-card">
                         <div class="product-image">
-                            <img *ngIf="getProductImage(product)" [src]="getProductImage(product)" [alt]="product.title"
-                                (error)="onImageError($event)">
-                            <div *ngIf="!getProductImage(product)" class="image-placeholder">No Image</div>
-                            <div *ngIf="product.sale_price" class="sale-badge">SALE</div>
+                            <img [src]="getProductImage(product)" [alt]="product.title" (error)="onImageError($event)"
+                                loading="lazy" *ngIf="product.images; else imageLoading">
+                            <ng-template #imageLoading>
+                                <div class="image-placeholder"></div>
+                            </ng-template>
                         </div>
                         <div class="product-details">
                             <h3>{{ product.title }}</h3>

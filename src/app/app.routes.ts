@@ -50,6 +50,7 @@ export const routes: Routes = [
     { path: 'signup', component: SignupComponent },
     { path: 'forgot-pwd', component: ForgotPwdComponent },
     { path: 'add-product', component: AddProductComponent },
+    
 ];
 
 

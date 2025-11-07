@@ -91,7 +91,7 @@ export class ProductService {
     return this.apiService.getProductById(productId).pipe(
       switchMap((product: Product) => {
         // Fetch images for the product
-        return this.apiService.serveProductImages(productId).pipe(
+        return this.apiService.serveProductImagesSafe(productId).pipe(
           map(images => ({
             ...product,
             images: this.processImages(images)
