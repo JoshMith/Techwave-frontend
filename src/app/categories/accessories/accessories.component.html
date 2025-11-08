@@ -197,7 +197,7 @@
             <div class="product-info">
               <h3 class="product-name">{{ product.title }}</h3>
               <p class="product-specs">{{ formatSpecs(product.specs) }}</p>
-              <div class="product-rating" *ngIf="product.rating">
+              <div class="product-rating">
                 <div class="stars">
                   <span *ngFor="let star of [1,2,3,4,5]" class="star" [class.filled]="star <= product.rating">
                     ★
