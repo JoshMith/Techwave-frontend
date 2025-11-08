@@ -123,7 +123,7 @@ export class AccessoriesComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.errorMessage = null;
 
-    this.apiService.getProductsByCategoryName('Assessories').subscribe({
+    this.apiService.getProductsByCategoryName('Accessories').subscribe({
       next: (products: Product[]) => {
         // Store products first
         this.allProducts = products;
