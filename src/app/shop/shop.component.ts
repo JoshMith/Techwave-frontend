@@ -533,7 +533,12 @@ export class ShopComponent implements OnInit, OnDestroy {
    * Handle category navigation click
    */
   onCategoryClick(categoryName: string): void {
-    this.router.navigate(['/categories', categoryName]);
+    // Filter products by category
+    this.selectedCategory = categoryName;
+    this.applyFilters();
+    // Optionally navigate to category page
+    // this.router.navigate(['/categories', categoryName]);
+
   }
 
   /**
