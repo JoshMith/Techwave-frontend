@@ -1,3 +1,4 @@
+<!-- shop.component.html (FIXED - Correct Product Cards) -->
 <!-- Header Navigation -->
 <header class="header">
   <nav class="nav-container">
@@ -66,7 +67,7 @@
             </svg>
             Gaming
           </a>
-          <a href="/categories/Audio Sound" class="dropdown-link" (click)="onCategoryClick('Audio Sound')">
+          <a href="/categories/Audio & Sound" class="dropdown-link" (click)="onCategoryClick('Audio & Sound')">
             <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
               xmlns="http://www.w3.org/2000/svg">
               <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" stroke="currentColor" stroke-width="2" />
@@ -95,7 +96,8 @@
       </button>
     </div>
     <div class="search-bar-container">
-      <input type="text" class="search-input" placeholder="Search products, brands, or categories..." />
+      <input type="text" class="search-input" [(ngModel)]="searchQuery" (keyup.enter)="onSearch()"
+        placeholder="Search products, brands, or categories..." />
       <button class="search-btn" aria-label="Search" (click)="onSearch()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path
@@ -113,7 +115,7 @@
     <div class="hero-content">
       <h1>Discover Tech That Inspires</h1>
       <p>Premium electronics at competitive prices with free delivery in Nairobi for orders over KSh 5,000</p>
-      <button class="shop-now-btn">Shop Now</button>
+      <button class="shop-now-btn" (click)="resetFilters()">Shop Now</button>
     </div>
   </section>
 
@@ -122,7 +124,7 @@
     <h2>Shop by Category</h2>
     <div class="categories-grid">
       <div *ngFor="let category of featuredCategories" class="category-card"
-        [class.active]="selectedCategory === category.name" (click)="selectedCategory = category.name; applyFilters()">
+        [class.active]="selectedCategory === category.name" (click)="onCategoryCardClick(category.name)">
         <div class="category-icon">{{category.icon}}</div>
         <h3>{{category.name}}</h3>
         <p>{{category.count}} products</p>
@@ -145,8 +147,20 @@
     </div>
   </section>
 
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p>Loading products...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="errorMessage && !loading" class="error-container">
+    <p>{{errorMessage}}</p>
+    <button class="retry-btn" (click)="loadAllProducts()">Retry</button>
+  </div>
+
   <!-- Products Section -->
-  <section class="products-section">
+  <section class="products-section" *ngIf="!loading && !errorMessage">
     <div class="section-header">
       <h2>Browse Products</h2>
       <div class="controls">
@@ -172,6 +186,7 @@
           <button class="reset-btn" (click)="resetFilters()">Reset All</button>
         </div>
 
+        <!-- Price Range Filter -->
         <div class="filter-group">
           <h4>Price Range</h4>
           <div class="price-range">
@@ -182,16 +197,13 @@
             </div>
             <button class="apply-btn" (click)="applyFilters()">Apply</button>
           </div>
-          <div class="price-slider">
-            <input type="range" min="0" max="200000" [(ngModel)]="minPrice" (input)="applyFilters()">
-            <input type="range" min="0" max="200000" [(ngModel)]="maxPrice" (input)="applyFilters()">
-          </div>
           <div class="price-values">
             <span>KSh {{minPrice | number}}</span>
             <span>KSh {{maxPrice | number}}</span>
           </div>
         </div>
 
+        <!-- Category Filter -->
         <div class="filter-group">
           <h4>Category</h4>
           <ul class="filter-list">
@@ -205,6 +217,7 @@
           </ul>
         </div>
 
+        <!-- Brand Filter -->
         <div class="filter-group">
           <h4>Brand</h4>
           <ul class="filter-list">
@@ -218,52 +231,81 @@
         </div>
       </aside>
 
-      <!-- Products Grid -->
-      <div class="products-grid">
-        <div *ngFor="let product of filteredProducts" class="product-card">
-          <div class="product-badges">
-            <div class="discount-badge" *ngIf="product.discount">
-              {{product.discount}}% OFF
-            </div>
-            <div class="new-badge" *ngIf="!product.discount">
-              NEW
+      <!-- Products Grid - Using Correct Product Card Structure -->
+      <div class="products-grid" *ngIf="!loading; else loadingTemplate">
+        <div class="product-card" *ngFor="let product of filteredProducts">
+          <!-- Product Badges -->
+          <div class="product-badges" *ngIf="product.sale_price">
+            <div class="discount-badge">
+              {{getDiscountPercentage(product)}}% OFF
             </div>
           </div>
+
+          <!-- Product Image -->
           <div class="product-image">
-            <div class="image-placeholder">{{product.images}}</div>
+            <img [src]="getProductImage(product)" [alt]="product.title" (error)="onImageError($event)" loading="lazy"
+              *ngIf="product.images; else imageLoading">
+            <ng-template #imageLoading>
+              <div class="image-placeholder">Product Image</div>
+            </ng-template>
           </div>
+
+          <!-- Product Info -->
           <div class="product-info">
-            <h3 (click)="viewDetails(product)">{{product.title}}</h3>
-            <p class="brand">{{product.brand}}</p>
-            <p class="specs">{{product.specs}}</p>
-            <div class="rating">
+            <h3 class="product-name">{{ product.title }}</h3>
+            <p class="product-specs">{{ getProductSpecs(product) }}</p>
+            
+            <!-- Product Rating and Price -->
+            <div class="product-rating">
               <div class="stars">
-                <span *ngFor="let star of [1,2,3,4,5]">★</span>
-                <div class="rating-fill" [style.width]="(product.rating / 5) * 100 + '%'"></div>
+                <span *ngFor="let star of [1,2,3,4,5]" class="star" [class.filled]="star <= product.rating"
+                  [class.half]="star === Math.ceil(product.rating) && product.rating % 1 !== 0">
+                  ★
+                </span>
               </div>
-              <span class="reviews">({{product.reviews}})</span>
+              <span class="rating-count">({{ product.review_count }})</span>
             </div>
+
+            <!-- Price -->
             <div class="price-container">
-              <span class="price" *ngIf="!product.discount">KSh {{product.price | number}}</span>
-              <span class="price discounted" *ngIf="product.discount">
-                <span class="original-price">KSh {{product.price | number}}</span>
-                KSh {{product.price * (1 - product.discount/100) | number:'1.0-0'}}
-              </span>
+              <span class="original-price" *ngIf="product.sale_price">KSh {{ product.price | number:'1.0-0' }}</span>
+              <span class="product-price">KSh {{ getDisplayPrice(product) | number:'1.0-0' }}</span>
             </div>
-            <div class="colors">
-              <span *ngFor="let color of product.colors" [style.background]="getColorCode(color)"></span>
+
+            <!-- Product Footer -->
+            <div class="product-footer">
+              <button class="add-to-cart" (click)="addToCart(product)" [disabled]="addingToCart || product.stock < 1">
+                {{product.stock < 1 ? 'Out of Stock' : 'Add to Cart'}}
+              </button>
+              <button class="view-details" (click)="viewProductDetails(product)">View Details</button>
             </div>
-          </div>
-          <div class="product-actions">
-            <button class="add-to-cart" (click)="addToCart(product)">Add to Cart</button>
-            <button class="view-details" (click)="viewDetails(product)">Details</button>
           </div>
         </div>
+
+        <!-- Empty State -->
+        <div *ngIf="filteredProducts.length === 0" class="empty-state">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="10" stroke="#9ca3af" stroke-width="2" />
+            <path d="M8 12L12 16L16 12" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" />
+          </svg>
+          <h3>No products found</h3>
+          <p>Try adjusting your filters or search criteria</p>
+        </div>
       </div>
+
+      <!-- Loading Template -->
+      <ng-template #loadingTemplate>
+        <div class="loading-container">
+          <div class="loading-spinner"></div>
+          <p>Loading products...</p>
+        </div>
+      </ng-template>
     </div>
   </section>
 </main>
 
+<!-- Footer -->
 <footer class="shop-footer">
   <div class="footer-content">
     <div class="footer-section">
@@ -273,15 +315,14 @@
       <div class="contact-info">
         <p>Email: techwaveelectronics4&#64;gmail.com</p>
         <p>Phone: +254 742 841406 / +254 741 677623</p>
-
         <div class="social-icons">
-          <p><a href="https://wa.me/+254742841406" target="_blank"><i class="fa-brands fa-whatsapp"></i></a></p>
-          <p><a href="https://web.facebook.com/profile.php?id=61577689410885" target="_blank"><i
-                class="fa-brands fa-facebook-f"></i></a></p>
-          <p><a href="http://instagram.com/techwave_.electronics/" target="_blank"><i
-                class="fa-brands fa-instagram"></i></a></p>
-          <p><a href="https://www.tiktok.com/@_.techwave" target="_blank"><i class="fa-brands fa-tiktok"></i></a></p>
-          <p><a href="https://x.com/_techWave01" target="_blank"><i class="fa-brands fa-x-twitter"></i></a></p>
+          <a href="https://wa.me/+254742841406" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
+          <a href="https://web.facebook.com/profile.php?id=61577689410885" target="_blank"><i
+              class="fa-brands fa-facebook-f"></i></a>
+          <a href="http://instagram.com/techwave_.electronics/" target="_blank"><i
+              class="fa-brands fa-instagram"></i></a>
+          <a href="https://www.tiktok.com/@_.techwave" target="_blank"><i class="fa-brands fa-tiktok"></i></a>
+          <a href="https://x.com/_techWave01" target="_blank"><i class="fa-brands fa-x-twitter"></i></a>
         </div>
       </div>
     </div>
@@ -313,10 +354,6 @@
         <div class="payment-method">VISA</div>
         <div class="payment-method">MasterCard</div>
       </div>
-      <!-- <div class="qr-code">
-        <div class="qr-placeholder">Scan QR to visit</div>
-        <p>Visit our mobile site</p>
-      </div> -->
     </div>
   </div>
   <div class="copyright">

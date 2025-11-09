@@ -284,6 +284,7 @@ export class AccessoriesComponent implements OnInit, OnDestroy {
     this.applyFilters();
   }
 
+
   private sortProducts(): void {
     switch (this.selectedSort) {
       case 'price-low':
@@ -315,7 +316,7 @@ export class AccessoriesComponent implements OnInit, OnDestroy {
   }
 
   private getFallbackImage(): string {
-    return 'assets/images/accessory-placeholder.jpg';
+    return '/images/accessory-placeholder.jpg';
   }
 
   onImageError(event: any): void {

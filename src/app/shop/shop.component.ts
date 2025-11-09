@@ -1,13 +1,15 @@
+// ============================================
+// shop.component.ts (FIXED - With Category Filtering)
+// ============================================
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, Inject, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
-import { Router } from '@angular/router';
-import { Subscription, catchError, forkJoin, map, of, switchMap } from 'rxjs';
-import { ApiService } from '../services/api.service'; // Import the API service
+import { RouterModule, Router } from '@angular/router';
+import { Subscription, catchError, forkJoin, map, of } from 'rxjs';
+import { ApiService } from '../services/api.service';
 import { CartService } from '../services/cart.service';
+import { ProductService } from '../services/product.service';
 
-// Define the Product interface matching the API structure
 interface Product {
   product_id: number;
   title: string;
@@ -16,21 +18,15 @@ interface Product {
   sale_price: number | null;
   stock: number;
   specs: {
-    type?: string;
     brand?: string;
-    connectivity?: string;
-    features?: string;
     [key: string]: any;
   };
   rating: number;
   review_count: number;
-  category_name: string;
-  seller_name: string;
+  category_id: number;
+  seller_id: number;
   images: ProductImage[];
-  colors?: string[];
-  discount?: number;
-  reviews?: { user: string; rating: number; comment: string }[];
-  brand?: string;
+  category_name?: string;
 }
 
 interface ProductImage {
@@ -46,38 +42,34 @@ interface SpecialOffer {
   discount: number | null;
 }
 
+interface Category {
+  category_id: number;
+  name: string;
+  description?: string;
+}
+
 @Component({
   selector: 'app-shop',
+  standalone: true,
   imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './shop.component.html',
   styleUrl: './shop.component.css'
 })
-export class ShopComponent implements OnInit {
-  constructor(
-    private router: Router,
-    private apiService: ApiService, // Inject the API service
-    private cartService: CartService,
-    @Inject(PLATFORM_ID) private platformId: any,
-  ) { }
-
-  private cartSubscription?: Subscription;
-  addingToCart = false;
-
-  // All products data - will be populated from API
+export class ShopComponent implements OnInit, OnDestroy {
+  // All products data
   allProducts: Product[] = [];
-
-  // State variables
-  products: Product[] = [];
   filteredProducts: Product[] = [];
+  
+  // State variables
   searchQuery: string = '';
   selectedCategory: string = 'all';
   selectedBrand: string = 'all';
   minPrice: number = 0;
   maxPrice: number = 200000;
   sortOption: string = 'featured';
-  isLoading: boolean = true; // Loading state
-  errorMessage: any; // Error message
-
+  loading: boolean = true;
+  errorMessage: string = '';
+  
   // Filter options
   categories: string[] = ['all'];
   brands: string[] = ['all'];
@@ -87,22 +79,49 @@ export class ShopComponent implements OnInit {
     { value: 'price-high', label: 'Price: High to Low' },
     { value: 'rating', label: 'Top Rated' }
   ];
-
-  // Special offers - will be populated from API
+  
+  // Special offers
   specialOffers: SpecialOffer[] = [];
-
-  // Featured categories
+  
+  // Category mapping (from database)
+  private categoryMap: Map<number, string> = new Map();
+  
+  // Featured categories with counts
   featuredCategories = [
-    { name: 'Phones', icon: '📱', count: 0 },
-    { name: 'Laptops', icon: '💻', count: 0 },
-    { name: 'Accessories', icon: '🎧', count: 0 },
-    { name: 'Home Appliances', icon: '🏠', count: 0 },
-    { name: 'Gaming', icon: '🎮', count: 0 },
-    { name: 'Audio & Sound', icon: '🔊', count: 0 }
+    { name: 'Phones', icon: '📱', count: 0, category_id: 1 },
+    { name: 'Laptops', icon: '💻', count: 0, category_id: 2 },
+    { name: 'Accessories', icon: '🎧', count: 0, category_id: 3 },
+    { name: 'Home Appliances', icon: '🏠', count: 0, category_id: 4 },
+    { name: 'Gaming', icon: '🎮', count: 0, category_id: 5 },
+    { name: 'Audio & Sound', icon: '🔊', count: 0, category_id: 6 }
   ];
-
+  
   // Cart
   cartCount = 0;
+  addingToCart = false;
+  private cartSubscription?: Subscription;
+  
+  // For Math.ceil in template
+  Math = Math;
+
+  constructor(
+    private router: Router,
+    private apiService: ApiService,
+    private cartService: CartService,
+    private productService: ProductService,
+    @Inject(PLATFORM_ID) private platformId: any
+  ) {}
+
+  ngOnInit(): void {
+    // Subscribe to cart state
+    this.cartSubscription = this.cartService.cartState$.subscribe(state => {
+      this.cartCount = state.item_count;
+    });
+    
+    // Load categories first, then products
+    this.loadCategories();
+    this.loadSpecialOffers();
+  }
 
   ngOnDestroy(): void {
     if (this.cartSubscription) {
@@ -110,70 +129,108 @@ export class ShopComponent implements OnInit {
     }
   }
 
-  ngOnInit(): void {
-    this.cartSubscription = this.cartService.cartState$.subscribe(state => {
-      this.cartCount = state.item_count;
-    });
-    this.loadProducts();
-  }
-
-  private loadProducts(): void {
-    this.isLoading = true;
-    this.errorMessage = null;
-
-    this.apiService.getProductsByCategoryName('Gaming').subscribe({
-      next: (products: Product[]) => {
-        // Store products first
-        this.allProducts = products;
-        this.extractCategoriesAndBrands();
-
-        // Create image requests for all products with individual error handling
-        const imageRequests = products.map(product =>
-          this.apiService.serveProductImagesSafe(product.product_id.toString()).pipe(
-            map(imagesResponse => ({
-              ...product,
-              images: this.processImages(imagesResponse)
-            })),
-            catchError(error => {
-              console.warn(`Failed to load images for product ${product.product_id}:`, error);
-              return of({
-                ...product,
-                images: []
-              });
-            })
-          )
-        );
-
-        // Wait for all image requests (or their fallbacks)
-        if (imageRequests.length > 0) {
-          forkJoin(imageRequests).subscribe({
-            next: (productsWithImages: Product[]) => {
-              this.allProducts = productsWithImages;
-              this.applyFilters();
-              this.isLoading = false;
-            },
-            error: (err) => {
-              // This should rarely happen due to individual catchError above
-              console.error('Unexpected error in image loading:', err);
-              this.allProducts = products.map(p => ({ ...p, images: [] }));
-              this.applyFilters();
-              this.isLoading = false;
-            }
-          });
-        } else {
-          // No products, just finish loading
-          this.applyFilters();
-          this.isLoading = false;
-        }
+  /**
+   * Load categories from API
+   */
+  private loadCategories(): void {
+    this.apiService.getCategories().subscribe({
+      next: (categories: Category[]) => {
+        // Build category map
+        console.log('Loaded categories:', categories);
+        categories.forEach(cat => {
+          this.categoryMap.set(cat.category_id, cat.name);
+        });
+        
+        // Now load products
+        this.loadAllProducts();
       },
       error: (err) => {
-        console.error('Error loading products:', err);
-        this.errorMessage = 'Failed to load products. Please try again later.';
-        this.isLoading = false;
+        console.error('Error loading categories:', err);
+        // Use fallback mapping if API fails
+        this.categoryMap.set(1, 'Phones');
+        this.categoryMap.set(2, 'Laptops');
+        this.categoryMap.set(3, 'Accessories');
+        this.categoryMap.set(4, 'Home Appliances');
+        this.categoryMap.set(5, 'Gaming');
+        this.categoryMap.set(6, 'Audio & Sound');
+        
+        this.loadAllProducts();
       }
     });
   }
 
+  /**
+   * Load all products from all categories
+   */
+  loadAllProducts(): void {
+    this.loading = true;
+    this.errorMessage = '';
+
+    this.apiService.getProducts().subscribe({
+      next: (products: Product[]) => {
+        // Add category names to products
+        this.allProducts = products.map(p => ({
+          ...p,
+          category_name: this.categoryMap.get(p.category_id) || 'Unknown'
+        }));
+        
+        this.extractCategoriesAndBrands();
+        this.updateFeaturedCategoriesCount();
+        
+        // Load images for all products
+        this.loadProductImages();
+      },
+      error: (err) => {
+        console.error('Error loading products:', err);
+        this.errorMessage = 'Failed to load products. Please try again later.';
+        this.loading = false;
+      }
+    });
+  }
+
+  /**
+   * Load images for all products
+   */
+  private loadProductImages(): void {
+    if (this.allProducts.length === 0) {
+      this.loading = false;
+      this.applyFilters();
+      return;
+    }
+
+    const imageRequests = this.allProducts.map(product =>
+      this.apiService.serveProductImagesSafe(product.product_id.toString()).pipe(
+        map(imagesResponse => ({
+          ...product,
+          images: this.processImages(imagesResponse)
+        })),
+        catchError(error => {
+          console.warn(`Failed to load images for product ${product.product_id}:`, error);
+          return of({
+            ...product,
+            images: []
+          });
+        })
+      )
+    );
+
+    forkJoin(imageRequests).subscribe({
+      next: (productsWithImages: Product[]) => {
+        this.allProducts = productsWithImages;
+        this.applyFilters();
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error loading product images:', err);
+        this.applyFilters();
+        this.loading = false;
+      }
+    });
+  }
+
+  /**
+   * Load special offers from API
+   */
   private loadSpecialOffers(): void {
     this.apiService.getSpecialOffers().subscribe({
       next: (offersData: any) => {
@@ -181,12 +238,11 @@ export class ShopComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error loading special offers:', err);
-        // Use sample offers if API fails
         this.specialOffers = [
           {
-            title: '50% Off Headphones',
-            description: 'Premium noise-cancelling headphones',
-            category: 'Accessories',
+            title: '50% Off Selected Items',
+            description: 'Premium electronics at unbeatable prices',
+            category: 'All',
             discount: 50
           },
           {
@@ -194,14 +250,22 @@ export class ShopComponent implements OnInit {
             description: 'On orders over KSh 5,000',
             category: 'All',
             discount: null
+          },
+          {
+            title: 'Weekend Special',
+            description: 'Extra 10% off on all laptops',
+            category: 'Laptops',
+            discount: 10
           }
-        ].slice(0, 2);
+        ];
       }
     });
   }
 
+  /**
+   * Process images from API response
+   */
   private processImages(imagesResponse: any): ProductImage[] {
-    // Handle different response formats
     let images: any[] = [];
 
     if (Array.isArray(imagesResponse)) {
@@ -215,9 +279,7 @@ export class ShopComponent implements OnInit {
     }
 
     return images.map(img => {
-      // Use full_url if available, otherwise construct from image_url
       const imageUrl = img.full_url || img.image_url;
-
       return {
         image_url: this.ensureAbsoluteUrl(imageUrl),
         alt_text: img.alt_text || 'Product image',
@@ -226,23 +288,36 @@ export class ShopComponent implements OnInit {
     });
   }
 
+  /**
+   * Ensure image URL is absolute
+   */
   private ensureAbsoluteUrl(url: string): string {
     if (!url) return this.getFallbackImage();
-
-    // If already absolute, return as is
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
-
-    // Remove leading slash if present
     const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
-
-    // Construct absolute URL
     const apiBaseUrl = this.apiService.getApiBaseUrl();
     return `${apiBaseUrl}/${cleanUrl}`;
   }
 
-  // Process special offers from API response
+  /**
+   * Get fallback image
+   */
+  private getFallbackImage(): string {
+    return 'assets/images/product-placeholder.png';
+  }
+
+  /**
+   * Handle image error
+   */
+  onImageError(event: any): void {
+    event.target.src = this.getFallbackImage();
+  }
+
+  /**
+   * Process special offers from API
+   */
   private processSpecialOffers(offersData: any): SpecialOffer[] {
     if (!offersData || !Array.isArray(offersData)) return [];
 
@@ -256,118 +331,63 @@ export class ShopComponent implements OnInit {
       }));
   }
 
-  // Extract categories and brands from products
+  /**
+   * Extract unique categories and brands from products
+   */
   private extractCategoriesAndBrands(): void {
     const uniqueCategories = new Set<string>();
     const uniqueBrands = new Set<string>();
 
-    // Add categories and brands from products
     this.allProducts.forEach(product => {
       if (product.category_name) {
         uniqueCategories.add(product.category_name);
       }
 
-      // Try to get brand from specs first, then from title
-      const brand = product.specs.brand || product.title.split(' ')[0];
-      if (brand) {
-        uniqueBrands.add(brand);
+      if (product.specs.brand) {
+        uniqueBrands.add(product.specs.brand);
       }
     });
 
-    // Update categories and brands arrays
-    this.categories = ['all', ...Array.from(uniqueCategories)];
-    this.brands = ['all', ...Array.from(uniqueBrands)];
+    this.categories = ['all', ...Array.from(uniqueCategories).sort()];
+    this.brands = ['all', ...Array.from(uniqueBrands).sort()];
   }
 
-  // Update featured categories count
+  /**
+   * Update featured categories count
+   */
   private updateFeaturedCategoriesCount(): void {
     this.featuredCategories = this.featuredCategories.map(category => {
-      const count = this.allProducts.filter(p => p.category_name === category.name).length;
+      const count = this.allProducts.filter(p => 
+        p.category_name === category.name
+      ).length;
       return { ...category, count };
     });
   }
 
-  // Fallback to sample data if API fails
-  private loadSampleData(): void {
-    this.allProducts = [
-      {
-        product_id: 1,
-        title: 'Samsung Galaxy S24',
-        description: 'Latest Samsung flagship phone',
-        price: 89999,
-        sale_price: 80999,
-        stock: 10,
-        specs: {
-          type: 'Smartphone',
-          brand: 'Samsung',
-          connectivity: '5G, Wi-Fi 6',
-          features: '128GB Storage, 8GB RAM, OLED Display'
-        },
-        rating: 4.8,
-        review_count: 342,
-        category_name: 'Phones',
-        seller_name: 'TechWave Kenya',
-        images: []
-      },
-      {
-        product_id: 2,
-        title: 'iPhone 15 Pro',
-        description: 'Apple premium smartphone',
-        price: 129999,
-        sale_price: null,
-        stock: 15,
-        specs: {
-          type: 'Smartphone',
-          brand: 'Apple',
-          connectivity: '5G, Wi-Fi 6E',
-          features: '256GB Storage, Face ID, iOS'
-        },
-        rating: 4.9,
-        review_count: 487,
-        category_name: 'Phones',
-        seller_name: 'TechWave Kenya',
-        images: []
-      },
-      {
-        product_id: 3,
-        title: 'Dell XPS 15',
-        description: 'Premium performance laptop',
-        price: 149999,
-        sale_price: 127499,
-        stock: 5,
-        specs: {
-          type: 'Laptop',
-          brand: 'Dell',
-          connectivity: 'Wi-Fi 6, Bluetooth 5.2',
-          features: 'Intel Core i9, 32GB RAM, 1TB SSD'
-        },
-        rating: 4.7,
-        review_count: 231,
-        category_name: 'Laptops',
-        seller_name: 'TechWave Kenya',
-        images: []
-      }
-    ];
-
-    this.products = [...this.allProducts];
-    this.filteredProducts = [...this.allProducts];
-
-    this.extractCategoriesAndBrands();
-    this.updateFeaturedCategoriesCount();
+  /**
+   * Handle category card click
+   */
+  onCategoryCardClick(categoryName: string): void {
+    console.log('Category clicked:', categoryName);
+    this.selectedCategory = categoryName;
+    this.applyFilters();
   }
 
-  // Filter products based on selections
-  applyFilters() {
-    this.filteredProducts = this.products.filter(product => {
+  /**
+   * Apply all filters and sorting
+   */
+  applyFilters(): void {
+    this.filteredProducts = this.allProducts.filter(product => {
       // Category filter
-      if (this.selectedCategory !== 'all' && product.category_name !== this.selectedCategory) {
-        return false;
+      if (this.selectedCategory !== 'all') {
+        if (product.category_name !== this.selectedCategory) {
+          return false;
+        }
       }
 
       // Brand filter
       if (this.selectedBrand !== 'all') {
-        const productBrand = product.specs.brand || product.title.split(' ')[0];
-        if (productBrand !== this.selectedBrand) {
+        if (product.specs.brand !== this.selectedBrand) {
           return false;
         }
       }
@@ -379,11 +399,15 @@ export class ShopComponent implements OnInit {
       }
 
       // Search query filter
-      if (this.searchQuery &&
-        !product.title.toLowerCase().includes(this.searchQuery.toLowerCase()) &&
-        !product.description.toLowerCase().includes(this.searchQuery.toLowerCase()) &&
-        !this.formatSpecs(product.specs).toLowerCase().includes(this.searchQuery.toLowerCase())) {
-        return false;
+      if (this.searchQuery) {
+        const query = this.searchQuery.toLowerCase();
+        const titleMatch = product.title.toLowerCase().includes(query);
+        const descMatch = product.description.toLowerCase().includes(query);
+        const specsMatch = this.getProductSpecs(product).toLowerCase().includes(query);
+        
+        if (!titleMatch && !descMatch && !specsMatch) {
+          return false;
+        }
       }
 
       return true;
@@ -392,26 +416,34 @@ export class ShopComponent implements OnInit {
     this.sortProducts();
   }
 
-  // Sort products based on selected option
-  sortProducts() {
+  /**
+   * Sort products based on selected option
+   */
+  private sortProducts(): void {
     switch (this.sortOption) {
       case 'price-low':
-        this.filteredProducts.sort((a, b) => (a.sale_price || a.price) - (b.sale_price || b.price));
+        this.filteredProducts.sort((a, b) => 
+          (a.sale_price || a.price) - (b.sale_price || b.price)
+        );
         break;
       case 'price-high':
-        this.filteredProducts.sort((a, b) => (b.sale_price || b.price) - (a.sale_price || a.price));
+        this.filteredProducts.sort((a, b) => 
+          (b.sale_price || b.price) - (a.sale_price || a.price)
+        );
         break;
       case 'rating':
         this.filteredProducts.sort((a, b) => b.rating - a.rating);
         break;
       default:
-        // Featured order (original order)
-        this.filteredProducts = [...this.filteredProducts];
+        // Featured order (keep original order)
+        break;
     }
   }
 
-  // Reset all filters
-  resetFilters() {
+  /**
+   * Reset all filters
+   */
+  resetFilters(): void {
     this.selectedCategory = 'all';
     this.selectedBrand = 'all';
     this.minPrice = 0;
@@ -421,7 +453,9 @@ export class ShopComponent implements OnInit {
     this.applyFilters();
   }
 
-  // Add to cart functionality
+  /**
+   * Add product to cart
+   */
   addToCart(product: Product): void {
     if (this.addingToCart) return;
 
@@ -448,70 +482,71 @@ export class ShopComponent implements OnInit {
     });
   }
 
-  // View product details
-  viewDetails(product: Product) {
-    console.log(`Viewing details for: ${product.title}`);
-    // Navigate to product detail page
+  /**
+   * View product details
+   */
+  viewProductDetails(product: Product): void {
+    this.productService.setSelectedProduct(product);
     this.router.navigate(['/product', product.product_id]);
   }
 
-  // Get product image
-  getProductImage(product: Product): string | null {
+  /**
+   * Get product image URL
+   */
+  getProductImage(product: Product): string {
     if (!product.images || product.images.length === 0) {
-      return null;
+      return this.getFallbackImage();
     }
     const image = product.images.find(img => img.is_primary) || product.images[0];
-    return image ? this.ensureAbsoluteUrl(image.image_url) : null;
+    return image ? this.ensureAbsoluteUrl(image.image_url) : this.getFallbackImage();
   }
 
-  private getFallbackImage(): string {
-    return 'assets/images/gaming-placeholder.png';
-  }
-
-  onImageError(event: any): void {
-    event.target.src = this.getFallbackImage();
-  }
-
-  formatSpecs(specs: any): string {
+  /**
+   * Get product specs formatted
+   */
+  getProductSpecs(product: Product): string {
     const parts = [];
-    if (specs.brand) parts.push(specs.brand);
-    if (specs.type) parts.push(specs.type);
-    if (specs.connectivity) parts.push(specs.connectivity);
-    if (specs.features) parts.push(specs.features);
+    if (product.specs.brand) parts.push(product.specs.brand);
+    // if (product.specs.processor) parts.push(product.specs.processor);
+    // if (product.specs.ram) parts.push(product.specs.ram);
+    // if (product.specs.storage) parts.push(product.specs.storage);
+    // if (product.specs.display) parts.push(product.specs.display);
     return parts.join(' • ');
   }
 
-  getColorCode(color: string): string {
-    const colorMap: { [key: string]: string } = {
-      Black: '#222',
-      Silver: '#C0C0C0',
-      Blue: '#2196F3',
-      Gold: '#FFD700',
-      'Space Black': '#1a1a1a',
-      'Space Gray': '#4B4B4B',
-      'Product Red': '#D32F2F',
-      Green: '#4CAF50',
-      Platinum: '#E5E4E2',
-      Midnight: '#191970',
-      Starlight: '#F8F8FF'
-    };
-    return colorMap[color] || color;
+  /**
+   * Get display price (sale price if available, otherwise regular price)
+   */
+  getDisplayPrice(product: Product): number {
+    return product.sale_price || product.price;
   }
 
+  /**
+   * Calculate discount percentage
+   */
+  getDiscountPercentage(product: Product): number {
+    if (!product.sale_price) return 0;
+    return Math.round(((product.price - product.sale_price) / product.price) * 100);
+  }
+
+  /**
+   * Handle category navigation click
+   */
+  onCategoryClick(categoryName: string): void {
+    this.router.navigate(['/categories', categoryName]);
+  }
+
+  /**
+   * Handle search
+   */
   onSearch(): void {
     this.applyFilters();
   }
 
   /**
-   * Handle category card clicks
-   * @param category - The category that was clicked
+   * Navigate to cart
    */
-  onCategoryClick(category: string): void {
-    this.selectedCategory = category;
-    this.applyFilters();
-  }
-
-  goToCart() {
+  goToCart(): void {
     this.router.navigate(['/cart']);
   }
 }
