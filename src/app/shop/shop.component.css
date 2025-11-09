@@ -587,7 +587,6 @@
 
 /* Products Grid */
 .products-grid {
-  flex: 1;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
@@ -599,12 +598,12 @@
   overflow: hidden;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
-  position: relative;
+  border: 1px solid #e5e7eb;
 }
 
 .product-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
 }
 
 .product-badges {
@@ -633,52 +632,52 @@
 }
 
 .product-image {
-  height: 200px;
+  aspect-ratio: 1;
   background: #f8fafc;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: 1px solid #f1f5f9;
+  overflow: hidden;
 }
 
 .image-placeholder {
-  background: #dbeafe;
-  color: #3b82f6;
-  font-weight: bold;
-  padding: 1rem;
-  border-radius: 8px;
+  width: 100%;
+  height: 200px;
+  background-color: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-image img {
+  transform: scale(1.05);
 }
 
 .product-info {
   padding: 1.5rem;
 }
 
-.product-info h3 {
-  margin: 0 0 0.5rem;
+.product-name {
   font-size: 1.2rem;
-  color: #1e293b;
-  cursor: pointer;
-  transition: color 0.2s;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
 }
 
-.product-info h3:hover {
-  color: #3b82f6;
-}
-
-.brand {
-  color: #64748b;
+.product-specs {
+  color: #6b7280;
   font-size: 0.9rem;
-  margin: 0 0 0.5rem;
+  margin-bottom: 1rem;
 }
 
-.specs {
-  color: #475569;
-  font-size: 0.9rem;
-  margin: 0 0 1rem;
-  min-height: 40px;
-}
-
-.rating {
+.product-rating {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -686,97 +685,74 @@
 }
 
 .stars {
-  position: relative;
-  display: inline-block;
-  color: #cbd5e1;
+  display: flex;
+  gap: 2px;
 }
 
-.rating-fill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  color: #f59e0b;
+.star {
+  color: #d1d5db;
+  font-size: 1.2rem;
+  transition: color 0.2s ease;
 }
 
-.reviews {
+.star.filled {
+  color: #fbbf24;
+}
+
+.star.half {
+  background: linear-gradient(90deg, #fbbf24 50%, #d1d5db 50%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.rating-count {
+  color: #6b7280;
   font-size: 0.85rem;
-  color: #64748b;
 }
 
-.price-container {
-  margin-bottom: 1rem;
+.product-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.price {
+.product-price {
   font-size: 1.3rem;
-  font-weight: bold;
-  color: #1e40af;
-}
-
-.discounted {
-  display: flex;
-  flex-direction: column;
-}
-
-.original-price {
-  text-decoration: line-through;
-  color: #94a3b8;
-  font-size: 0.9rem;
-}
-
-.colors {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.colors span {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 1px solid #e2e8f0;
-}
-
-.product-actions {
-  display: flex;
-  gap: 0.5rem;
-  padding: 0 1.5rem 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
 }
 
 .add-to-cart {
-  flex: 1;
   background: #3b82f6;
   color: white;
   border: none;
-  padding: 0.7rem;
-  border-radius: 6px;
-  cursor: pointer;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
   font-weight: 500;
-  transition: background 0.2s;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .add-to-cart:hover {
   background: #2563eb;
+  transform: translateY(-1px);
 }
 
 .view-details {
-  flex: 1;
-  background: white;
-  border: 1px solid #cbd5e1;
-  color: #475569;
-  padding: 0.7rem;
-  border-radius: 6px;
-  cursor: pointer;
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
   font-weight: 500;
-  transition: all 0.2s;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 0.5rem;
 }
-
 .view-details:hover {
-  border-color: #3b82f6;
-  color: #3b82f6;
+  background: #059669;
+  transform: translateY(-1px);
 }
 
 /* Footer */

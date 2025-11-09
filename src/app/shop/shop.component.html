@@ -124,7 +124,7 @@
     <h2>Shop by Category</h2>
     <div class="categories-grid">
       <div *ngFor="let category of featuredCategories" class="category-card"
-        [class.active]="selectedCategory === category.name" (click)="onCategoryCardClick(category.name)">
+        [class.active]="selectedCategory === category.name" (click)="onCategoryClick(category.name)">
         <div class="category-icon">{{category.icon}}</div>
         <h3>{{category.name}}</h3>
         <p>{{category.count}} products</p>
@@ -156,7 +156,7 @@
   <!-- Error State -->
   <div *ngIf="errorMessage && !loading" class="error-container">
     <p>{{errorMessage}}</p>
-    <button class="retry-btn" (click)="loadAllProducts()">Retry</button>
+    <button class="retry-btn" (click)="loadProducts()">Retry</button>
   </div>
 
   <!-- Products Section -->

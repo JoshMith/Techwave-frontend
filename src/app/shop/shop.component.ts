@@ -59,7 +59,7 @@ export class ShopComponent implements OnInit, OnDestroy {
   // All products data
   allProducts: Product[] = [];
   filteredProducts: Product[] = [];
-  
+
   // State variables
   searchQuery: string = '';
   selectedCategory: string = 'all';
@@ -68,8 +68,8 @@ export class ShopComponent implements OnInit, OnDestroy {
   maxPrice: number = 200000;
   sortOption: string = 'featured';
   loading: boolean = true;
-  errorMessage: string = '';
-  
+  errorMessage: any = '';
+
   // Filter options
   categories: string[] = ['all'];
   brands: string[] = ['all'];
@@ -79,13 +79,13 @@ export class ShopComponent implements OnInit, OnDestroy {
     { value: 'price-high', label: 'Price: High to Low' },
     { value: 'rating', label: 'Top Rated' }
   ];
-  
+
   // Special offers
   specialOffers: SpecialOffer[] = [];
-  
+
   // Category mapping (from database)
   private categoryMap: Map<number, string> = new Map();
-  
+
   // Featured categories with counts
   featuredCategories = [
     { name: 'Phones', icon: '📱', count: 0, category_id: 1 },
@@ -95,14 +95,15 @@ export class ShopComponent implements OnInit, OnDestroy {
     { name: 'Gaming', icon: '🎮', count: 0, category_id: 5 },
     { name: 'Audio & Sound', icon: '🔊', count: 0, category_id: 6 }
   ];
-  
+
   // Cart
   cartCount = 0;
   addingToCart = false;
   private cartSubscription?: Subscription;
-  
+
   // For Math.ceil in template
   Math = Math;
+  products: Product[] = [];
 
   constructor(
     private router: Router,
@@ -110,15 +111,15 @@ export class ShopComponent implements OnInit, OnDestroy {
     private cartService: CartService,
     private productService: ProductService,
     @Inject(PLATFORM_ID) private platformId: any
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     // Subscribe to cart state
     this.cartSubscription = this.cartService.cartState$.subscribe(state => {
       this.cartCount = state.item_count;
     });
-    
-    // Load categories first, then products
+
+    this.loadCategoryCounts();
     this.loadCategories();
     this.loadSpecialOffers();
   }
@@ -136,13 +137,13 @@ export class ShopComponent implements OnInit, OnDestroy {
     this.apiService.getCategories().subscribe({
       next: (categories: Category[]) => {
         // Build category map
-        console.log('Loaded categories:', categories);
+        // console.log('Loaded categories:', categories);
         categories.forEach(cat => {
           this.categoryMap.set(cat.category_id, cat.name);
         });
-        
+
         // Now load products
-        this.loadAllProducts();
+        this.loadProducts();
       },
       error: (err) => {
         console.error('Error loading categories:', err);
@@ -153,32 +154,88 @@ export class ShopComponent implements OnInit, OnDestroy {
         this.categoryMap.set(4, 'Home Appliances');
         this.categoryMap.set(5, 'Gaming');
         this.categoryMap.set(6, 'Audio & Sound');
-        
-        this.loadAllProducts();
+
+        this.loadProducts();
       }
+    });
+  }
+
+  private loadCategoryCounts(): void {
+    // Load product counts for each featured category
+    this.featuredCategories.forEach((category, index) => {
+      this.apiService.getProductsByCategoryName(category.name).pipe(
+        catchError(error => {
+          console.warn(`Failed to load count for ${category.name}:`, error);
+          return of([]);
+        })
+      ).subscribe({
+        next: (products: any) => {
+          const count = Array.isArray(products) ? products.length : 0;
+          this.featuredCategories[index] = { ...category, count };
+        }
+      });
     });
   }
 
   /**
    * Load all products from all categories
    */
-  loadAllProducts(): void {
+  loadProducts(categoryName?: string): void {
     this.loading = true;
-    this.errorMessage = '';
+    this.errorMessage = null;
 
-    this.apiService.getProducts().subscribe({
+    // Load all products or products by category
+    const productsObservable = categoryName && categoryName !== 'all'
+      ? this.apiService.getProductsByCategoryName(categoryName)
+      : this.apiService.getProducts();
+
+    productsObservable.subscribe({
       next: (products: Product[]) => {
-        // Add category names to products
-        this.allProducts = products.map(p => ({
-          ...p,
-          category_name: this.categoryMap.get(p.category_id) || 'Unknown'
-        }));
-        
+        // Store products first
+        this.allProducts = products;
+        this.products = products;
         this.extractCategoriesAndBrands();
-        this.updateFeaturedCategoriesCount();
-        
-        // Load images for all products
-        this.loadProductImages();
+
+        // Create image requests for all products with individual error handling
+        const imageRequests = products.map(product =>
+          this.apiService.serveProductImagesSafe(product.product_id.toString()).pipe(
+            map(imagesResponse => ({
+              ...product,
+              images: this.processImages(imagesResponse)
+            })),
+            catchError(error => {
+              console.warn(`Failed to load images for product ${product.product_id}:`, error);
+              return of({
+                ...product,
+                images: []
+              });
+            })
+          )
+        );
+
+        // Wait for all image requests (or their fallbacks)
+        if (imageRequests.length > 0) {
+          forkJoin(imageRequests).subscribe({
+            next: (productsWithImages: Product[]) => {
+              this.allProducts = productsWithImages;
+              this.products = productsWithImages;
+              this.applyFilters();
+              this.loading = false;
+            },
+            error: (err) => {
+              // This should rarely happen due to individual catchError above
+              console.error('Unexpected error in image loading:', err);
+              this.allProducts = products.map(p => ({ ...p, images: [] }));
+              this.products = products.map(p => ({ ...p, images: [] }));
+              this.applyFilters();
+              this.loading = false;
+            }
+          });
+        } else {
+          // No products, just finish loading
+          this.applyFilters();
+          this.loading = false;
+        }
       },
       error: (err) => {
         console.error('Error loading products:', err);
@@ -305,7 +362,7 @@ export class ShopComponent implements OnInit, OnDestroy {
    * Get fallback image
    */
   private getFallbackImage(): string {
-    return 'assets/images/product-placeholder.png';
+    return '/images/product-placeholder.jpg';
   }
 
   /**
@@ -357,7 +414,7 @@ export class ShopComponent implements OnInit, OnDestroy {
    */
   private updateFeaturedCategoriesCount(): void {
     this.featuredCategories = this.featuredCategories.map(category => {
-      const count = this.allProducts.filter(p => 
+      const count = this.allProducts.filter(p =>
         p.category_name === category.name
       ).length;
       return { ...category, count };
@@ -404,7 +461,7 @@ export class ShopComponent implements OnInit, OnDestroy {
         const titleMatch = product.title.toLowerCase().includes(query);
         const descMatch = product.description.toLowerCase().includes(query);
         const specsMatch = this.getProductSpecs(product).toLowerCase().includes(query);
-        
+
         if (!titleMatch && !descMatch && !specsMatch) {
           return false;
         }
@@ -422,12 +479,12 @@ export class ShopComponent implements OnInit, OnDestroy {
   private sortProducts(): void {
     switch (this.sortOption) {
       case 'price-low':
-        this.filteredProducts.sort((a, b) => 
+        this.filteredProducts.sort((a, b) =>
           (a.sale_price || a.price) - (b.sale_price || b.price)
         );
         break;
       case 'price-high':
-        this.filteredProducts.sort((a, b) => 
+        this.filteredProducts.sort((a, b) =>
           (b.sale_price || b.price) - (a.sale_price || a.price)
         );
         break;
