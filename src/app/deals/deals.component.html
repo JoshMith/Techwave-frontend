@@ -2,7 +2,7 @@
 <header class="header">
     <nav class="nav-container">
         <div class="nav-items">
-            <a href="#" class="nav-link">Home</a>
+            <a href="/" class="nav-link">Home</a>
             <a href="/shop" class="nav-link">Shop</a>
             <div class="dropdown">
                 <a class="nav-link dropdown-trigger">
@@ -116,42 +116,104 @@
 </header>
 
 <main class="deals-container">
-    <!-- Hero Banner -->
-    <section class="deals-hero">
-        <div class="hero-content">
-            <h1>Exclusive Deals & Special Offers</h1>
-            <p>Limited-time discounts on premium electronics. Don't miss out!</p>
-        </div>
-        <div class="countdown-banner">
-            <div class="countdown-item">
-                <span class="countdown-value">02</span>
-                <span class="countdown-label">Days</span>
-            </div>
-            <div class="countdown-item">
-                <span class="countdown-value">14</span>
-                <span class="countdown-label">Hours</span>
-            </div>
-            <div class="countdown-item">
-                <span class="countdown-value">38</span>
-                <span class="countdown-label">Minutes</span>
-            </div>
-            <div class="countdown-item">
-                <span class="countdown-value">22</span>
-                <span class="countdown-label">Seconds</span>
-            </div>
-        </div>
-    </section>
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Loading amazing deals...</p>
+    </div>
 
-    <!-- Featured Deals -->
-    <section class="featured-deals">
-        <h2>Featured Deals</h2>
-        <div class="deals-grid">
-            <div *ngFor="let deal of featuredDeals" class="featured-deal-card">
-                <div class="deal-badge">
-                    <span class="discount">{{deal.discount}}% OFF</span>
-                    <span class="expiration">Ends in {{daysRemaining(deal.expiration)}} days</span>
+    <!-- Error State -->
+    <div *ngIf="errorMessage && !loading" class="error-container">
+        <p>{{ errorMessage }}</p>
+        <button class="retry-btn" (click)="ngOnInit()">Retry</button>
+    </div>
+
+    <!-- Content -->
+    <div *ngIf="!loading && !errorMessage">
+        <!-- Hero Banner -->
+        <section class="deals-hero">
+            <div class="hero-content">
+                <h1>Exclusive Deals & Special Offers</h1>
+                <p>Limited-time discounts on premium electronics. Don't miss out!</p>
+            </div>
+            <div class="countdown-banner">
+                <div class="countdown-item">
+                    <span class="countdown-value">{{ countdown.days < 10 ? '0' + countdown.days : countdown.days }}</span>
+                    <span class="countdown-label">Days</span>
                 </div>
-                <div class="deal-content">
+                <div class="countdown-item">
+                    <span class="countdown-value">{{ countdown.hours < 10 ? '0' + countdown.hours : countdown.hours }}</span>
+                    <span class="countdown-label">Hours</span>
+                </div>
+                <div class="countdown-item">
+                    <span class="countdown-value">{{ countdown.minutes < 10 ? '0' + countdown.minutes : countdown.minutes }}</span>
+                    <span class="countdown-label">Minutes</span>
+                </div>
+                <div class="countdown-item">
+                    <span class="countdown-value">{{ countdown.seconds < 10 ? '0' + countdown.seconds : countdown.seconds }}</span>
+                    <span class="countdown-label">Seconds</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Featured Deals -->
+        <section class="featured-deals">
+            <h2>Featured Deals</h2>
+            <div class="deals-grid" *ngIf="featuredDeals.length > 0; else noFeaturedDeals">
+                <div *ngFor="let deal of featuredDeals" class="featured-deal-card">
+                    <div class="deal-badge">
+                        <span class="discount">{{deal.discount}}% OFF</span>
+                        <span class="expiration">Ends in {{daysRemaining(deal.expiration)}} days</span>
+                    </div>
+                    <div class="deal-content">
+                        <div class="deal-image">
+                            <div class="image-placeholder">{{deal.image}}</div>
+                        </div>
+                        <div class="deal-info">
+                            <h3>{{deal.title}}</h3>
+                            <p class="description">{{deal.description}}</p>
+                            <div class="deal-meta">
+                                <span class="category">{{deal.category}}</span>
+                                <span class="products">{{deal.products}} products</span>
+                            </div>
+                            <button class="shop-now-btn" (click)="shopNow()">Shop Now</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <ng-template #noFeaturedDeals>
+                <p class="no-deals-message">No featured deals available at the moment. Check back soon!</p>
+            </ng-template>
+        </section>
+
+        <!-- Deal Categories -->
+        <section class="deal-categories">
+            <h2>Browse Deals by Category</h2>
+            <div class="categories-grid">
+                <div *ngFor="let category of categories" class="category-card"
+                    [class.active]="selectedCategory === category.name" (click)="filterDeals(category.name)">
+                    <div class="category-icon">{{category.icon}}</div>
+                    <h3>{{category.name}}</h3>
+                    <p>{{category.count}} deals</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- All Active Deals -->
+        <section class="all-deals">
+            <div class="section-header">
+                <h2>All Active Deals</h2>
+                <div class="results-count">
+                    Showing {{filteredDeals.length}} deals
+                </div>
+            </div>
+
+            <div class="deals-grid" *ngIf="filteredDeals.length > 0; else noDeals">
+                <div *ngFor="let deal of filteredDeals" class="deal-card">
+                    <div class="deal-badge">
+                        <span class="discount">{{deal.discount}}% OFF</span>
+                        <span class="expiration">Ends in {{daysRemaining(deal.expiration)}} days</span>
+                    </div>
                     <div class="deal-image">
                         <div class="image-placeholder">{{deal.image}}</div>
                     </div>
@@ -162,85 +224,44 @@
                             <span class="category">{{deal.category}}</span>
                             <span class="products">{{deal.products}} products</span>
                         </div>
-                        <button class="shop-now-btn">Shop Now</button>
+                        <button class="shop-now-btn" (click)="shopNow()">Shop Now</button>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+            <ng-template #noDeals>
+                <p class="no-deals-message">No deals available in this category. Try selecting a different category!</p>
+            </ng-template>
+        </section>
 
-    <!-- Deal Categories -->
-    <section class="deal-categories">
-        <h2>Browse Deals by Category</h2>
-        <div class="categories-grid">
-            <div *ngFor="let category of categories" class="category-card"
-                [class.active]="selectedCategory === category.name" (click)="filterDeals(category.name)">
-                <div class="category-icon">{{category.icon}}</div>
-                <h3>{{category.name}}</h3>
-                <p>{{category.count}} deals</p>
+        <!-- Expiring Soon -->
+        <section class="expiring-deals" *ngIf="expiringDeals.length > 0">
+            <div class="section-header">
+                <h2>Expiring Soon</h2>
+                <div class="urgent-tag">Hurry!</div>
             </div>
-        </div>
-    </section>
 
-    <!-- All Active Deals -->
-    <section class="all-deals">
-        <div class="section-header">
-            <h2>All Active Deals</h2>
-            <div class="results-count">
-                Showing {{filteredDeals.length}} deals
-            </div>
-        </div>
-
-        <div class="deals-grid">
-            <div *ngFor="let deal of filteredDeals" class="deal-card">
-                <div class="deal-badge">
-                    <span class="discount">{{deal.discount}}% OFF</span>
-                    <span class="expiration">Ends in {{daysRemaining(deal.expiration)}} days</span>
-                </div>
-                <div class="deal-image">
-                    <div class="image-placeholder">{{deal.image}}</div>
-                </div>
-                <div class="deal-info">
-                    <h3>{{deal.title}}</h3>
-                    <p class="description">{{deal.description}}</p>
-                    <div class="deal-meta">
-                        <span class="category">{{deal.category}}</span>
-                        <span class="products">{{deal.products}} products</span>
+            <div class="deals-grid">
+                <div *ngFor="let deal of expiringDeals" class="deal-card urgent">
+                    <div class="deal-badge">
+                        <span class="discount">{{deal.discount}}% OFF</span>
+                        <span class="expiration">Ends in {{daysRemaining(deal.expiration)}} days</span>
                     </div>
-                    <button class="shop-now-btn">Shop Now</button>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Expiring Soon -->
-    <section class="expiring-deals" *ngIf="expiringDeals.length > 0">
-        <div class="section-header">
-            <h2>Expiring Soon</h2>
-            <div class="urgent-tag">Hurry!</div>
-        </div>
-
-        <div class="deals-grid">
-            <div *ngFor="let deal of expiringDeals" class="deal-card urgent">
-                <div class="deal-badge">
-                    <span class="discount">{{deal.discount}}% OFF</span>
-                    <span class="expiration">Ends in {{daysRemaining(deal.expiration)}} days</span>
-                </div>
-                <div class="deal-image">
-                    <div class="image-placeholder">{{deal.image}}</div>
-                </div>
-                <div class="deal-info">
-                    <h3>{{deal.title}}</h3>
-                    <p class="description">{{deal.description}}</p>
-                    <div class="deal-meta">
-                        <span class="category">{{deal.category}}</span>
-                        <span class="products">{{deal.products}} products</span>
+                    <div class="deal-image">
+                        <div class="image-placeholder">{{deal.image}}</div>
                     </div>
-                    <button class="shop-now-btn">Shop Now</button>
+                    <div class="deal-info">
+                        <h3>{{deal.title}}</h3>
+                        <p class="description">{{deal.description}}</p>
+                        <div class="deal-meta">
+                            <span class="category">{{deal.category}}</span>
+                            <span class="products">{{deal.products}} products</span>
+                        </div>
+                        <button class="shop-now-btn" (click)="shopNow()">Shop Now</button>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+    </div>
 </main>
 
 <footer class="deals-footer">
@@ -290,10 +311,6 @@
                 <div class="payment-method">VISA</div>
                 <div class="payment-method">MasterCard</div>
             </div>
-            <!-- <div class="qr-code">
-                <div class="qr-placeholder">Scan for deals</div>
-                <p>Mobile exclusive offers</p>
-            </div> -->
         </div>
     </div>
     <div class="copyright">

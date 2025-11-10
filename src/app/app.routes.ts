@@ -22,6 +22,8 @@ import { ForgotPwdComponent } from './auth/forgot-pwd/forgot-pwd.component';
 import { SignupComponent } from './auth/signup/signup.component';
 import { AddProductComponent } from './add-product/add-product.component';
 import { OrdersComponent } from './checkout/orders/orders.component';
+import { TermsofserviceComponent } from './ToS/termsofservice/termsofservice.component';
+import { PrivacypolicyComponent } from './ToS/privacypolicy/privacypolicy.component';
 
 export const routes: Routes = [
     { path: '', redirectTo: 'homepage', pathMatch: 'full' },
@@ -50,6 +52,8 @@ export const routes: Routes = [
     { path: 'signup', component: SignupComponent },
     { path: 'forgot-pwd', component: ForgotPwdComponent },
     { path: 'add-product', component: AddProductComponent },
+    { path: 'termsofservice', component: TermsofserviceComponent },
+    { path: 'privacypolicy', component: PrivacypolicyComponent }
     
 ];
 

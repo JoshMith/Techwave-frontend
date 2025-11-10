@@ -146,7 +146,7 @@ export class CartComponent implements OnInit, OnDestroy {
       return;
     }
 
-    console.log('🛒 Starting cart initialization...');
+    // console.log('🛒 Starting cart initialization...');
 
     try {
       // Use CartService to ensure cart is ready

@@ -4,8 +4,11 @@
         <!-- Header Navigation -->
         <header class="header">
             <nav class="nav-container">
-                <div class="nav-items">
+                <div class="cart-logo">
                     <img src="favicon.ico" width="40px" alt="Logo">
+                </div>
+                <div class="nav-items">
+                    
                     <a href="#" class="nav-link">Home</a>
                     <a href="/shop" class="nav-link">Shop</a>
                     <div class="dropdown">
@@ -92,7 +95,8 @@
                         </div>
                     </div>
                     <a href="/deals" class="nav-link">Deals</a>
-                    <a href="/signup" class="nav-link">Signup</a>
+                    <a href="/login" class="nav-link">Signup</a>
+                    <a href="/profile" class="nav-link">Profile</a>
                 </div>
                 <div class="cart-icon-container">
                     <button class="cart-icon" aria-label="Cart" (click)="goToCart()" title="Cart">
@@ -107,16 +111,6 @@
                                 stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                         <span class="cart-count" *ngIf="cartCount > 0">{{ cartCount }}</span>
-                    </button>
-                </div>
-                <div class="search-bar-container">
-                    <input type="text" class="search-input" placeholder="Search products, brands, or categories..." />
-                    <button class="search-btn" aria-label="Search" (click)="onSearch()">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path
-                                d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z"
-                                stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
                     </button>
                 </div>
             </nav>

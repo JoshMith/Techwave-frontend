@@ -24,9 +24,7 @@ export class SignupComponent {
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       phone: ['', [Validators.required, Validators.pattern(/^[0-9]{9}$/)]],
-      location: ['', Validators.required],
       password: ['', [Validators.required, Validators.minLength(8)]],
-      confirmPassword: ['', Validators.required],
       terms: [false, Validators.requiredTrue],
       newsletter: [false]
     }, { validator: this.passwordMatchValidator });
@@ -54,10 +52,9 @@ export class SignupComponent {
       const userData = {
         name: this.signupForm.value.name,
         email: this.signupForm.value.email,
-        phone: '+254' + this.signupForm.value.phone, // Add country code
-        location: this.signupForm.value.location,
+        phone: '+254' + this.signupForm.value.phone,
         password: this.signupForm.value.password,
-        confirmPassword: this.signupForm.value.confirmPassword,
+        terms: this.signupForm.value.terms,
         newsletter: this.signupForm.value.newsletter
       };
 
@@ -81,11 +78,11 @@ export class SignupComponent {
   }
 
   showTerms(): void {
-    alert('Terms of Service would be displayed here');
+    this.router.navigate(['/termsofservice']);
   }
 
   showPrivacy(): void {
-    alert('Privacy Policy would be displayed here');
+    this.router.navigate(['/privacypolicy']);
   }
 
   showLogin(): void {

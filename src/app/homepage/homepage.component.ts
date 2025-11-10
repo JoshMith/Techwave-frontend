@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { CartService } from '../services/cart.service';
 import { finalize } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
 interface Category {
   category_id: number;
@@ -38,7 +39,7 @@ export class HomepageComponent implements OnInit {
     private apiService: ApiService,
     private cartService: CartService,
     @Inject(PLATFORM_ID) private platformId: any
-  ) { 
+  ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
   }
 
@@ -60,13 +61,24 @@ export class HomepageComponent implements OnInit {
     }
   }
 
+  ngOnDestroy(): void {
+    if (this.cartSubscription) {
+      this.cartSubscription.unsubscribe();
+    }
+  }
+
+  private cartSubscription?: Subscription;
+
+
   /**
    * Subscribe to cart state from CartService
    */
   private subscribeToCartState(): void {
-    this.cartService.cartState$.subscribe(state => {
+    this.cartSubscription = this.cartService.cartState$.subscribe(state => {
       this.cartCount = state.item_count;
     });
+    // Initialize cart
+    this.cartService.initializeCart();
   }
 
   /**
@@ -198,16 +210,12 @@ export class HomepageComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 
-  onSearch(): void {
-    alert('Search functionality is not implemented yet.');
-  }
-
   /**
    * Load authenticated user from localStorage
    */
   private loadCurrentUser(): void {
     if (!this.isBrowser) return;
-    
+
     try {
       const userStr = localStorage.getItem('currentUser');
       if (userStr) {
@@ -224,10 +232,10 @@ export class HomepageComponent implements OnInit {
    */
   private loadGuestUser(): void {
     if (!this.isBrowser) return;
-    
+
     try {
       const guestStr = localStorage.getItem('guestUser');
-      
+
       if (guestStr) {
         this.guestUser = JSON.parse(guestStr);
         console.log('✅ Guest user loaded in homepage:', this.guestUser?.session_id);
@@ -249,7 +257,7 @@ export class HomepageComponent implements OnInit {
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 11);
     const session_id = `session_${timestamp}_${randomStr}`;
-    
+
     return {
       session_id,
       created_at: new Date().toISOString()
