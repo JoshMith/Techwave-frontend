@@ -53,6 +53,10 @@ export class ApiService {
     return this.http.get(`${this.apiUrl}/users/${id}`, this.httpOptions);
   }
 
+  getCurrentUser(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/users/userLoggedIn`, this.httpOptions);
+  }
+
   getCurrentUserProfile(id: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/users/profile/${id}`, this.httpOptions);
   }

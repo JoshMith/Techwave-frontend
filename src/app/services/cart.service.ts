@@ -50,7 +50,7 @@ export class CartService {
     @Inject(PLATFORM_ID) private platformId: any
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
-    
+
     if (this.isBrowser) {
       this.loadCurrentUser();
       this.loadGuestUser();
@@ -64,28 +64,29 @@ export class CartService {
    */
   private loadCurrentUser(): void {
     if (!this.isBrowser) return;
-    
+
     try {
-      const userStr = localStorage.getItem('currentUser');
-      if (userStr) {
-        this.currentUser = JSON.parse(userStr);
-        this.updateCartState({ isGuest: false });
-        console.log('✅ Authenticated user loaded:', this.currentUser?.user_id);
+      const userStr = this.apiService.getCurrentUser().subscribe(user => {
+        if (userStr) {
+          this.currentUser = user;
+          this.updateCartState({ isGuest: false });
+          console.log('✅ Authenticated user loaded:', this.currentUser?.user_id);
+        }
+      });
+      } catch (error) {
+        console.warn('⚠️ Failed to load user from localStorage:', error);
       }
-    } catch (error) {
-      console.warn('⚠️ Failed to load user from localStorage:', error);
     }
-  }
 
   /**
    * Load or create guest user session
    */
   private loadGuestUser(): void {
     if (!this.isBrowser) return;
-    
+
     try {
       const guestStr = localStorage.getItem('guestUser');
-      
+
       if (guestStr) {
         this.guestUser = JSON.parse(guestStr);
         console.log('✅ Guest user loaded:', this.guestUser?.session_id);
@@ -94,7 +95,7 @@ export class CartService {
         localStorage.setItem('guestUser', JSON.stringify(this.guestUser));
         console.log('🆕 New guest user created:', this.guestUser.session_id);
       }
-      
+
       if (!this.currentUser) {
         this.updateCartState({ isGuest: true });
       }
@@ -111,7 +112,7 @@ export class CartService {
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 11);
     const session_id = `session_${timestamp}_${randomStr}`;
-    
+
     return {
       session_id,
       created_at: new Date().toISOString()
@@ -161,7 +162,7 @@ export class CartService {
   private loadUserCart(): Promise<boolean> {
     return new Promise((resolve) => {
       console.log('🛒 Loading cart for user:', this.currentUser.user_id);
-      
+
       this.apiService.getCartByUserId(this.currentUser.user_id).subscribe({
         next: (cart) => {
           this.handleCartLoaded(cart);
@@ -190,7 +191,7 @@ export class CartService {
       }
 
       const sessionId = this.guestUser?.session_id;
-      
+
       if (!sessionId) {
         console.error('❌ No session ID available for guest');
         this.handleError('Failed to create guest session');
@@ -199,7 +200,7 @@ export class CartService {
       }
 
       console.log('🛒 Loading guest cart with session:', sessionId);
-      
+
       this.apiService.getCartBySessionId(sessionId).subscribe({
         next: (cart) => {
           console.log('✅ Guest cart found:', cart);
@@ -328,22 +329,22 @@ export class CartService {
         this.apiService.addCartItem(cartItemData).subscribe({
           next: (response) => {
             console.log('✅ Item added to cart:', response);
-            
+
             // Refresh cart summary immediately after adding
             this.refreshCartSummary();
-            
+
             observer.next(response);
             observer.complete();
           },
           error: (err) => {
             console.error('❌ Add to cart failed:', err);
-            
+
             if (err.status === 404) {
               console.log('🔄 Cart not found, reinitializing...');
               this.currentCart = null;
               this.initializeCart();
             }
-            
+
             observer.error(err);
             observer.complete();
           }
@@ -359,7 +360,7 @@ export class CartService {
    * Refresh cart summary - ENHANCED with debouncing
    */
   private refreshTimeout: any = null;
-  
+
   public refreshCartSummary(): void {
     if (!this.currentCart?.cart_id) {
       console.log('⚠️ No cart to refresh');
@@ -374,7 +375,7 @@ export class CartService {
     // Debounce refresh to avoid excessive API calls
     this.refreshTimeout = setTimeout(() => {
       console.log('🔄 Refreshing cart summary for cart:', this.currentCart!.cart_id);
-      
+
       this.apiService.getCartSummary(this.currentCart!.cart_id.toString()).subscribe({
         next: (summary) => {
           const newState = {
@@ -383,13 +384,13 @@ export class CartService {
             total_amount: summary.subtotal || 0,
             isGuest: !this.currentCart!.user_id
           };
-          
+
           this.updateCartState(newState);
           console.log('✅ Cart summary refreshed:', newState);
         },
         error: (err) => {
           console.error('❌ Failed to refresh cart summary:', err);
-          
+
           // If cart not found, reset
           if (err.status === 404) {
             console.log('🔄 Cart not found, resetting...');
@@ -413,14 +414,14 @@ export class CartService {
       clearTimeout(this.refreshTimeout);
       this.refreshTimeout = null;
     }
-    
+
     if (!this.currentCart?.cart_id) {
       console.log('⚠️ No cart to refresh');
       return;
     }
 
     console.log('🔄 Force refreshing cart summary for cart:', this.currentCart.cart_id);
-    
+
     this.apiService.getCartSummary(this.currentCart.cart_id.toString()).subscribe({
       next: (summary) => {
         const newState = {
@@ -429,7 +430,7 @@ export class CartService {
           total_amount: summary.subtotal || 0,
           isGuest: !this.currentCart!.user_id
         };
-        
+
         this.updateCartState(newState);
         console.log('✅ Cart summary force refreshed:', newState);
       },
@@ -477,7 +478,7 @@ export class CartService {
       ...updates,
       isLoading: false
     };
-    
+
     console.log('📊 Updating cart state:', newState);
     this.cartStateSubject.next(newState);
   }
@@ -549,10 +550,10 @@ export class CartService {
     console.log('currentUser:', this.currentUser);
     console.log('guestUser:', this.guestUser);
     console.log('cartState:', this.cartStateSubject.value);
-    
+
     if (this.isBrowser) {
       console.log('guestUser (localStorage):', localStorage.getItem('guestUser'));
-      console.log('currentUser (localStorage):', localStorage.getItem('currentUser'));
+      // console.log('currentUser (localStorage):', localStorage.getItem('currentUser'));
     }
     console.groupEnd();
   }
@@ -563,27 +564,27 @@ export class CartService {
   public logout(): void {
     this.currentUser = null;
     this.currentCart = null;
-    
+
     if (this.isBrowser) {
       this.guestUser = this.createGuestUser();
       localStorage.setItem('guestUser', JSON.stringify(this.guestUser));
     }
-    
+
     this.updateCartState({
       cart_id: null,
       item_count: 0,
       total_amount: 0,
       isGuest: true
     });
-    
-    if (this.isBrowser) {
-      try {
-        localStorage.removeItem('currentUser');
-      } catch (error) {
-        console.warn('⚠️ Failed to clear localStorage:', error);
-      }
-    }
-    
+
+    // if (this.isBrowser) {
+    //   try {
+    //     localStorage.removeItem('currentUser');
+    //   } catch (error) {
+    //     console.warn('⚠️ Failed to clear localStorage:', error);
+    //   }
+    // }
+
     console.log('✅ Logged out, new guest session created');
   }
 }

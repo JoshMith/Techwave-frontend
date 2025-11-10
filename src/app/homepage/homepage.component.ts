@@ -211,21 +211,22 @@ export class HomepageComponent implements OnInit {
   }
 
   /**
-   * Load authenticated user from localStorage
+   * Load authenticated user from server
    */
   private loadCurrentUser(): void {
     if (!this.isBrowser) return;
 
     try {
-      const userStr = localStorage.getItem('currentUser');
-      if (userStr) {
-        this.currentUser = JSON.parse(userStr);
-        console.log('✅ User loaded in homepage:', this.currentUser?.user_id);
+      const userStr = this.apiService.getCurrentUser().subscribe(user => {
+        if (userStr) {
+          this.currentUser = user;
+          console.log('✅ User loaded in homepage:', this.currentUser?.user_id);
+        }
+      });
+      } catch (error) {
+        console.error('❌ Failed to load user from localStorage:', error);
       }
-    } catch (error) {
-      console.error('❌ Failed to load user from localStorage:', error);
     }
-  }
 
   /**
    * Load or create guest user session

@@ -57,13 +57,8 @@ export class LoginComponent implements OnInit {
           this.isLoading = false;
           this.loginMessage = 'Login successful! Redirecting...';
 
-          // Store authentication token if available
-          if (response.token) {
-            localStorage.setItem('authToken', response.token);
-          }
-
           if (response.user) {
-            localStorage.setItem('currentUser', JSON.stringify(response.user));
+            // localStorage.setItem('currentUser', JSON.stringify(response.user));
           }
 
           // Redirect to the intended destination or based on role

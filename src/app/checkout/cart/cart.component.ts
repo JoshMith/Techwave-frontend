@@ -92,12 +92,12 @@ export class CartComponent implements OnInit, OnDestroy {
    */
   private subscribeToCartState(): void {
     this.cartSubscription = this.cartService.cartState$.subscribe(state => {
-      console.log('🔄 Cart state updated:', state);
-      
+      // console.log('🔄 Cart state updated:', state);
+
       // Update local state from service
       this.cartCount = state.item_count;
       this.isGuest = state.isGuest;
-      
+
       if (state.error) {
         this.error = state.error;
       }
@@ -117,31 +117,32 @@ export class CartComponent implements OnInit, OnDestroy {
    */
   private loadCurrentUser(): void {
     if (!this.isBrowser) return;
-    
+
     try {
-      const userStr = localStorage.getItem('currentUser');
-      if (userStr) {
-        this.currentUser = JSON.parse(userStr);
-        this.isGuest = false;
-        console.log('✅ User loaded:', this.currentUser?.user_id);
-      } else {
-        console.log('ℹ️ No user found - proceeding as guest');
+      const userStr = this.apiService.getCurrentUser().subscribe(user => {
+        this.currentUser = user;
+        if (userStr) {
+          this.isGuest = false;
+          console.log('✅ User loaded:', this.currentUser?.user_id);
+        } else {
+          console.log('ℹ️ No user found - proceeding as guest');
+          this.isGuest = true;
+        }
+      });
+      } catch (error) {
+        console.error('❌ Failed to load user. Login again:', error);
         this.isGuest = true;
       }
-    } catch (error) {
-      console.error('❌ Failed to load user from localStorage:', error);
-      this.isGuest = true;
     }
-  }
 
   /**
    * Initialize cart using CartService
    */
-  async initializeCart(): Promise<void> {
-    this.loading = true;
-    this.error = null;
+  async initializeCart(): Promise < void> {
+      this.loading = true;
+      this.error = null;
 
-    if (!this.isBrowser) {
+      if(!this.isBrowser) {
       this.loading = false;
       return;
     }
@@ -151,7 +152,7 @@ export class CartComponent implements OnInit, OnDestroy {
     try {
       // Use CartService to ensure cart is ready
       const isReady = await this.cartService.ensureCartReady();
-      
+
       if (!isReady) {
         this.showErrorAndCreateEmpty('Unable to initialize cart. Please refresh the page.');
         return;
@@ -159,7 +160,7 @@ export class CartComponent implements OnInit, OnDestroy {
 
       // Get current cart from service
       const currentCart = this.cartService.getCurrentCart();
-      
+
       if (!currentCart) {
         this.showErrorAndCreateEmpty('No cart found. Creating a new cart...');
         return;
@@ -175,7 +176,7 @@ export class CartComponent implements OnInit, OnDestroy {
         created_at: currentCart.created_at
       };
 
-      console.log('✅ Cart initialized:', this.cart);
+      // console.log('✅ Cart initialized:', this.cart);
 
       // Load cart items
       await this.loadCartItems(this.cart.cart_id);
@@ -196,23 +197,23 @@ export class CartComponent implements OnInit, OnDestroy {
    * Load cart items and update summary
    */
   private async loadCartItems(cartId: number): Promise<void> {
-    console.log('🛒 Loading cart items for cart:', cartId);
-    
+    // console.log('🛒 Loading cart items for cart:', cartId);
+
     this.apiService.getCartItemsByCartId(cartId.toString()).subscribe({
       next: (items) => {
-        console.log('✅ Cart items loaded:', items.length, 'items');
+        // console.log('✅ Cart items loaded:', items.length, 'items');
         this.cartItems = this.processCartItems(items);
         this.cartCount = this.cartItems.length;
-        
+
         // Update cart summary from service
         this.cartService.refreshCartSummary();
-        
+
         this.loading = false;
         this.error = null;
       },
       error: (err) => {
         console.error('❌ Failed to load cart items:', err);
-        
+
         if (err.status === 404) {
           // Cart exists but has no items
           this.cartItems = [];
@@ -304,7 +305,7 @@ export class CartComponent implements OnInit, OnDestroy {
       return;
     }
 
-    console.log(`🔄 Updating quantity for item ${item.cart_item_id}: ${item.quantity} → ${newQuantity}`);
+    // console.log(`🔄 Updating quantity for item ${item.cart_item_id}: ${item.quantity} → ${newQuantity}`);
 
     // Store old quantity for rollback
     const oldQuantity = item.quantity;
@@ -316,11 +317,11 @@ export class CartComponent implements OnInit, OnDestroy {
 
     this.apiService.updateCartItem(item.cart_item_id.toString(), { quantity: newQuantity }).subscribe({
       next: (response) => {
-        console.log('✅ Quantity updated successfully');
-        
+        // console.log('✅ Quantity updated successfully');
+
         // Update cart summary via service
         this.cartService.refreshCartSummary();
-        
+
         // Reload items to ensure consistency
         if (this.cart) {
           this.loadCartItems(this.cart.cart_id);
@@ -328,11 +329,11 @@ export class CartComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.error('❌ Failed to update quantity:', err);
-        
+
         // Rollback optimistic update
         item.quantity = oldQuantity;
         item.subtotal = oldSubtotal;
-        
+
         const errorMessage = err.error?.message || 'Failed to update quantity';
         alert(errorMessage);
       }
@@ -352,19 +353,19 @@ export class CartComponent implements OnInit, OnDestroy {
       return;
     }
 
-    console.log(`🗑️ Removing item from cart: ${item.cart_item_id}`);
+    // console.log(`🗑️ Removing item from cart: ${item.cart_item_id}`);
 
     this.apiService.removeCartItem(item.cart_item_id.toString()).subscribe({
       next: () => {
         console.log('✅ Item removed successfully');
-        
+
         // Remove from local array
         this.cartItems = this.cartItems.filter(i => i.cart_item_id !== item.cart_item_id);
         this.cartCount = this.cartItems.length;
-        
+
         // Update cart summary via service
         this.cartService.refreshCartSummary();
-        
+
         alert(`"${item.product_title}" removed from cart`);
       },
       error: (err) => {
@@ -477,10 +478,10 @@ export class CartComponent implements OnInit, OnDestroy {
         this.cartCount = 0;
         this.couponApplied = false;
         this.couponDiscount = 0;
-        
+
         // Update service
         this.cartService.refreshCartSummary();
-        
+
         alert('Cart cleared successfully');
       },
       error: (err) => {
@@ -498,7 +499,7 @@ export class CartComponent implements OnInit, OnDestroy {
     this.cartItems = [];
     this.cartCount = 0;
     this.loading = false;
-    
+
     setTimeout(() => {
       this.error = null;
     }, 3000);
@@ -552,7 +553,7 @@ export class CartComponent implements OnInit, OnDestroy {
     console.log('total:', this.total);
     console.log('cart:', this.cart);
     console.groupEnd();
-    
+
     this.cartService.debugCartStatus();
   }
 }

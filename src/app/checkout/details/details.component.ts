@@ -115,30 +115,29 @@ export class DetailsComponent implements OnInit {
     if (!this.isBrowser) return;
 
     try {
-      const storedUser = localStorage.getItem('currentUser');
-      if (!storedUser) {
-        console.log('ℹ️ No user logged in - guest checkout');
+      const storedUser = this.apiService.getCurrentUser().subscribe(user => {
+        if (!storedUser) {
+          console.log('ℹ️ No user logged in - guest checkout');
+          this.setupGuestCheckout();
+          // For guest, load checkout data immediately
+          this.loadCheckoutData();
+          return;
+        }
+
+        this.currentUser = user;
+        this.isGuest = false;
+
+        // console.log('✅ User loaded, loading profile and addresses...');
+
+        // Load user profile and addresses FIRST, then checkout data
+        this.loadUserProfileAndAddresses(user.user_id);
+      });
+      } catch (error) {
+        console.error('❌ Error loading user data:', error);
         this.setupGuestCheckout();
-        // For guest, load checkout data immediately
         this.loadCheckoutData();
-        return;
       }
-
-      const userData = JSON.parse(storedUser);
-      this.currentUser = userData;
-      this.isGuest = false;
-
-      // console.log('✅ User loaded, loading profile and addresses...');
-      
-      // Load user profile and addresses FIRST, then checkout data
-      this.loadUserProfileAndAddresses(userData.user_id);
-
-    } catch (error) {
-      console.error('❌ Error loading user data:', error);
-      this.setupGuestCheckout();
-      this.loadCheckoutData();
     }
-  }
 
   /**
    * Load user profile and addresses, then checkout data
@@ -150,7 +149,7 @@ export class DetailsComponent implements OnInit {
         this.contactInfo.email = user.email || '';
         this.contactInfo.phone = user.phone || '';
         // console.log('✅ User profile loaded, now loading addresses...');
-        
+
         // Now load addresses, then checkout data
         this.loadAddresses(() => {
           console.log('✅ Addresses loaded, now loading checkout data...');
@@ -225,7 +224,7 @@ export class DetailsComponent implements OnInit {
   loadCheckoutData(): void {
     // console.log('🔄 Loading checkout data...');
     // console.log('📌 Current selectedAddressId:', this.selectedAddressId);
-    
+
     // Try navigation state first
     const navigation = this.router.getCurrentNavigation();
     const state = navigation?.extras.state as any;
@@ -389,14 +388,14 @@ export class DetailsComponent implements OnInit {
         this.selectedAddressId = createdAddress.address_id;
         this.showAddressForm = false;
         this.resetAddressForm();
-        
+
         // CRITICAL: Update orderData with the new address
         if (this.orderData) {
           this.orderData.addressId = createdAddress.address_id;
           localStorage.setItem('checkout_data', JSON.stringify(this.orderData));
           console.log('✅ Updated orderData with new addressId:', this.orderData.addressId);
         }
-        
+
         alert('Address added successfully!');
       },
       error: (err) => {
@@ -421,14 +420,14 @@ export class DetailsComponent implements OnInit {
     this.selectedAddressId = guestAddress.address_id;
     this.showAddressForm = false;
     this.resetAddressForm();
-    
+
     // CRITICAL: Update orderData with the new address
     if (this.orderData) {
       this.orderData.addressId = guestAddress.address_id;
       localStorage.setItem('checkout_data', JSON.stringify(this.orderData));
       console.log('✅ Updated orderData with guest addressId:', this.orderData.addressId);
     }
-    
+
     alert('Delivery address saved!');
   }
 
@@ -438,7 +437,7 @@ export class DetailsComponent implements OnInit {
   selectAddress(addressId: number): void {
     console.log('📍 Selecting address:', addressId);
     this.selectedAddressId = addressId;
-    
+
     // CRITICAL: Update orderData with the selected address
     if (this.orderData) {
       this.orderData.addressId = addressId;
@@ -487,7 +486,7 @@ export class DetailsComponent implements OnInit {
   proceedToPayment(): void {
     console.log('🔄 Proceeding to payment...');
     console.log('📌 Current selectedAddressId:', this.selectedAddressId);
-    
+
     if (!this.validateForm()) {
       return;
     }

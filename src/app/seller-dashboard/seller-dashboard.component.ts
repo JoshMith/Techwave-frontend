@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil, forkJoin, catchError, of } from 'rxjs';
 import { ApiService } from '../services/api.service';
+import { Router } from '@angular/router';
 
 // Interfaces
 interface Order {
@@ -257,7 +258,10 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   isLoadingOrderDetails = false;
   isSubmittingProduct = false;
 
-  constructor(private apiService: ApiService) { }
+  constructor(
+    private apiService: ApiService,
+    private router: Router
+  ) { }
 
   ngOnInit(): void {
     this.loadDashboardData();
@@ -322,14 +326,9 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     this.isAuthorized = false;
 
     try {
-      const userString = localStorage.getItem('currentUser');
-
-      if (userString) {
-        const user = JSON.parse(userString);
-
-        this.userName = user.firstName || user.name || 'User';
+      const userString = this.apiService.getCurrentUser().subscribe(user => {
+        this.userName = user.name || 'User';
         this.userRole = user.role || 'buyer';
-
         if (this.userRole.toLowerCase() === 'seller' || this.userRole.toLowerCase() === 'admin') {
           this.isAuthorized = true;
           this.loadSellerData();
@@ -337,10 +336,10 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
           this.isAuthorized = false;
           this.isLoading = false;
         }
-      } else {
-        this.error = 'No user found. Please log in again.';
+      }, err => {
+        this.error = 'Failed to load user data. Please log in again.';
         this.isLoading = false;
-      }
+      });
     } catch (error) {
       this.error = 'Invalid user data. Please log in again.';
       this.isLoading = false;
@@ -385,40 +384,41 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     this.profileError = null;
 
     try {
-      const userString = localStorage.getItem('currentUser');
-      if (!userString) {
-        this.profileError = 'User session expired. Please log in again.';
-        this.profileLoading = false;
-        return;
-      }
+      const userString = this.apiService.getCurrentUser().subscribe(user => {
+        if (!userString) {
+          this.profileError = 'User session expired. Please log in again.';
+          this.profileLoading = false;
+          this.router.navigate(['/login']);
+          return;
+        }
 
-      const user = JSON.parse(userString);
-      const userId = user.id || user.user_id;
+        const userId = user.user_id;
 
-      this.apiService.getSellers()
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (sellers) => {
-            const userSeller = sellers.find((s: any) => s.user_id === userId);
+        this.apiService.getSellers()
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: (sellers) => {
+              const userSeller = sellers.find((s: any) => s.user_id === userId);
 
-            if (userSeller) {
-              this.sellerProfile = userSeller;
-              this.profileForm = {
-                business_name: userSeller.business_name || '',
-                tax_id: userSeller.tax_id || '',
-                business_license: userSeller.business_license || ''
-              };
-            } else {
-              this.sellerProfile = null;
+              if (userSeller) {
+                this.sellerProfile = userSeller;
+                this.profileForm = {
+                  business_name: userSeller.business_name || '',
+                  tax_id: userSeller.tax_id || '',
+                  business_license: userSeller.business_license || ''
+                };
+              } else {
+                this.sellerProfile = null;
+              }
+              this.profileLoading = false;
+            },
+            error: (error) => {
+              console.error('Error loading seller profile:', error);
+              this.profileError = 'Failed to load profile. Please try again.';
+              this.profileLoading = false;
             }
-            this.profileLoading = false;
-          },
-          error: (error) => {
-            console.error('Error loading seller profile:', error);
-            this.profileError = 'Failed to load profile. Please try again.';
-            this.profileLoading = false;
-          }
-        });
+          });
+      });
     } catch (error) {
       console.error('Error parsing user data:', error);
       this.profileError = 'Invalid user session. Please log in again.';
@@ -682,58 +682,58 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     }
 
     try {
-      const userString = localStorage.getItem('currentUser');
-      const sellerString = sessionStorage.getItem('sellerData');
+      const userString = this.apiService.getCurrentUser().subscribe(user => {
+        const sellerString = sessionStorage.getItem('sellerData');
 
-      if (userString) {
-        const user = JSON.parse(userString);
-        const seller = sellerString ? JSON.parse(sellerString) : null;
+        if (userString) {
+          const seller = sellerString ? JSON.parse(sellerString) : null;
 
-        // Convert specs array to JSON object
-        const specsObject: { [key: string]: any } = {};
-        this.specs.forEach(spec => {
-          if (spec.key && spec.value) {
-            specsObject[spec.key] = spec.value;
-          }
-        });
-
-        const productData = {
-          seller_id: seller?.seller_id,
-          category_id: this.newProduct.category_id,
-          title: this.newProduct.title,
-          description: this.newProduct.description,
-          price: this.newProduct.price,
-          sale_price: this.newProduct.sale_price || null,
-          stock: this.newProduct.stock || 0,
-          specs: JSON.stringify(specsObject)
-        };
-
-        console.log('Creating product with data:', productData);
-
-        // First create the product
-        this.apiService.createProduct(productData)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: (response) => {
-              const productId = response.productId;
-              console.log('Product created:', productId);
-
-              // Now upload the images
-              this.uploadImages(productId);
-            },
-            error: (error) => {
-              console.error('Error creating product:', error);
-              this.productError = 'Failed to create product. Please try again.';
+          // Convert specs array to JSON object
+          const specsObject: { [key: string]: any } = {};
+          this.specs.forEach(spec => {
+            if (spec.key && spec.value) {
+              specsObject[spec.key] = spec.value;
             }
           });
-      } else {
-        this.productError = 'User session expired. Please log in again.';
+
+          const productData = {
+            seller_id: seller?.seller_id,
+            category_id: this.newProduct.category_id,
+            title: this.newProduct.title,
+            description: this.newProduct.description,
+            price: this.newProduct.price,
+            sale_price: this.newProduct.sale_price || null,
+            stock: this.newProduct.stock || 0,
+            specs: JSON.stringify(specsObject)
+          };
+
+          console.log('Creating product with data:', productData);
+
+          // First create the product
+          this.apiService.createProduct(productData)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: (response) => {
+                const productId = response.productId;
+                console.log('Product created:', productId);
+
+                // Now upload the images
+                this.uploadImages(productId);
+              },
+              error: (error) => {
+                console.error('Error creating product:', error);
+                this.productError = 'Failed to create product. Please try again.';
+              }
+            });
+        } else {
+          this.productError = 'User session expired. Please log in again.';
+        }
+      });
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        this.productError = 'Invalid user session. Please log in again.';
       }
-    } catch (error) {
-      console.error('Error parsing user data:', error);
-      this.productError = 'Invalid user session. Please log in again.';
     }
-  }
 
   /**
    * Upload images for a product

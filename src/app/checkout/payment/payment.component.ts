@@ -98,25 +98,26 @@ export class PaymentComponent implements OnInit {
   }
 
   loadCurrentUser(): void {
-    const userStr = localStorage.getItem('currentUser');
-    if (!userStr) {
-      this.router.navigate(['/login'], {
-        queryParams: { returnUrl: this.router.url }
-      });
-      return;
-    }
-    const userId = JSON.parse(userStr).user_id;
-    this.apiService.getCurrentUserProfile(userId).subscribe({
-      next: (user) => {
-        this.currentUser = user;
-        // Pre-fill phone number for M-Pesa
-        if (user.phone) {
-          this.paymentForm.patchValue({ mpesaPhone: user.phone });
-        }
-      },
-      error: (err) => {
-        this.router.navigate(['/login']);
+    const userStr = this.apiService.getCurrentUser().subscribe(user => {
+      if (!userStr) {
+        this.router.navigate(['/login'], {
+          queryParams: { returnUrl: this.router.url }
+        });
+        return;
       }
+      const userId = user?.user_id;
+      this.apiService.getCurrentUserProfile(userId).subscribe({
+        next: (user) => {
+          this.currentUser = user;
+          // Pre-fill phone number for M-Pesa
+          if (user.phone) {
+            this.paymentForm.patchValue({ mpesaPhone: user.phone });
+          }
+        },
+        error: (err) => {
+          this.router.navigate(['/login']);
+        }
+      });
     });
   }
 
@@ -192,7 +193,7 @@ export class PaymentComponent implements OnInit {
       this.handleError('Missing payment info or user data');
       return;
     }
-    
+
 
     console.log('🔄 Creating order...');
     this.currentStep = 'creating_order';

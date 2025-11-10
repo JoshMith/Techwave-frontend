@@ -8,8 +8,6 @@ import { LaptopsComponent } from './categories/laptops/laptops.component';
 import { PhonesComponent } from './categories/phones/phones.component';
 import { ShopComponent } from './shop/shop.component';
 import { AudioSoundComponent } from './categories/audio-sound/audio-sound.component';
-import { AboutComponent } from './about/about.component';
-import { ContactComponent } from './contact/contact.component';
 import { DealsComponent } from './deals/deals.component';
 import { CartComponent } from './checkout/cart/cart.component';
 import { DetailsComponent } from './checkout/details/details.component';
@@ -20,10 +18,9 @@ import { ProductComponent } from './product/product.component';
 import { LoginComponent } from './auth/login/login.component';
 import { ForgotPwdComponent } from './auth/forgot-pwd/forgot-pwd.component';
 import { SignupComponent } from './auth/signup/signup.component';
-import { AddProductComponent } from './add-product/add-product.component';
 import { OrdersComponent } from './checkout/orders/orders.component';
-import { TermsofserviceComponent } from './ToS/termsofservice/termsofservice.component';
-import { PrivacypolicyComponent } from './ToS/privacypolicy/privacypolicy.component';
+import { TermsofserviceComponent } from './legal/termsofservice/termsofservice.component';
+import { PrivacypolicyComponent } from './legal/privacypolicy/privacypolicy.component';
 
 export const routes: Routes = [
     { path: '', redirectTo: 'homepage', pathMatch: 'full' },
@@ -35,8 +32,6 @@ export const routes: Routes = [
     { path: 'categories/Home Appliances', component: HomeAppliancesComponent },
     { path: 'categories/Gaming', component: GamingComponent },
     { path: 'categories/Audio & Sound', component: AudioSoundComponent },
-    { path: 'about', component: AboutComponent },
-    { path: 'contact', component: ContactComponent },
     { path: 'deals', component: DealsComponent },
     
     // Checkout routes with proper structure
@@ -51,7 +46,6 @@ export const routes: Routes = [
     { path: 'login', component: LoginComponent },
     { path: 'signup', component: SignupComponent },
     { path: 'forgot-pwd', component: ForgotPwdComponent },
-    { path: 'add-product', component: AddProductComponent },
     { path: 'termsofservice', component: TermsofserviceComponent },
     { path: 'privacypolicy', component: PrivacypolicyComponent }
     
