@@ -27,6 +27,7 @@ interface Specification {
   styleUrls: ['./product.component.css']
 })
 export class ProductComponent implements OnInit, OnDestroy {
+  returnUrl: string = '/homepage'; // Default fallback
   constructor(
     private router: Router,
     public route: ActivatedRoute,
@@ -70,6 +71,10 @@ export class ProductComponent implements OnInit, OnDestroy {
   private routeSubscription?: Subscription;
 
   ngOnInit(): void {
+    // Get the returnUrl from query parameters
+    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/homepage';
+    console.log('Return URL:', this.returnUrl);
+
     // Subscribe to cart state
     this.cartSubscription = this.cartService.cartState$.subscribe(state => {
       this.cartCount = state.item_count;
@@ -111,13 +116,13 @@ export class ProductComponent implements OnInit, OnDestroy {
         this.reviews = reviews;
         this.setupProductDisplay();
         this.isLoading = false;
-        
+
         // console.log('Product loaded successfully:', product);
         // console.log('Reviews loaded:', reviews.length);
       },
       error: (err) => {
         console.error('Error loading product:', err);
-        
+
         if (err.status === 404) {
           this.errorMessage = 'Product not found. Please check the product ID.';
         } else if (err.status === 401) {
@@ -127,7 +132,7 @@ export class ProductComponent implements OnInit, OnDestroy {
         } else {
           this.errorMessage = 'Failed to load product details. Please try again.';
         }
-        
+
         this.isLoading = false;
       }
     });
@@ -140,7 +145,7 @@ export class ProductComponent implements OnInit, OnDestroy {
     this.product = product;
     this.setupProductDisplay();
     this.isLoading = false;
-    
+
     this.loadReviewsOnly(product.product_id.toString());
   }
 
@@ -188,9 +193,8 @@ export class ProductComponent implements OnInit, OnDestroy {
   /** * Navigate back to product listing
    */
   goBack(): void {
-    // Return to previous page or product listing dynamically
-    // Here is the format: http://localhost:4200/categories/Phones
-    this.router.navigate([`/categories/${this.categoryRoute}`]);
+    // Use the returnUrl from query parameters
+    this.router.navigateByUrl(this.returnUrl);
   }
 
   /**
@@ -223,32 +227,32 @@ export class ProductComponent implements OnInit, OnDestroy {
 
     if (specs.brand) this.specifications.push({ label: 'Brand', value: specs.brand });
     if (specs.model) this.specifications.push({ label: 'Model', value: specs.model });
-    
+
     if (specs.display) this.specifications.push({ label: 'Display', value: specs.display });
     if (specs.screen) this.specifications.push({ label: 'Screen Size', value: specs.screen });
     if (specs.storage) this.specifications.push({ label: 'Storage', value: specs.storage });
     if (specs.ram) this.specifications.push({ label: 'RAM', value: specs.ram });
     if (specs.camera) this.specifications.push({ label: 'Camera', value: specs.camera });
     if (specs.battery) this.specifications.push({ label: 'Battery', value: specs.battery });
-    
+
     if (specs.processor) this.specifications.push({ label: 'Processor', value: specs.processor });
     if (specs.os) this.specifications.push({ label: 'Operating System', value: specs.os });
     if (specs.graphics) this.specifications.push({ label: 'Graphics', value: specs.graphics });
-    
+
     if (specs.connectivity) this.specifications.push({ label: 'Connectivity', value: specs.connectivity });
     if (specs.color) this.specifications.push({ label: 'Color', value: specs.color });
     if (specs.weight) this.specifications.push({ label: 'Weight', value: specs.weight });
     if (specs.dimensions) this.specifications.push({ label: 'Dimensions', value: specs.dimensions });
-    
+
     for (const key in specs) {
-      if (specs.hasOwnProperty(key) && 
-          !['brand', 'model', 'display', 'screen', 'storage', 'ram', 'camera', 'battery', 
-            'processor', 'os', 'graphics', 'connectivity', 'color', 'weight', 'dimensions'].includes(key)) {
+      if (specs.hasOwnProperty(key) &&
+        !['brand', 'model', 'display', 'screen', 'storage', 'ram', 'camera', 'battery',
+          'processor', 'os', 'graphics', 'connectivity', 'color', 'weight', 'dimensions'].includes(key)) {
         const value = specs[key];
         if (value !== null && value !== undefined && value !== '') {
-          this.specifications.push({ 
-            label: this.formatLabel(key), 
-            value: String(value) 
+          this.specifications.push({
+            label: this.formatLabel(key),
+            value: String(value)
           });
         }
       }
@@ -266,7 +270,7 @@ export class ProductComponent implements OnInit, OnDestroy {
    * Get fallback image
    */
   private getFallbackImage(): string {
-    return 'assets/images/product-placeholder.png';
+    return '/images/product-placeholder.jpg';
   }
 
   /**
@@ -391,10 +395,10 @@ export class ProductComponent implements OnInit, OnDestroy {
       next: (response) => {
         console.log('Review submitted successfully:', response);
         alert('Thank you for your review!');
-        
+
         // Reload reviews
         this.loadReviewsOnly(this.product!.product_id.toString());
-        
+
         // Reset and hide form
         this.resetReviewForm();
         this.showReviewForm = false;
@@ -405,15 +409,16 @@ export class ProductComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.error('Error submitting review:', err);
-        
+
         if (err.status === 401) {
           alert('Please log in to submit a review');
+          this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
         } else if (err.error?.message) {
           alert(err.error.message);
         } else {
           alert('Failed to submit review. Please try again.');
         }
-        
+
         this.submittingReview = false;
       }
     });
@@ -442,7 +447,7 @@ export class ProductComponent implements OnInit, OnDestroy {
    */
   getRatingPercentage(rating: number): number {
     if (!this.reviews || this.reviews.length === 0) return 0;
-    
+
     const ratingCount = this.reviews.filter(r => Math.floor(r.rating) === rating).length;
     return (ratingCount / this.reviews.length) * 100;
   }

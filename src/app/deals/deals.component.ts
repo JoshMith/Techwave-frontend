@@ -1,7 +1,7 @@
 // deals.component.ts
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Component, Inject, OnInit, PLATFORM_ID, OnDestroy } from '@angular/core';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, RouterLink } from '@angular/router';
 import { Observable, catchError, forkJoin, map, of, switchMap, Subscription } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../services/api.service';
@@ -50,7 +50,7 @@ interface Deal {
 @Component({
   selector: 'app-deals',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, RouterLink],
   templateUrl: './deals.component.html',
   styleUrl: './deals.component.css'
 })

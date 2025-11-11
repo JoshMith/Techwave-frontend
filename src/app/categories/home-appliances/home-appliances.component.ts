@@ -1,7 +1,7 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Observable, forkJoin, map, switchMap, Subscription, catchError, of } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { CartService } from '../../services/cart.service';
@@ -39,7 +39,7 @@ interface ProductImage {
 @Component({
   selector: 'app-home-appliances',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './home-appliances.component.html',
   styleUrls: ['./home-appliances.component.css']
 })
@@ -345,6 +345,6 @@ export class HomeAppliancesComponent implements OnInit, OnDestroy {
   }
   viewProductDetails(product: Product): void {
     this.productService.setSelectedProduct(product);
-    this.router.navigate(['/product', product.product_id]);
+    this.router.navigate(['/product', product.product_id], { queryParams: { returnUrl: this.router.url } });
   }
 }

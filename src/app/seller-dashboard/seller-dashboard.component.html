@@ -2,7 +2,9 @@
 <header class="header">
   <nav class="nav-container">
     <div class="logo-section">
-      <a href="/" class="logo">TechWave</a>
+      <a routerLink="/" class="logo">
+        <img routerLink="/" src="favicon.ico" width="50px" alt="Logo">
+      </a>
       <span class="seller-badge">Seller Portal</span>
     </div>
     <div class="nav-items">
@@ -46,8 +48,8 @@
       <p>You don't have permission to access the seller dashboard.</p>
       <p>This area is restricted to sellers and administrators only.</p>
       <div class="unauthorized-actions">
-        <a href="/" class="btn btn-primary">Go to Home</a>
-        <a href="/shop" class="btn btn-secondary">Continue Shopping</a>
+        <a routerLink="/" class="btn btn-primary">Go to Home</a>
+        <a routerLink="/shop" class="btn btn-secondary">Continue Shopping</a>
       </div>
       <div class="user-info">
         <small>Logged in as: <strong>{{userName}}</strong> ({{userRole}})</small>

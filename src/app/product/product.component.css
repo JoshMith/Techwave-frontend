@@ -43,6 +43,12 @@ body {
   align-items: center;
 }
 
+logo, img {
+  border-radius: 27px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+
 .nav-link {
   color: white;
   text-decoration: none;
@@ -76,6 +82,22 @@ body {
 
 .breadcrumb a:hover {
   text-decoration: underline;
+}
+
+.back {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.back-btn {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 1rem;
 }
 
 /* Product Header */

@@ -1,7 +1,10 @@
 <!-- Header -->
 <header class="header">
   <nav class="nav-container">
-    <a href="#" class="logo">TechWave Kenya</a>
+    <a routerLink="/" class="logo">
+      <img routerLink="/" src="favicon.ico" width="50px" alt="Logo">
+    </a>
+    <h2>TechWave Kenya</h2>
   </nav>
 </header>
 
@@ -89,7 +92,8 @@
             {{ showConfirmPassword ? '🙈' : '👁️' }}
           </button>
         </div>
-        <div *ngIf="signupForm.hasError('mismatch') && signupForm.get('confirmPassword')?.touched" class="error-message">
+        <div *ngIf="signupForm.hasError('mismatch') && signupForm.get('confirmPassword')?.touched"
+          class="error-message">
           Passwords do not match
         </div>
       </div>
@@ -97,8 +101,9 @@
       <div class="checkbox-group">
         <input type="checkbox" id="terms" formControlName="terms" class="checkbox-input">
         <label for="terms" class="checkbox-label">
-          I agree to the <a href="/termsofservice" (click)="showTerms(); $event.preventDefault()">Terms of Service</a> and
-          <a href="/privacypolicy" (click)="showPrivacy(); $event.preventDefault()">Privacy Policy</a>
+          I agree to the <a routerLink="/termsofservice" (click)="showTerms(); $event.preventDefault()">Terms of
+            Service</a> and
+          <a routerLink="/privacypolicy" (click)="showPrivacy(); $event.preventDefault()">Privacy Policy</a>
         </label>
         <div *ngIf="signupForm.get('terms')?.invalid && signupForm.get('terms')?.touched" class="error-message">
           You must accept the terms and conditions
@@ -135,7 +140,7 @@
     </div>
 
     <div class="login-link">
-      Already have an account? <a href="/login" (click)="showLogin(); $event.preventDefault()">Sign in here</a>
+      Already have an account? <a routerLink="/login" (click)="showLogin(); $event.preventDefault()">Sign in here</a>
     </div>
   </div>
 </main>

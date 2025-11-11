@@ -130,7 +130,7 @@ export class DetailsComponent implements OnInit {
         // console.log('✅ User loaded, loading profile and addresses...');
 
         // Load user profile and addresses FIRST, then checkout data
-        this.loadUserProfileAndAddresses(user.user_id);
+        this.loadUserProfileAndAddresses(user.user.user_id);
       });
       } catch (error) {
         console.error('❌ Error loading user data:', error);

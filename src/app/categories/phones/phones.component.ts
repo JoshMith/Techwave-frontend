@@ -1,7 +1,7 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { forkJoin, map, switchMap, Subscription, catchError, of } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { CartService } from '../../services/cart.service';
@@ -51,7 +51,7 @@ interface Filters {
 @Component({
   selector: 'app-phones',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './phones.component.html',
   styleUrls: ['./phones.component.css']
 })
@@ -429,6 +429,6 @@ export class PhonesComponent implements OnInit {
  */
   viewProductDetails(product: Product): void {
     this.productService.setSelectedProduct(product);
-    this.router.navigate(['/product', product.product_id]);
+    this.router.navigate(['/product', product.product_id], { queryParams: { returnUrl: this.router.url } });
   }
 }

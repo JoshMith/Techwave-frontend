@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { CartService } from '../services/cart.service';
 import { finalize } from 'rxjs/operators';
@@ -27,7 +27,7 @@ interface GuestUser {
 
 @Component({
   selector: 'app-homepage',
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './homepage.component.html',
   styleUrl: './homepage.component.css'
 })
@@ -220,7 +220,7 @@ export class HomepageComponent implements OnInit {
       const userStr = this.apiService.getCurrentUser().subscribe(user => {
         if (userStr) {
           this.currentUser = user;
-          console.log('✅ User loaded in homepage:', this.currentUser?.user_id);
+          console.log('✅ User loaded in homepage:', this.currentUser.user?.user_id);
         }
       });
       } catch (error) {

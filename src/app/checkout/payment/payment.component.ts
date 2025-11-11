@@ -105,7 +105,9 @@ export class PaymentComponent implements OnInit {
         });
         return;
       }
-      const userId = user?.user_id;
+
+      const userId = user.user?.user_id;
+      console.log('🔄 Loading user profile for user ID:', userId);
       this.apiService.getCurrentUserProfile(userId).subscribe({
         next: (user) => {
           this.currentUser = user;

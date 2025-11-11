@@ -1,7 +1,10 @@
 <!-- Header -->
 <header class="header">
   <nav class="nav-container">
-    <a href="#" class="logo">TechWave Kenya</a>
+    <a routerLink="/" class="logo">
+      <img routerLink="/" src="favicon.ico" width="50px" alt="Logo">
+    </a>
+    <h2>TechWave Kenya</h2>
   </nav>
 </header>
 
@@ -41,7 +44,7 @@
         <label for="password" class="form-label">Password</label>
         <div class="password-container">
           <input [type]="passwordFieldType" id="password" formControlName="password" class="form-input"
-            placeholder="Enter your password" 
+            placeholder="Enter your password"
             [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
           <button type="button" class="password-toggle" (click)="togglePassword()">
             {{ showPassword ? '🙈' : '👁️' }}
@@ -51,7 +54,7 @@
           Password must be at least 6 characters
         </div>
         <div class="forgot-password">
-          <a href="/forgot-pwd" (click)="showForgotPassword(); $event.preventDefault()">Forgot your password?</a>
+          <a routerLink="/forgot-pwd">Forgot your password?</a>
         </div>
       </div>
 
@@ -82,7 +85,7 @@
     </div>
 
     <div class="signup-link">
-      Don't have an account? <a href="#" (click)="showSignup(); $event.preventDefault()">Sign up here</a>
+      Don't have an account? <a routerLink="#" (click)="showSignup(); $event.preventDefault()">Sign up here</a>
     </div>
   </div>
 </main>

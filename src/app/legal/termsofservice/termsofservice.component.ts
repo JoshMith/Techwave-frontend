@@ -1,8 +1,9 @@
 import { Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-termsofservice',
-  imports: [],
+  imports: [RouterLink],
   templateUrl: './termsofservice.component.html',
   styleUrl: './termsofservice.component.css'
 })

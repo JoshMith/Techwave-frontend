@@ -20,19 +20,22 @@ body {
 
 .nav-container {
   display: flex;
-  justify-content: center;
+  justify-content:space-evenly;
   align-items: center;
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 2rem;
 }
 
-.logo {
-  color: white;
-  font-size: 1.8rem;
-  font-weight: 700;
-  text-decoration: none;
+logo, img {
+  border-radius: 27px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
+
+h2 {
+  color: white;
+}
+
 
 .main-content {
   flex: 1;

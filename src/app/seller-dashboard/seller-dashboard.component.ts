@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil, forkJoin, catchError, of } from 'rxjs';
 import { ApiService } from '../services/api.service';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 // Interfaces
 interface Order {
@@ -78,7 +78,7 @@ interface SellerProfile {
 
 @Component({
   selector: 'app-seller-dashboard',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './seller-dashboard.component.html',
   styleUrl: './seller-dashboard.component.css'
 })
@@ -327,8 +327,8 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
 
     try {
       const userString = this.apiService.getCurrentUser().subscribe(user => {
-        this.userName = user.name || 'User';
-        this.userRole = user.role || 'buyer';
+        this.userName = user.user.name || 'User';
+        this.userRole = user.user.role || 'buyer';
         if (this.userRole.toLowerCase() === 'seller' || this.userRole.toLowerCase() === 'admin') {
           this.isAuthorized = true;
           this.loadSellerData();
@@ -392,7 +392,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
           return;
         }
 
-        const userId = user.user_id;
+        const userId = user.user.user_id;
 
         this.apiService.getSellers()
           .pipe(takeUntil(this.destroy$))
@@ -683,10 +683,11 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
 
     try {
       const userString = this.apiService.getCurrentUser().subscribe(user => {
-        const sellerString = sessionStorage.getItem('sellerData');
+        const sellerString = user.seller;
 
         if (userString) {
           const seller = sellerString ? JSON.parse(sellerString) : null;
+          console.log('✅ Creating product for seller ID:', seller?.seller_id);
 
           // Convert specs array to JSON object
           const specsObject: { [key: string]: any } = {};

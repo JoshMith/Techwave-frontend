@@ -1,7 +1,10 @@
 <!-- Header -->
 <header class="header">
   <nav class="nav-container">
-    <a href="#" class="logo">TechWave Kenya</a>
+    <a routerLink="/" class="logo">
+      <img routerLink="/" src="favicon.ico" width="50px" alt="Logo">
+    </a>
+    <h2>TechWave Kenya</h2>
   </nav>
 </header>
 
@@ -165,7 +168,7 @@
     </div>
 
     <div class="back-to-login">
-      <a href="#" (click)="goToLogin()">
+      <a routerLink="#" (click)="goToLogin()">
         ← Back to Sign In
       </a>
     </div>

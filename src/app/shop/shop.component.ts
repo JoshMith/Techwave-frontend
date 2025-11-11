@@ -4,7 +4,7 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Component, OnInit, Inject, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, RouterLink } from '@angular/router';
 import { Subscription, catchError, forkJoin, map, of } from 'rxjs';
 import { ApiService } from '../services/api.service';
 import { CartService } from '../services/cart.service';
@@ -51,7 +51,7 @@ interface Category {
 @Component({
   selector: 'app-shop',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, RouterLink],
   templateUrl: './shop.component.html',
   styleUrl: './shop.component.css'
 })
@@ -544,7 +544,7 @@ export class ShopComponent implements OnInit, OnDestroy {
    */
   viewProductDetails(product: Product): void {
     this.productService.setSelectedProduct(product);
-    this.router.navigate(['/product', product.product_id]);
+    this.router.navigate(['/product', product.product_id], { queryParams: { returnUrl: this.router.url } });
   }
 
   /**

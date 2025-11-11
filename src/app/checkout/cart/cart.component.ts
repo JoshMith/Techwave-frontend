@@ -1,7 +1,7 @@
 import { Component, OnInit, Inject, PLATFORM_ID, OnDestroy } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { CartService } from '../../services/cart.service';
 import { Subscription } from 'rxjs';
@@ -35,7 +35,7 @@ interface Cart {
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, RouterLink],
   templateUrl: './cart.component.html',
   styleUrl: './cart.component.css'
 })
@@ -123,7 +123,7 @@ export class CartComponent implements OnInit, OnDestroy {
         this.currentUser = user;
         if (userStr) {
           this.isGuest = false;
-          console.log('✅ User loaded:', this.currentUser?.user_id);
+          console.log('✅ User loaded:', this.currentUser.user?.user_id);
         } else {
           console.log('ℹ️ No user found - proceeding as guest');
           this.isGuest = true;

@@ -37,12 +37,19 @@ body {
     color: white;
     padding: 2rem 0;
     box-shadow: var(--shadow-light);
+    display: flex;
 }
 
 .header-content {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 2rem;
+}
+
+logo, img {
+  border-radius: 27px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 0 20px;
 }
 
 .header h1 {

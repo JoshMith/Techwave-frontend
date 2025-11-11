@@ -2,7 +2,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Observable, Subscription, catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { CartService } from '../../services/cart.service';
@@ -38,7 +38,7 @@ interface ProductImage {
 @Component({
   selector: 'app-audio-sound',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './audio-sound.component.html',
   styleUrls: ['./audio-sound.component.css']
 })
@@ -354,6 +354,6 @@ export class AudioSoundComponent implements OnInit {
   }
   viewProductDetails(product: Product): void {
     this.productService.setSelectedProduct(product);
-    this.router.navigate(['/product', product.product_id]);
+    this.router.navigate(['/product', product.product_id], { queryParams: { returnUrl: this.router.url } });
   }
 }

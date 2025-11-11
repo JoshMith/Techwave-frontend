@@ -70,7 +70,9 @@ export class CartService {
         if (userStr) {
           this.currentUser = user;
           this.updateCartState({ isGuest: false });
-          console.log('✅ Authenticated user loaded:', this.currentUser?.user_id);
+          localStorage.setItem('currentUser', JSON.stringify(user.user));
+          sessionStorage.setItem('sellerData', JSON.stringify(user.seller || {}));
+          console.log('✅ Authenticated user loaded:', this.currentUser.user?.user_id);
         }
       });
       } catch (error) {
