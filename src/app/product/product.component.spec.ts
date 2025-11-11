@@ -3,6 +3,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ProductComponent } from './product.component';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { ActivatedRoute } from '@angular/router';
+import { of } from 'rxjs';
 
 describe('ProductComponent', () => {
   let component: ProductComponent;
@@ -13,7 +15,14 @@ describe('ProductComponent', () => {
       imports: [ProductComponent],
       providers: [
         provideHttpClient(),
-        provideHttpClientTesting()
+        provideHttpClientTesting(),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            params: of({}), // mock your route params here if needed
+            snapshot: { paramMap: { get: () => null } }
+          }
+        }
       ]
     })
     .compileComponents();
