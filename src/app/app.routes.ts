@@ -22,6 +22,7 @@ import { OrdersComponent } from './checkout/orders/orders.component';
 import { TermsofserviceComponent } from './legal/termsofservice/termsofservice.component';
 import { PrivacypolicyComponent } from './legal/privacypolicy/privacypolicy.component';
 
+
 export const routes: Routes = [
     { path: '', redirectTo: 'homepage', pathMatch: 'full' },
     { path: 'homepage', component: HomepageComponent },
