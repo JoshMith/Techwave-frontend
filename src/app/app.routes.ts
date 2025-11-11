@@ -43,7 +43,7 @@ export const routes: Routes = [
     
     { path: 'profile', component: ProfileComponent },
     { path: 'seller-dashboard', component: SellerDashboardComponent },
-    { path: 'product/:id', component: ProductComponent },
+    { path: 'product/:id', component: ProductComponent, providers: [] },
     { path: 'login', component: LoginComponent },
     { path: 'signup', component: SignupComponent },
     { path: 'forgot-pwd', component: ForgotPwdComponent },
