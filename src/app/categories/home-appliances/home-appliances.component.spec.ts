@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { HomeAppliancesComponent } from './home-appliances.component';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('HomeAppliancesComponent', () => {
   let component: HomeAppliancesComponent;
@@ -8,7 +10,11 @@ describe('HomeAppliancesComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [HomeAppliancesComponent]
+      imports: [HomeAppliancesComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting()
+      ]
     })
     .compileComponents();
 
