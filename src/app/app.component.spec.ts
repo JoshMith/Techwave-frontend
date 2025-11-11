@@ -1,5 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { AppComponent } from './app.component';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
@@ -14,3 +17,9 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 });
+
+export const provideTestDependencies = () => [
+  provideHttpClient(withInterceptorsFromDi()),
+  provideHttpClientTesting(),
+  provideRouter([]) // Provide empty router for tests
+];
