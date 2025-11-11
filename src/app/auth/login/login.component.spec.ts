@@ -19,8 +19,17 @@ describe('LoginComponent', () => {
         {
           provide: ActivatedRoute,
           useValue: {
-            params: of({}), // mock your route params here if needed
-            snapshot: { paramMap: { get: () => null } }
+            params: of({}),
+            queryParams: of({ returnUrl: '/' }), // Add queryParams with returnUrl
+            snapshot: {
+              paramMap: {
+                get: (key: string) => null
+              },
+              queryParamMap: {
+                get: (key: string) => key === 'returnUrl' ? '/' : null
+              },
+              queryParams: { returnUrl: '/' } // Add this line to fix the error
+            }
           }
         }
       ]
