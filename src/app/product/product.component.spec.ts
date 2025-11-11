@@ -5,6 +5,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
+import { mockActivatedRoute } from '../test-utils';
 
 describe('ProductComponent', () => {
   let component: ProductComponent;
@@ -16,12 +17,12 @@ describe('ProductComponent', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            params: of({}), // mock your route params here if needed
-            snapshot: { paramMap: { get: () => null } }
-          }
+         { 
+          provide: ActivatedRoute, 
+          useValue: mockActivatedRoute(
+            { id: '123' }, // params
+            { returnUrl: '/' } // queryParams 
+          )
         }
       ]
     })

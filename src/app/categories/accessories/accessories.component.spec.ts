@@ -3,6 +3,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AccessoriesComponent } from './accessories.component';
 import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
+import { mockActivatedRoute } from '../../test-utils';
 
 describe('AccessoriesComponent', () => {
   let component: AccessoriesComponent;
@@ -13,7 +15,8 @@ describe('AccessoriesComponent', () => {
       imports: [AccessoriesComponent, HttpClientTestingModule],
       providers: [
         provideHttpClient(),
-        provideHttpClientTesting()
+        provideHttpClientTesting(),
+        { provide: ActivatedRoute, useValue: mockActivatedRoute() }
       ]
     })
     .compileComponents();

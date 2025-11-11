@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { PrivacypolicyComponent } from './privacypolicy.component';
+import { ActivatedRoute } from '@angular/router';
+import { mockActivatedRoute } from '../../test-utils';
 
 describe('PrivacypolicyComponent', () => {
   let component: PrivacypolicyComponent;
@@ -8,7 +10,10 @@ describe('PrivacypolicyComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [PrivacypolicyComponent]
+      imports: [PrivacypolicyComponent],
+      providers: [
+        { provide: ActivatedRoute, useValue: mockActivatedRoute() }
+      ]
     })
     .compileComponents();
 

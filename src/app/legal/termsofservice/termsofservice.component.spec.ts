@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { TermsofserviceComponent } from './termsofservice.component';
+import { ActivatedRoute } from '@angular/router';
+import { mockActivatedRoute } from '../../test-utils';
 
 describe('TermsofserviceComponent', () => {
   let component: TermsofserviceComponent;
@@ -8,7 +10,10 @@ describe('TermsofserviceComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TermsofserviceComponent]
+      imports: [TermsofserviceComponent],
+      providers: [
+        { provide: ActivatedRoute, useValue: mockActivatedRoute() }
+      ]
     })
     .compileComponents();
 

@@ -3,6 +3,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SellerDashboardComponent } from './seller-dashboard.component';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { ActivatedRoute } from '@angular/router';
+import { mockActivatedRoute } from '../test-utils';
 
 describe('SellerDashboardComponent', () => {
   let component: SellerDashboardComponent;
@@ -13,7 +15,8 @@ describe('SellerDashboardComponent', () => {
       imports: [SellerDashboardComponent],
       providers: [
         provideHttpClient(),
-        provideHttpClientTesting()
+        provideHttpClientTesting(),
+        { provide: ActivatedRoute, useValue: mockActivatedRoute() }
       ]
     })
     .compileComponents();
