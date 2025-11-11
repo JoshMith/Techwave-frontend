@@ -2,6 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DealsComponent } from './deals.component';
 import { ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('DealsComponent', () => {
   let component: DealsComponent;
@@ -11,6 +13,8 @@ describe('DealsComponent', () => {
     await TestBed.configureTestingModule({
       imports: [DealsComponent], // since it's standalone
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         {
           provide: ActivatedRoute,
           useValue: {
