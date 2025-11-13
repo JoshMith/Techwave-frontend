@@ -58,7 +58,7 @@ export class LoginComponent implements OnInit {
           this.loginMessage = 'Login successful! Redirecting...';
 
           if (response.user) {
-            // localStorage.setItem('currentUser', JSON.stringify(response.user));
+            localStorage.setItem('currentUser', JSON.stringify(response.user));
           }
 
           // Redirect to the intended destination or based on role
