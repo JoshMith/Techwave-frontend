@@ -6,7 +6,8 @@ import { catchError, map, Observable, of } from 'rxjs';
   providedIn: 'root'
 })
 export class ApiService {
-  public apiUrl = 'http://localhost:3000'; // Development URL
+  // public apiUrl = 'http://localhost:3000'; // Development URL
+  public apiUrl = 'https://miffiest-tom-pyramidally.ngrok-free.dev'; // Ngrok Production Testing URL
   // public apiUrl = 'https://techwave-backend-lepy.onrender.com'; // Production URL
   private httpOptions = {
     headers: new HttpHeaders({
@@ -436,8 +437,8 @@ export class ApiService {
     return this.http.post(`${this.apiUrl}/payments`, paymentData, this.httpOptions);
   }
 
-  confirmPayment(id: string): Observable<any> {
-    return this.http.put(`${this.apiUrl}/payments/${id}/confirm`, {}, this.httpOptions);
+  confirmPayment(orderId: string): Observable<any> {
+    return this.http.put(`${this.apiUrl}/payments/${orderId}/confirm`, {}, this.httpOptions);
   }
 
   deletePayment(id: string): Observable<any> {

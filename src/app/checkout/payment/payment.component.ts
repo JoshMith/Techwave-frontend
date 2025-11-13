@@ -4,6 +4,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { Router, RouterModule } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { forkJoin } from 'rxjs';
+import { MpesaService } from '../../services/mpesa.service';
 
 interface PaymentInfo {
   cartId: number;
@@ -33,6 +34,11 @@ export class PaymentComponent implements OnInit {
   orderCreated = false;
   orderId: number | null = null;
 
+  // M-Pesa specific properties
+  mpesaCheckoutRequestID: string | null = null;
+  mpesaPolling = false;
+  mpesaTimeout = false;
+
   // Add new state tracking variables
   currentStep: 'creating_order' | 'creating_items' | 'processing_payment' | 'completed' = 'creating_order';
 
@@ -40,6 +46,7 @@ export class PaymentComponent implements OnInit {
     private fb: FormBuilder,
     private router: Router,
     private apiService: ApiService,
+    private mpesaService: MpesaService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
@@ -172,8 +179,21 @@ export class PaymentComponent implements OnInit {
       return;
     }
 
-    // Validate form for non-COD methods
-    if (this.selectedPaymentMethod !== 'cash_on_delivery') {
+    // Validate addressId
+    if (!this.paymentInfo.addressId || this.paymentInfo.addressId === 0) {
+      this.error = 'Invalid delivery address. Please go back and select a valid address.';
+      return;
+    }
+
+    // Validate form based on payment method
+    if (this.selectedPaymentMethod === 'mpesa') {
+      const phone = this.paymentForm.value.mpesaPhone;
+      if (!phone || !this.mpesaService.isValidKenyanPhone(phone)) {
+        this.error = 'Please enter a valid Kenyan phone number (e.g., 0712345678)';
+        this.paymentForm.get('mpesaPhone')?.markAsTouched();
+        return;
+      }
+    } else if (this.selectedPaymentMethod === 'card') {
       if (this.paymentForm.invalid) {
         Object.keys(this.paymentForm.controls).forEach(key => {
           this.paymentForm.get(key)?.markAsTouched();
@@ -186,7 +206,7 @@ export class PaymentComponent implements OnInit {
     this.error = null;
     this.currentStep = 'creating_order';
 
-    // Step 1: Create the order
+    // Create order first
     this.createOrder();
   }
 
@@ -277,35 +297,178 @@ export class PaymentComponent implements OnInit {
       return;
     }
 
-    console.log('🔄 Processing payment...');
+    console.log('🔄 Processing payment for order:', this.orderId);
 
-    let paymentData: any = {
+    // Handle M-Pesa STK Push
+    if (this.selectedPaymentMethod === 'mpesa') {
+      this.processMpesaPayment();
+    } else if (this.selectedPaymentMethod === 'card') {
+      this.processCardPayment();
+    } else if (this.selectedPaymentMethod === 'cash_on_delivery') {
+      this.processCODPayment();
+    }
+  }
+
+
+   /**
+   * Process M-Pesa STK Push Payment
+   */
+  private processMpesaPayment(): void {
+    const phone = this.paymentForm.value.mpesaPhone;
+    const formattedPhone = this.mpesaService.formatPhoneNumber(phone);
+
+    console.log('📱 Initiating M-Pesa STK Push...');
+    console.log('Phone:', formattedPhone);
+    console.log('Amount:', this.paymentInfo?.finalTotal);
+    console.log('Order:', this.orderId);
+
+    // First, create payment record
+    const paymentData = {
       orderId: this.orderId,
-      method: this.selectedPaymentMethod,
-      amount: this.paymentInfo.finalTotal
+      method: 'mpesa',
+      amount: this.paymentInfo!.finalTotal,
+      mpesaPhone: formattedPhone
     };
 
-    // Add method-specific data
-    if (this.selectedPaymentMethod === 'mpesa') {
-      paymentData.mpesaPhone = this.paymentForm.value.mpesaPhone;
-      paymentData.mpesaCode = 'MPX' + Date.now();
-    } else if (this.selectedPaymentMethod === 'card') {
-      paymentData.transactionReference = 'CARD' + Date.now();
-    }
-
     this.apiService.createPayment(paymentData).subscribe({
-      next: (response) => {
-        console.log('✅ Payment created:', response);
+      next: (paymentResponse) => {
+        console.log('✅ Payment record created:', paymentResponse);
 
-        // For demo purposes, auto-confirm payment
-        if (this.selectedPaymentMethod !== 'cash_on_delivery') {
-          this.confirmPaymentRecord(response.payment_id);
-        } else {
-          this.finalizeOrder();
+        // Now initiate STK Push
+        this.mpesaService.initiateSTKPush(
+          formattedPhone,
+          this.paymentInfo!.finalTotal,
+          this.orderId!.toString()
+        ).subscribe({
+          next: (stkResponse) => {
+            console.log('✅ STK Push initiated:', stkResponse);
+
+            if (stkResponse.success) {
+              this.mpesaCheckoutRequestID = stkResponse.checkoutRequestID;
+              
+              // Show user message
+              alert(stkResponse.customerMessage || 'Please check your phone for M-Pesa prompt');
+
+              // Start polling for payment confirmation
+              this.startMpesaPolling(stkResponse.checkoutRequestID);
+            } else {
+              this.handleError('Failed to send M-Pesa prompt. Please try again.');
+            }
+          },
+          error: (err) => {
+            console.error('❌ STK Push failed:', err);
+            this.handleError('Failed to initiate M-Pesa payment: ' + (err.error?.message || 'Unknown error'));
+          }
+        });
+      },
+      error: (err) => {
+        console.error('❌ Payment record creation failed:', err);
+        this.handleError('Failed to create payment record: ' + (err.error?.message || 'Unknown error'));
+      }
+    });
+  }
+  
+  /**
+   * Start polling M-Pesa payment status
+   */
+  private startMpesaPolling(checkoutRequestID: string): void {
+    console.log('🔄 Starting M-Pesa status polling...');
+    this.mpesaPolling = true;
+    this.mpesaTimeout = false;
+
+    this.mpesaService.pollPaymentStatus(checkoutRequestID, 24).subscribe({
+      next: (status) => {
+        console.log('📊 Payment status update:', status);
+
+        if (status.status === 'completed') {
+          console.log('✅ M-Pesa payment confirmed!');
+          this.mpesaPolling = false;
+          
+          // Update payment confirmation
+          this.apiService.confirmPayment(this.orderId!.toString()).subscribe({
+            next: () => {
+              console.log('✅ Payment marked as confirmed');
+              this.updateOrderStatus();
+            },
+            error: (err) => {
+              console.warn('⚠️ Payment confirmation update failed:', err);
+              // Continue anyway as payment was successful
+              this.updateOrderStatus();
+            }
+          });
+
+        } else if (status.status === 'failed') {
+          console.error('❌ M-Pesa payment failed:', status.resultDesc);
+          this.mpesaPolling = false;
+          this.handleError(`Payment failed: ${status.resultDesc}`);
+          
+          // Update order status to failed
+          this.apiService.updateOrder(this.orderId!.toString(), { status: 'failed' }).subscribe();
         }
       },
       error: (err) => {
-        this.handleError('Payment processing failed: ' + (err.error?.message || 'Unknown error'));
+        console.error('❌ M-Pesa polling error:', err);
+        this.mpesaPolling = false;
+        this.mpesaTimeout = true;
+        this.handleError('Unable to confirm payment status. Please contact support with your order number.');
+      },
+      complete: () => {
+        console.log('🏁 M-Pesa polling completed');
+        this.mpesaPolling = false;
+        
+        if (this.mpesaTimeout) {
+          this.handleError('Payment confirmation timeout. We will update your order once payment is confirmed.');
+        }
+      }
+    });
+  }
+
+  /**
+   * Process Card Payment (simplified for demo)
+   */
+  private processCardPayment(): void {
+    console.log('💳 Processing card payment...');
+
+    const paymentData = {
+      orderId: this.orderId,
+      method: 'card',
+      amount: this.paymentInfo!.finalTotal,
+      transactionReference: 'CARD' + Date.now()
+    };
+
+    this.apiService.createPayment(paymentData).subscribe({
+      next: (response) => {
+        console.log('✅ Card payment created:', response);
+        
+        // In production, integrate with actual payment gateway
+        // For demo, auto-confirm
+        this.confirmPaymentRecord(response.payment_id);
+      },
+      error: (err) => {
+        this.handleError('Card payment failed: ' + (err.error?.message || 'Unknown error'));
+      }
+    });
+  }
+
+  /**
+   * Process Cash on Delivery
+   */
+  private processCODPayment(): void {
+    console.log('💵 Processing cash on delivery...');
+
+    const paymentData = {
+      orderId: this.orderId,
+      method: 'cash_on_delivery',
+      amount: this.paymentInfo!.finalTotal
+    };
+
+    this.apiService.createPayment(paymentData).subscribe({
+      next: () => {
+        console.log('✅ COD payment record created');
+        this.updateOrderStatus();
+      },
+      error: (err) => {
+        this.handleError('Failed to process order: ' + (err.error?.message || 'Unknown error'));
       }
     });
   }
