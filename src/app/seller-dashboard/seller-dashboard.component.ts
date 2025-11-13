@@ -386,9 +386,9 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     try {
       const userString = this.apiService.getCurrentUser().subscribe(user => {
         if (!userString) {
+          this.router.navigate(['/login'], { queryParams: { returnUrl: '/seller-dashboard' } });
           this.profileError = 'User session expired. Please log in again.';
           this.profileLoading = false;
-          this.router.navigate(['/login']);
           return;
         }
 
@@ -414,6 +414,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
             },
             error: (error) => {
               console.error('Error loading seller profile:', error);
+              this.router.navigate(['/login'], { queryParams: { returnUrl: '/seller-dashboard' } });
               this.profileError = 'Failed to load profile. Please try again.';
               this.profileLoading = false;
             }
@@ -421,6 +422,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
       });
     } catch (error) {
       console.error('Error parsing user data:', error);
+      this.router.navigate(['/login'], { queryParams: { returnUrl: '/seller-dashboard' } });
       this.profileError = 'Invalid user session. Please log in again.';
       this.profileLoading = false;
     }
@@ -730,11 +732,11 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
           this.productError = 'User session expired. Please log in again.';
         }
       });
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        this.productError = 'Invalid user session. Please log in again.';
-      }
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+      this.productError = 'Invalid user session. Please log in again.';
     }
+  }
 
   /**
    * Upload images for a product
