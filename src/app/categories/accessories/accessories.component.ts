@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Observable, Subscription, catchError, forkJoin, map, of, switchMap } from 'rxjs';
@@ -65,6 +65,12 @@ export class AccessoriesComponent implements OnInit, OnDestroy {
 
   cartCount = 0;
   addingToCart = false;
+
+  // Mobile menu state
+  mobileMenuOpen = false;
+  activeDropdown: string | null = null;
+
+
   private cartSubscription?: Subscription;
 
   constructor(
@@ -367,6 +373,93 @@ export class AccessoriesComponent implements OnInit, OnDestroy {
   viewProductDetails(product: Product): void {
     this.productService.setSelectedProduct(product);
     this.router.navigate(['/product', product.product_id], { queryParams: { returnUrl: this.router.url } });
+  }
+
+  /**
+   * Toggle mobile menu
+   */
+  toggleMobileMenu(): void {
+    this.mobileMenuOpen = !this.mobileMenuOpen;
+    
+    // Prevent body scroll when menu is open
+    if (this.mobileMenuOpen) {
+      document.body.classList.add('mobile-menu-active');
+    } else {
+      document.body.classList.remove('mobile-menu-active');
+      this.activeDropdown = null; // Close any open dropdowns
+    }
+  }
+
+  /**
+   * Close mobile menu
+   */
+  closeMobileMenu(): void {
+    this.mobileMenuOpen = false;
+    document.body.classList.remove('mobile-menu-active');
+    this.activeDropdown = null;
+  }
+
+  /**
+   * Toggle dropdown in mobile menu
+   */
+  toggleMobileDropdown(dropdownName: string): void {
+    if (this.activeDropdown === dropdownName) {
+      this.activeDropdown = null;
+    } else {
+      this.activeDropdown = dropdownName;
+    }
+  }
+
+  /**
+   * Check if dropdown is open
+   */
+  isDropdownOpen(dropdownName: string): boolean {
+    return this.activeDropdown === dropdownName;
+  }
+
+  /**
+   * Close menu when clicking outside on desktop
+   */
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    
+    // Don't close if clicking inside nav or on hamburger
+    if (target.closest('.nav-items') || target.closest('.hamburger-menu')) {
+      return;
+    }
+    
+    // Close mobile menu if open
+    if (this.mobileMenuOpen && window.innerWidth <= 768) {
+      this.closeMobileMenu();
+    }
+  }
+
+  /**
+   * Close menu on route change (add to your navigation links)
+   */
+  onNavigate(): void {
+    if (window.innerWidth <= 768) {
+      this.closeMobileMenu();
+    }
+  }
+
+  /**
+   * Handle window resize
+   */
+  @HostListener('window:resize', ['$event'])
+  onResize(event: any): void {
+    // Close mobile menu when resizing to desktop
+    if (event.target.innerWidth > 768 && this.mobileMenuOpen) {
+      this.closeMobileMenu();
+    }
+  }
+
+  /**
+   * Check if we're on mobile
+   */
+  isMobile(): boolean {
+    return window.innerWidth <= 768;
   }
   
 }

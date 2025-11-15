@@ -1,3 +1,27 @@
+/* Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.main-content {
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.content {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+
+/* Header Styles */
 .header {
   background: linear-gradient(135deg, #1e3a8a, #3b4f7d);
   position: relative;

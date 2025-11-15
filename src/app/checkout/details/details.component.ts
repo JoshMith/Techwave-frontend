@@ -16,6 +16,8 @@ interface Address {
   is_default: boolean;
   created_at?: string;
   updated_at?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface OrderItem {
@@ -39,6 +41,8 @@ interface CheckoutData {
   items: OrderItem[];
   isGuest: boolean;
 }
+
+declare var google: any;
 
 @Component({
   selector: 'app-details',
@@ -71,8 +75,17 @@ export class DetailsComponent implements OnInit {
     state: '',
     postal_code: '',
     country: 'Kenya',
-    is_default: false
+    is_default: false,
+    latitude: 0,
+    longitude: 0
   };
+
+  // Google Maps
+  map: any = null;
+  marker: any = null;
+  geocoder: any = null;
+  showMapPicker = false;
+  isLoadingMap = false;
 
   // Contact information
   contactInfo = {
@@ -103,14 +116,260 @@ export class DetailsComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.isBrowser) {
-      // console.log('🔄 DetailsComponent initialized - starting user load');
       this.loadCurrentUser();
+      this.loadGoogleMaps();
     }
   }
 
   /**
-   * Load current user - MAIN ENTRY POINT
+   * Load Google Maps Script
    */
+  loadGoogleMaps(): void {
+    if (!this.isBrowser) return;
+
+    // Check if Google Maps is already loaded
+    if (typeof google !== 'undefined' && google.maps) {
+      this.initializeGoogleMaps();
+      return;
+    }
+
+    // Load Google Maps script
+    const script = document.createElement('script');
+    script.src = `https://api.mapbox.com/mapbox-gl-js/v3.17.0-beta.1/mapbox-gl.js`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      this.initializeGoogleMaps();
+    };
+    script.onerror = () => {
+      console.error('❌ Failed to load Google Maps');
+      alert('Failed to load Google Maps. Please check your internet connection.');
+    };
+    document.head.appendChild(script);
+  }
+
+  /**
+   * Initialize Google Maps
+   */
+  initializeGoogleMaps(): void {
+    if (typeof google === 'undefined' || !google.maps) {
+      console.error('❌ Google Maps not available');
+      return;
+    }
+    this.geocoder = new google.maps.Geocoder();
+    console.log('✅ Google Maps initialized');
+  }
+
+  /**
+   * Open Map Picker
+   */
+  openMapPicker(): void {
+    this.showMapPicker = true;
+    this.isLoadingMap = true;
+
+    // Wait for DOM to render the map container
+    setTimeout(() => {
+      this.initializeMap();
+    }, 100);
+  }
+
+  /**
+   * Close Map Picker
+   */
+  closeMapPicker(): void {
+    this.showMapPicker = false;
+    this.map = null;
+    this.marker = null;
+  }
+
+  /**
+   * Initialize Map
+   */
+  initializeMap(): void {
+    if (!this.isBrowser || typeof google === 'undefined') return;
+
+    const mapElement = document.getElementById('map-canvas');
+    if (!mapElement) {
+      console.error('❌ Map container not found');
+      this.isLoadingMap = false;
+      return;
+    }
+
+    // Default to Nairobi, Kenya
+    const defaultLocation = { lat: -1.286389, lng: 36.817223 };
+
+    // Try to get user's current location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          this.createMap(mapElement, userLocation);
+        },
+        (error) => {
+          console.log('ℹ️ Could not get user location, using default');
+          this.createMap(mapElement, defaultLocation);
+        }
+      );
+    } else {
+      this.createMap(mapElement, defaultLocation);
+    }
+  }
+
+  /**
+   * Create Map
+   */
+  createMap(mapElement: HTMLElement, location: { lat: number, lng: number }): void {
+    this.map = new google.maps.Map(mapElement, {
+      center: location,
+      zoom: 15,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: true
+    });
+
+    // Add marker
+    this.marker = new google.maps.Marker({
+      position: location,
+      map: this.map,
+      draggable: true,
+      animation: google.maps.Animation.DROP
+    });
+
+    // Get address for initial location
+    this.reverseGeocode(location.lat, location.lng);
+
+    // Add click listener to map
+    this.map.addListener('click', (event: any) => {
+      const lat = event.latLng.lat();
+      const lng = event.latLng.lng();
+      this.updateMarkerPosition(lat, lng);
+    });
+
+    // Add drag listener to marker
+    this.marker.addListener('dragend', (event: any) => {
+      const lat = event.latLng.lat();
+      const lng = event.latLng.lng();
+      this.reverseGeocode(lat, lng);
+    });
+
+    this.isLoadingMap = false;
+  }
+
+  /**
+   * Update Marker Position
+   */
+  updateMarkerPosition(lat: number, lng: number): void {
+    const position = { lat, lng };
+    this.marker.setPosition(position);
+    this.map.panTo(position);
+    this.reverseGeocode(lat, lng);
+  }
+
+  /**
+   * Reverse Geocode - Get address from coordinates
+   */
+  reverseGeocode(lat: number, lng: number): void {
+    if (!this.geocoder) return;
+
+    const latlng = { lat, lng };
+    
+    this.geocoder.geocode({ location: latlng }, (results: any, status: any) => {
+      if (status === 'OK' && results[0]) {
+        this.parseGoogleAddress(results[0], lat, lng);
+      } else {
+        console.error('❌ Geocoding failed:', status);
+      }
+    });
+  }
+
+  /**
+   * Parse Google Address
+   */
+  parseGoogleAddress(result: any, lat: number, lng: number): void {
+    const addressComponents = result.address_components;
+    
+    let street = '';
+    let city = '';
+    let state = '';
+    let postalCode = '';
+    let country = '';
+
+    // Extract address components
+    for (const component of addressComponents) {
+      const types = component.types;
+      
+      if (types.includes('street_number') || types.includes('route')) {
+        street = street ? `${street} ${component.long_name}` : component.long_name;
+      }
+      
+      if (types.includes('locality') || types.includes('administrative_area_level_2')) {
+        city = component.long_name;
+      }
+      
+      if (types.includes('administrative_area_level_1')) {
+        state = component.long_name;
+      }
+      
+      if (types.includes('postal_code')) {
+        postalCode = component.long_name;
+      }
+      
+      if (types.includes('country')) {
+        country = component.long_name;
+      }
+    }
+
+    // Update form fields
+    this.newAddress.address_line1 = street || result.formatted_address;
+    this.newAddress.city = city || 'Nairobi';
+    this.newAddress.state = state || 'Nairobi County';
+    this.newAddress.postal_code = postalCode || '00100';
+    this.newAddress.country = country || 'Kenya';
+    this.newAddress.latitude = lat;
+    this.newAddress.longitude = lng;
+
+    console.log('✅ Address parsed:', this.newAddress);
+  }
+
+  /**
+   * Confirm Location from Map
+   */
+  confirmLocation(): void {
+    if (!this.newAddress.address_line1) {
+      alert('Please select a valid location on the map');
+      return;
+    }
+
+    this.closeMapPicker();
+    alert('Location selected! Please review and complete the address details.');
+  }
+
+  /**
+   * Search Location
+   */
+  searchLocation(query: string): void {
+    if (!query || !this.geocoder) return;
+
+    this.geocoder.geocode({ address: query }, (results: any, status: any) => {
+      if (status === 'OK' && results[0]) {
+        const location = results[0].geometry.location;
+        const lat = location.lat();
+        const lng = location.lng();
+        
+        this.map.setCenter(location);
+        this.map.setZoom(15);
+        this.updateMarkerPosition(lat, lng);
+      } else {
+        alert('Location not found. Please try a different search.');
+      }
+    });
+  }
+
+  // ========== EXISTING METHODS (unchanged) ==========
+
   loadCurrentUser(): void {
     if (!this.isBrowser) return;
 
@@ -119,38 +378,28 @@ export class DetailsComponent implements OnInit {
         if (!storedUser) {
           console.log('ℹ️ No user logged in - guest checkout');
           this.setupGuestCheckout();
-          // For guest, load checkout data immediately
           this.loadCheckoutData();
           return;
         }
 
         this.currentUser = user;
         this.isGuest = false;
-
-        // console.log('✅ User loaded, loading profile and addresses...');
-
-        // Load user profile and addresses FIRST, then checkout data
         this.loadUserProfileAndAddresses(user.user.user_id);
       });
-      } catch (error) {
-        console.error('❌ Error loading user data:', error);
-        this.setupGuestCheckout();
-        this.loadCheckoutData();
-      }
+    } catch (error) {
+      console.error('❌ Error loading user data:', error);
+      this.setupGuestCheckout();
+      this.loadCheckoutData();
     }
+  }
 
-  /**
-   * Load user profile and addresses, then checkout data
-   */
   private loadUserProfileAndAddresses(userId: number): void {
     this.apiService.getCurrentUserProfile(userId.toString()).subscribe({
       next: (user) => {
         this.currentUser = { ...this.currentUser, ...user };
         this.contactInfo.email = user.email || '';
         this.contactInfo.phone = user.phone || '';
-        // console.log('✅ User profile loaded, now loading addresses...');
-
-        // Now load addresses, then checkout data
+        
         this.loadAddresses(() => {
           console.log('✅ Addresses loaded, now loading checkout data...');
           this.loadCheckoutData();
@@ -158,7 +407,6 @@ export class DetailsComponent implements OnInit {
       },
       error: (err) => {
         console.error('❌ Error loading user profile:', err);
-        // Still try to load addresses
         this.loadAddresses(() => {
           this.loadCheckoutData();
         });
@@ -166,9 +414,6 @@ export class DetailsComponent implements OnInit {
     });
   }
 
-  /**
-   * Load addresses with callback - FIXED to ensure completion
-   */
   loadAddresses(callback?: () => void): void {
     if (!this.currentUser?.user_id || this.isGuest) {
       console.log('ℹ️ No addresses to load (guest or no user)');
@@ -180,25 +425,19 @@ export class DetailsComponent implements OnInit {
     this.isLoadingAddresses = true;
     this.addressError = null;
 
-    // console.log('🔄 Loading addresses for user:', this.currentUser.user_id);
-
     this.apiService.getAddressByUserId(this.currentUser.user_id.toString()).subscribe({
       next: (res: any) => {
         const addresses: Address[] = Array.isArray(res)
           ? res
           : (res?.addresses || res?.data || []);
 
-        // console.log('✅ Addresses loaded:', addresses);
         this.addresses = addresses;
 
-        // Auto-select default address
         const defaultAddress = addresses.find((addr: Address) => addr.is_default);
         if (defaultAddress) {
           this.selectedAddressId = defaultAddress.address_id;
-          // console.log('✅ Auto-selected default address:', this.selectedAddressId);
         } else if (addresses.length > 0) {
           this.selectedAddressId = addresses[0].address_id;
-          // console.log('✅ Auto-selected first address:', this.selectedAddressId);
         } else {
           console.log('ℹ️ No addresses found, showing address form');
           this.showAddressForm = true;
@@ -218,14 +457,7 @@ export class DetailsComponent implements OnInit {
     });
   }
 
-  /**
-   * Load checkout data from navigation state or localStorage
-   */
   loadCheckoutData(): void {
-    // console.log('🔄 Loading checkout data...');
-    // console.log('📌 Current selectedAddressId:', this.selectedAddressId);
-
-    // Try navigation state first
     const navigation = this.router.getCurrentNavigation();
     const state = navigation?.extras.state as any;
 
@@ -234,18 +466,10 @@ export class DetailsComponent implements OnInit {
       return;
     }
 
-    // Fallback to localStorage
     this.loadCheckoutDataFromStorage();
   }
 
-  /**
-   * Process checkout data - FIXED to use current selectedAddressId
-   */
   private processCheckoutData(data: any): void {
-    // console.log('🔄 Processing checkout data...');
-    // console.log('📌 Using selectedAddressId:', this.selectedAddressId);
-
-    // Normalize items and compute subtotals
     const items: OrderItem[] = (data.items || []).map((it: any) => {
       const qty = Number(it.quantity ?? 1);
       const price = Number(it.current_sale_price ?? it.unit_price ?? 0);
@@ -261,15 +485,11 @@ export class DetailsComponent implements OnInit {
       } as OrderItem;
     });
 
-    // Sum values
     const subtotal = items.reduce((sum, it) => sum + (Number(it.subtotal) || 0), 0);
     const shipping = Number(this.selectedDeliveryOption?.cost ?? data.shipping ?? 0);
     const tax = Number(data.tax ?? 0);
     const couponDiscount = Number(data.couponDiscount ?? 0);
-
     const total = subtotal + shipping + tax - couponDiscount;
-
-    // CRITICAL FIX: Use the CURRENT selectedAddressId, don't default to 0
     const addressId = this.selectedAddressId ? Number(this.selectedAddressId) : 0;
 
     this.orderData = {
@@ -287,18 +507,11 @@ export class DetailsComponent implements OnInit {
     this.orderItems = this.orderData.items;
     this.isGuest = this.orderData.isGuest;
 
-    // Save to localStorage for persistence
     if (this.isBrowser) {
       localStorage.setItem('checkout_data', JSON.stringify(this.orderData));
     }
-
-    // console.log('✅ Checkout data loaded with addressId:', this.orderData.addressId);
-    // console.log('✅ Full orderData:', this.orderData);
   }
 
-  /**
-   * Load checkout data from localStorage
-   */
   private loadCheckoutDataFromStorage(): void {
     if (!this.isBrowser) return;
 
@@ -317,9 +530,6 @@ export class DetailsComponent implements OnInit {
     }
   }
 
-  /**
-   * Show error and redirect
-   */
   private showErrorAndRedirect(message: string): void {
     this.error = message;
     setTimeout(() => {
@@ -327,9 +537,6 @@ export class DetailsComponent implements OnInit {
     }, 3000);
   }
 
-  /**
-   * Setup guest checkout
-   */
   private setupGuestCheckout(): void {
     this.isGuest = true;
     this.contactInfo.email = '';
@@ -339,22 +546,17 @@ export class DetailsComponent implements OnInit {
     this.showAddressForm = true;
   }
 
-  /**
-   * Save new address - FIXED to update orderData
-   */
   saveNewAddress(): void {
     if (!this.validateAddress(this.newAddress)) {
       alert('Please fill in all required fields (Address, City, State, Postal Code)');
       return;
     }
 
-    // For guest users, store address locally
     if (this.isGuest || !this.currentUser?.user_id) {
       this.handleGuestAddress();
       return;
     }
 
-    // For authenticated users, save to database
     this.apiService.createAddress({
       city: this.newAddress.city,
       street: this.newAddress.address_line1,
@@ -381,7 +583,9 @@ export class DetailsComponent implements OnInit {
           state: this.newAddress.state,
           postal_code: this.newAddress.postal_code,
           country: this.newAddress.country,
-          is_default: this.newAddress.is_default
+          is_default: this.newAddress.is_default,
+          latitude: this.newAddress.latitude,
+          longitude: this.newAddress.longitude
         };
 
         this.addresses.push(createdAddress);
@@ -389,11 +593,9 @@ export class DetailsComponent implements OnInit {
         this.showAddressForm = false;
         this.resetAddressForm();
 
-        // CRITICAL: Update orderData with the new address
         if (this.orderData) {
           this.orderData.addressId = createdAddress.address_id;
           localStorage.setItem('checkout_data', JSON.stringify(this.orderData));
-          console.log('✅ Updated orderData with new addressId:', this.orderData.addressId);
         }
 
         alert('Address added successfully!');
@@ -405,9 +607,6 @@ export class DetailsComponent implements OnInit {
     });
   }
 
-  /**
-   * Handle guest address - FIXED to update orderData
-   */
   private handleGuestAddress(): void {
     const guestAddress: Address = {
       address_id: Date.now(),
@@ -421,34 +620,23 @@ export class DetailsComponent implements OnInit {
     this.showAddressForm = false;
     this.resetAddressForm();
 
-    // CRITICAL: Update orderData with the new address
     if (this.orderData) {
       this.orderData.addressId = guestAddress.address_id;
       localStorage.setItem('checkout_data', JSON.stringify(this.orderData));
-      console.log('✅ Updated orderData with guest addressId:', this.orderData.addressId);
     }
 
     alert('Delivery address saved!');
   }
 
-  /**
-   * Select address - FIXED to update orderData
-   */
   selectAddress(addressId: number): void {
-    console.log('📍 Selecting address:', addressId);
     this.selectedAddressId = addressId;
 
-    // CRITICAL: Update orderData with the selected address
     if (this.orderData) {
       this.orderData.addressId = addressId;
       localStorage.setItem('checkout_data', JSON.stringify(this.orderData));
-      console.log('✅ Updated orderData with selected addressId:', this.orderData.addressId);
     }
   }
 
-  /**
-   * Validate form - ENHANCED to check for valid addressId
-   */
   validateForm(): boolean {
     if (!this.selectedAddressId || this.selectedAddressId === 0) {
       alert('Please select or add a delivery address');
@@ -480,18 +668,11 @@ export class DetailsComponent implements OnInit {
     return true;
   }
 
-  /**
-   * Proceed to payment - FIXED to use addressId
-   */
   proceedToPayment(): void {
-    console.log('🔄 Proceeding to payment...');
-    console.log('📌 Current selectedAddressId:', this.selectedAddressId);
-
     if (!this.validateForm()) {
       return;
     }
 
-    // Double-check we have a valid address ID
     if (!this.selectedAddressId || this.selectedAddressId === 0) {
       alert('Please select a valid delivery address');
       return;
@@ -506,37 +687,25 @@ export class DetailsComponent implements OnInit {
     this.isProcessing = true;
     this.error = '';
 
-    // Prepare data for payment page - FIXED: use addressId
     const paymentData = {
       cartId: this.orderData.cartId,
-      addressId: this.selectedAddressId, // This is the key fix
+      addressId: this.selectedAddressId,
       subtotal: this.orderData.subtotal,
       deliveryCost: this.selectedDeliveryOption.cost,
       finalTotal: this.finalTotal,
       deliveryCity: this.selectedAddress?.city || this.newAddress.city
     };
 
-    console.log('📦 Sending payment data:', paymentData);
-    console.log('📍 addressId being sent:', paymentData.addressId);
-
-    // Store for payment page
     if (this.isBrowser) {
       localStorage.setItem('payment_data', JSON.stringify(paymentData));
     }
 
     this.isProcessing = false;
-
-    // Navigate to payment
     this.router.navigate(['/checkout/payment'], {
       state: paymentData
     });
   }
 
-  // ========== REST OF THE METHODS (unchanged) ==========
-
-  /**
-   * Apply delivery cost to order
-   */
   private applyDeliveryToOrder(): void {
     if (!this.orderData) return;
 
@@ -574,7 +743,9 @@ export class DetailsComponent implements OnInit {
       state: '',
       postal_code: '',
       country: 'Kenya',
-      is_default: false
+      is_default: false,
+      latitude: 0,
+      longitude: 0
     };
   }
 

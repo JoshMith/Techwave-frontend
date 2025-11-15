@@ -106,7 +106,7 @@ export class PaymentComponent implements OnInit {
 
   loadCurrentUser(): void {
     const userStr = this.apiService.getCurrentUser().subscribe(user => {
-      if (!userStr) {
+      if (!user) {
         this.router.navigate(['/login'], {
           queryParams: { returnUrl: this.router.url }
         });

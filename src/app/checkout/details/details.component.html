@@ -102,6 +102,18 @@
           <!-- New Address Form -->
           <div *ngIf="showAddressForm" class="new-address-form">
             <h3>Add New Address</h3>
+            
+            <!-- Map Picker Button -->
+            <div class="form-group">
+              <button type="button" (click)="openMapPicker()" class="map-picker-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                📍 Select Location on Map
+              </button>
+            </div>
+
             <div class="form-group">
               <label for="address_line1">Address Line 1 *</label>
               <input type="text" id="address_line1" [(ngModel)]="newAddress.address_line1"
@@ -153,10 +165,13 @@
               [class.selected]="selectedDelivery === option.id" (click)="changeDelivery(option.id)">
               <input type="radio" [value]="option.id" [checked]="selectedDelivery === option.id" name="delivery"
                 (change)="changeDelivery(option.id)">
-              <div class="delivery-info"></div>
-              <span class="delivery-name">{{option.name}}</span>
-              <span class="delivery-estimate">{{option.estimate}}</span>
-              <span class="delivery-cost">{{option.cost | currency:'KSh '}}</span>
+              <div class="delivery-info">
+                <div>
+                  <span class="delivery-name">{{option.name}}</span>
+                  <span class="delivery-estimate">{{option.estimate}}</span>
+                </div>
+                <span class="delivery-cost">{{option.cost | currency:'KSh '}}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -235,4 +250,66 @@
   <button *ngIf="!isLoading && !error && orderData" (click)="debugCheckout()" class="debug-btn">
     Debug
   </button>
+</div>
+
+<!-- Map Picker Modal -->
+<div *ngIf="showMapPicker" class="map-modal-overlay" (click)="closeMapPicker()">
+  <div class="map-modal" (click)="$event.stopPropagation()">
+    <div class="map-modal-header">
+      <h3>Select Your Delivery Location</h3>
+      <button class="close-btn" (click)="closeMapPicker()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Search Box -->
+    <div class="map-search-box">
+      <input 
+        type="text" 
+        #searchInput 
+        placeholder="Search for a location (e.g., Westlands, Nairobi)"
+        (keyup.enter)="searchLocation(searchInput.value)"
+        class="map-search-input">
+      <button (click)="searchLocation(searchInput.value)" class="map-search-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Map Container -->
+    <div class="map-container">
+      <div *ngIf="isLoadingMap" class="map-loading">
+        <div class="spinner"></div>
+        <p>Loading map...</p>
+      </div>
+      <div id="map-canvas" class="map-canvas"></div>
+    </div>
+
+    <!-- Selected Address Display -->
+    <div class="selected-address-display" *ngIf="newAddress.address_line1">
+      <div class="address-icon">📍</div>
+      <div class="address-text">
+        <strong>Selected Location:</strong>
+        <p>{{ newAddress.address_line1 }}</p>
+        <p>{{ newAddress.city }}, {{ newAddress.state }} {{ newAddress.postal_code }}</p>
+      </div>
+    </div>
+
+    <!-- Map Instructions -->
+    <div class="map-instructions">
+      <p>💡 <strong>Tip:</strong> Click on the map or drag the marker to select your exact delivery location</p>
+    </div>
+
+    <!-- Modal Actions -->
+    <div class="map-modal-actions">
+      <button (click)="closeMapPicker()" class="btn-secondary">Cancel</button>
+      <button (click)="confirmLocation()" class="btn-primary" [disabled]="!newAddress.address_line1">
+        Confirm Location
+      </button>
+    </div>
+  </div>
 </div>
