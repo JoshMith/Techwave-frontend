@@ -7,10 +7,9 @@ import { ApiService } from '../../services/api.service';
 interface Address {
   address_id: number;
   user_id: number;
-  address_line1: string;
-  address_line2?: string;
+  street: string;
+  building: string;
   city: string;
-  state: string;
   postal_code: string;
   country: string;
   is_default: boolean;
@@ -65,10 +64,9 @@ export class DetailsComponent implements OnInit {
   // New address form
   showAddressForm = false;
   newAddress = {
-    address_line1: '',
-    address_line2: '',
+    street: '',
+    building: '',
     city: '',
-    state: '',
     postal_code: '',
     country: 'Kenya',
     is_default: false
@@ -89,7 +87,7 @@ export class DetailsComponent implements OnInit {
   ];
   selectedDelivery = 'pickup';
 
-  // Processing states
+  // Processing cities
   isProcessing = false;
   error = '';
   isLoading = false;
@@ -106,6 +104,7 @@ export class DetailsComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadCurrentUser();
     if (this.isBrowser) {
       this.loadCurrentUser();
     }
@@ -122,8 +121,6 @@ export class DetailsComponent implements OnInit {
    * Load current user - MAIN ENTRY POINT
    */
   loadCurrentUser(): void {
-    if (!this.isBrowser) return;
-
     try {
       const storedUser = this.apiService.getCurrentUser().subscribe(user => {
         if (!user) {
@@ -134,15 +131,31 @@ export class DetailsComponent implements OnInit {
 
         this.currentUser = user;
         this.isGuest = false;
+        this.error = '';
+        this.isLoading = false;
 
         // console.log('✅ User loaded, loading profile and addresses...');
 
         // Load user profile and addresses FIRST, then checkout data
         this.loadUserProfileAndAddresses(user.user.user_id);
       });
+      if (storedUser) {
+        this.currentUser = storedUser;
+        this.isGuest = false;
+        this.error = '';
+        this.isLoading = false;
+      }
+      if (!storedUser) {
+        console.log('ℹ️ No user logged in - prompting for login');
+        this.handleNoUserLogin();
+        this.error = 'You must be logged in to proceed with checkout.';
+        this.isLoading = true;
+      }
     } catch (error) {
       console.error('❌ Error loading user data:', error);
       this.handleNoUserLogin();
+      this.error = 'Failed to load user data. Please login again.';
+      this.isLoading = true;
       confirm('An error occurred while loading your user data. Please login again.');
     }
   }
@@ -205,7 +218,7 @@ export class DetailsComponent implements OnInit {
    * Load addresses with callback - FIXED to ensure completion
    */
   loadAddresses(callback?: () => void): void {
-    if (!this.currentUser?.user_id || this.isGuest) {
+    if (!this.currentUser.user?.user_id || this.isGuest) {
       console.log('ℹ️ No addresses to load (guest or no user)');
       this.isLoadingAddresses = false;
       callback?.();
@@ -217,7 +230,7 @@ export class DetailsComponent implements OnInit {
 
     // console.log('🔄 Loading addresses for user:', this.currentUser.user_id);
 
-    this.apiService.getAddressByUserId(this.currentUser.user_id.toString()).subscribe({
+    this.apiService.getAddressByUserId(this.currentUser.user.user_id.toString()).subscribe({
       next: (res: any) => {
         const addresses: Address[] = Array.isArray(res)
           ? res
@@ -251,26 +264,6 @@ export class DetailsComponent implements OnInit {
         callback?.();
       }
     });
-  }
-
-  /**
-   * Load checkout data from navigation state or localStorage
-   */
-  loadCheckoutData(): void {
-    // console.log('🔄 Loading checkout data...');
-    // console.log('📌 Current selectedAddressId:', this.selectedAddressId);
-
-    // Try navigation state first
-    const navigation = this.router.getCurrentNavigation();
-    const state = navigation?.extras.state as any;
-
-    if (state && state.cartId) {
-      this.processCheckoutData(state);
-      return;
-    }
-
-    // Fallback to localStorage
-    this.loadCheckoutDataFromStorage();
   }
 
   /**
@@ -334,8 +327,8 @@ export class DetailsComponent implements OnInit {
   /**
    * Load checkout data from localStorage
    */
-  private loadCheckoutDataFromStorage(): void {
-    if (!this.isBrowser) return;
+  private loadCheckoutData(): void {
+    // if (!this.isBrowser) return;
 
     const checkoutData = localStorage.getItem('checkout_data');
     if (!checkoutData) {
@@ -379,21 +372,22 @@ export class DetailsComponent implements OnInit {
    */
   saveNewAddress(): void {
     if (!this.validateAddress(this.newAddress)) {
-      alert('Please fill in all required fields (Address, City, State, Postal Code)');
+      alert('Please fill in all required fields (Address, City, Postal Code)');
       return;
     }
 
     // For guest users, store address locally
-    if (this.isGuest || !this.currentUser?.user_id) {
+    if (this.isGuest || !this.currentUser.user?.user_id) {
       this.handleGuestAddress();
       return;
     }
 
     // For authenticated users, save to database
     this.apiService.createAddress({
+      userId: this.currentUser.user.user_id,
       city: this.newAddress.city,
-      street: this.newAddress.address_line1,
-      building: this.newAddress.address_line2,
+      street: this.newAddress.street,
+      building: this.newAddress.building,
       postal_code: this.newAddress.postal_code,
       is_default: this.newAddress.is_default
     }).subscribe({
@@ -409,11 +403,10 @@ export class DetailsComponent implements OnInit {
 
         const createdAddress: Address = {
           address_id: newId,
-          user_id: this.currentUser?.user_id || 0,
-          address_line1: this.newAddress.address_line1,
-          address_line2: this.newAddress.address_line2,
+          user_id: this.currentUser.user?.user_id || 0,
+          street: this.newAddress.street,
+          building: this.newAddress.building,
           city: this.newAddress.city,
-          state: this.newAddress.state,
           postal_code: this.newAddress.postal_code,
           country: this.newAddress.country,
           is_default: this.newAddress.is_default
@@ -563,11 +556,10 @@ export class DetailsComponent implements OnInit {
 
     // Navigate to payment
     this.router.navigate(['/checkout/payment'], {
-      state: paymentData
+      city: paymentData
     });
   }
 
-  // ========== REST OF THE METHODS (unchanged) ==========
 
   /**
    * Apply delivery cost to order
@@ -603,10 +595,9 @@ export class DetailsComponent implements OnInit {
 
   resetAddressForm(): void {
     this.newAddress = {
-      address_line1: '',
-      address_line2: '',
+      street: '',
+      building: '',
       city: '',
-      state: '',
       postal_code: '',
       country: 'Kenya',
       is_default: false
@@ -615,9 +606,8 @@ export class DetailsComponent implements OnInit {
 
   validateAddress(address: any): boolean {
     return !!(
-      address.address_line1?.trim() &&
+      address.street?.trim() &&
       address.city?.trim() &&
-      address.state?.trim() &&
       address.postal_code?.trim()
     );
   }
@@ -641,10 +631,9 @@ export class DetailsComponent implements OnInit {
 
   formatAddress(address: Address): string {
     const parts = [
-      address.address_line1,
-      address.address_line2,
+      address.street,
+      address.building,
       address.city,
-      address.state,
       address.postal_code,
       address.country
     ].filter(part => part && part.trim());

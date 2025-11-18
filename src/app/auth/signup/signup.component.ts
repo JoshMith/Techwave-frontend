@@ -97,8 +97,4 @@ export class SignupComponent {
     // Redirect to backend Google auth endpoint
     window.location.href = `${this.apiService.apiUrl}/auth/google`;
   }
-
-  signupWithFacebook(): void {
-    alert('Facebook OAuth signup functionality');
-  }
 }

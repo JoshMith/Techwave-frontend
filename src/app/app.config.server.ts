@@ -9,7 +9,7 @@ const serverConfig: ApplicationConfig = {
     provideServerRendering(),
     provideServerRouting([
       { path: '', renderMode: RenderMode.Server },
-      { path: 'homepage', renderMode: RenderMode.Server },
+      { path: 'home', renderMode: RenderMode.Server },
       { path: 'shop', renderMode: RenderMode.Server },
       { path: 'categories/Phones', renderMode: RenderMode.Server },
       { path: 'categories/Laptops', renderMode: RenderMode.Server },

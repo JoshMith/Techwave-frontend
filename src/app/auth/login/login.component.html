@@ -61,10 +61,6 @@
       <button type="submit" class="login-btn" [disabled]="loginForm.invalid || isLoading">
         {{ isLoading ? 'Signing In...' : 'Sign In' }}
       </button>
-
-      <button type="button" class="login-btn mpesa-option" (click)="loginWithMpesa()" [disabled]="isLoading">
-        📱 Quick Login with M-Pesa
-      </button>
     </form>
 
     <div class="divider">
@@ -76,11 +72,6 @@
         <img src="https://cdn-icons-png.freepik.com/256/2991/2991148.png?semt=ais_white_label" alt="Google icon"
           width="20">
         {{ isLoading ? 'Redirecting...' : 'Google Login' }}
-      </button>
-      <button class="social-btn" type="button" (click)="loginWithFacebook()" [disabled]="isLoading">
-        <img src="https://i.pinimg.com/736x/3a/35/8d/3a358df023050199d97d4ee04ca27f00.jpg" alt="Facebook icon"
-          width="20">
-        Facebook
       </button>
     </div>
 

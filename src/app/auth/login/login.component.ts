@@ -87,11 +87,7 @@ export class LoginComponent implements OnInit {
   showSignup(): void {
     this.router.navigate(['/signup']);
   }
-
-  loginWithMpesa(): void {
-    alert('M-Pesa login functionality - Enter your phone number for quick access');
-  }
-
+  
   loginWithGoogle(): void {
     this.isLoading = true;
     this.loginMessage = 'Redirecting to Google...';
@@ -99,9 +95,5 @@ export class LoginComponent implements OnInit {
     // Redirect to backend Google auth endpoint with returnUrl
     const googleAuthUrl = `${this.apiService.apiUrl}/auth/google?returnUrl=${encodeURIComponent(this.returnUrl)}`;
     window.location.href = googleAuthUrl;
-  }
-
-  loginWithFacebook(): void {
-    alert('Facebook OAuth login functionality');
   }
 }
