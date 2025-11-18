@@ -1,150 +1,152 @@
 <!-- Header Navigation -->
 <header class="header">
-  <nav class="nav-container">
-    <a routerLink="/" class="logo">
-      <img routerLink="/" src="favicon.ico" width="50px" alt="Logo">
-    </a>
-    <div class="nav-items">
-
-      <a routerLink="/" class="nav-link">Home</a>
-      <a routerLink="/shop" class="nav-link">Shop</a>
-      <div class="dropdown">
-        <a class="nav-link dropdown-trigger">
-          Categories
-          <svg class="dropdown-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
-            xmlns="http://www.w3.org/2000/svg">
-            <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-              stroke-linejoin="round" />
-          </svg>
+    <nav class="nav-container">
+        <a routerLink="/" class="logo">
+            <img routerLink="/" src="favicon.ico" width="50px" alt="Logo">
         </a>
-        <div class="dropdown-menu">
-          <a routerLink="/categories/Phones" class="dropdown-link">
-            <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
-              xmlns="http://www.w3.org/2000/svg">
-              <rect x="5" y="2" width="14" height="20" rx="2" ry="2" stroke="currentColor" stroke-width="2" />
-              <line x1="12" y1="18" x2="12.01" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round" />
-            </svg>
-            Phones
-          </a>
-          <a routerLink="/categories/Laptops" class="dropdown-link">
-            <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
-              xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="4" width="20" height="12" rx="2" ry="2" stroke="currentColor" stroke-width="2" />
-              <line x1="2" y1="20" x2="22" y2="20" stroke="currentColor" stroke-width="2" />
-            </svg>
-            Laptops
-          </a>
-          <a routerLink="/categories/Accessories" class="dropdown-link">
-            <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
-              xmlns="http://www.w3.org/2000/svg">
-              <path d="M3 18V15C3 13.3431 4.34315 12 6 12C7.65686 12 9 13.3431 9 15V18" stroke="currentColor"
-                stroke-width="2" />
-              <path d="M21 18V15C21 13.3431 19.6569 12 18 12C16.3431 12 15 13.3431 15 15V18" stroke="currentColor"
-                stroke-width="2" />
-              <path
-                d="M9 9C9 6.79086 10.7909 5 13 5H11C8.79086 5 7 6.79086 7 9V12H15V9C15 6.79086 16.2091 5 18.5 5H16.5C14.2909 5 12.5 6.79086 12.5 9"
-                stroke="currentColor" stroke-width="2" />
-            </svg>
-            Accessories
-          </a>
-          <a routerLink="/categories/Home Appliances" class="dropdown-link">
-            <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
-              xmlns="http://www.w3.org/2000/svg">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="2" />
-              <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
-              <path d="M12 1V3" stroke="currentColor" stroke-width="2" />
-              <path d="M21 12H23" stroke="currentColor" stroke-width="2" />
-              <path d="M12 21V23" stroke="currentColor" stroke-width="2" />
-              <path d="M1 12H3" stroke="currentColor" stroke-width="2" />
-            </svg>
-            Home Appliances
-          </a>
-          <a routerLink="/categories/Gaming" class="dropdown-link">
-            <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
-              xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="6" width="20" height="12" rx="4" ry="4" stroke="currentColor" stroke-width="2" />
-              <circle cx="8" cy="12" r="2" stroke="currentColor" stroke-width="2" />
-              <path d="M16 10L18 12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round" />
-            </svg>
-            Gaming
-          </a>
-          <a routerLink="/categories/Audio & Sound" class="dropdown-link">
-            <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
-              xmlns="http://www.w3.org/2000/svg">
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" stroke="currentColor" stroke-width="2" />
-              <path d="M19.07 4.93C20.98 6.84 20.98 10.16 19.07 12.07M15.54 8.46C16.17 9.09 16.17 10.09 15.54 10.72"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-            Audio & Sound
-          </a>
+        <div class="nav-items">
+            <a routerLink="/" class="nav-link">Home</a>
+            <a routerLink="/shop" class="nav-link">Shop</a>
+            <div class="dropdown">
+                <a class="nav-link dropdown-trigger">
+                    Categories
+                    <svg class="dropdown-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </a>
+                <div class="dropdown-menu">
+                    <a routerLink="/categories/Phones" class="dropdown-link">
+                        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2" stroke="currentColor"
+                                stroke-width="2" />
+                            <line x1="12" y1="18" x2="12.01" y2="18" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" />
+                        </svg>
+                        Phones
+                    </a>
+                    <a routerLink="/categories/Laptops" class="dropdown-link">
+                        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <rect x="2" y="4" width="20" height="12" rx="2" ry="2" stroke="currentColor"
+                                stroke-width="2" />
+                            <line x1="2" y1="20" x2="22" y2="20" stroke="currentColor" stroke-width="2" />
+                        </svg>
+                        Laptops
+                    </a>
+                    <a routerLink="/categories/Accessories" class="dropdown-link">
+                        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M3 18V15C3 13.3431 4.34315 12 6 12C7.65686 12 9 13.3431 9 15V18"
+                                stroke="currentColor" stroke-width="2" />
+                            <path d="M21 18V15C21 13.3431 19.6569 12 18 12C16.3431 12 15 13.3431 15 15V18"
+                                stroke="currentColor" stroke-width="2" />
+                        </svg>
+                        Accessories
+                    </a>
+                    <a routerLink="/categories/Home Appliances" class="dropdown-link">
+                        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke="currentColor"
+                                stroke-width="2" />
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
+                        </svg>
+                        Home Appliances
+                    </a>
+                    <a routerLink="/categories/Gaming" class="dropdown-link">
+                        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <rect x="2" y="6" width="20" height="12" rx="4" ry="4" stroke="currentColor"
+                                stroke-width="2" />
+                            <circle cx="8" cy="12" r="2" stroke="currentColor" stroke-width="2" />
+                        </svg>
+                        Gaming
+                    </a>
+                    <a routerLink="/categories/Audio & Sound" class="dropdown-link">
+                        <svg class="dropdown-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" stroke="currentColor"
+                                stroke-width="2" />
+                        </svg>
+                        Audio & Sound
+                    </a>
+                </div>
+            </div>
+            <a routerLink="/deals" class="nav-link">Deals</a>
+            <a routerLink="/login" class="nav-link">Signup</a>
+            <a routerLink="/profile" class="nav-link">Profile</a>
         </div>
-      </div>
-      <a routerLink="/deals" class="nav-link">Deals</a>
-      <a routerLink="/login" class="nav-link">Signup</a>
-      <a routerLink="/profile" class="nav-link">Profile</a>
-    </div>
-    <div class="cart-icon-container">
-      <button class="cart-icon" aria-label="Cart" (click)="goToCart()" title="Cart">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path
-            d="M6 2L3 6V20C3 20.5304 3.21071 21.0391 3.58579 21.4142C3.96086 21.7893 4.46957 22 5 22H19C19.5304 22 20.0391 21.7893 20.4142 21.4142C20.7893 21.0391 21 20.5304 21 20V6L18 2H6Z"
-            stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-          <path d="M3 6H21" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-          <path
-            d="M16 10C16 11.0609 15.5786 12.0783 14.8284 12.8284C14.0783 13.5786 13.0609 14 12 14C10.9391 14 9.92172 13.5786 9.17157 12.8284C8.42143 12.0783 8 11.0609 8 10"
-            stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-        <span class="cart-count" *ngIf="cartCount > 0">{{ cartCount }}</span>
-      </button>
-    </div>
-  </nav>
+        <div class="cart-icon-container">
+            <button class="cart-icon" aria-label="Cart" (click)="goToCart()" title="Cart">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path
+                        d="M6 2L3 6V20C3 20.5304 3.21071 21.0391 3.58579 21.4142C3.96086 21.7893 4.46957 22 5 22H19C19.5304 22 20.0391 21.7893 20.4142 21.4142C20.7893 21.0391 21 20.5304 21 20V6L18 2H6Z"
+                        stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M3 6H21" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path
+                        d="M16 10C16 11.0609 15.5786 12.0783 14.8284 12.8284C14.0783 13.5786 13.0609 14 12 14C10.9391 14 9.92172 13.5786 9.17157 12.8284C8.42143 12.0783 8 11.0609 8 10"
+                        stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span class="cart-count" *ngIf="cartCount > 0">{{ cartCount }}</span>
+            </button>
+        </div>
+    </nav>
 </header>
 
-<main class="profile-container">
+<!-- Loading State -->
+<div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading your profile...</p>
+</div>
+
+<!-- Error State -->
+<div *ngIf="error && !isLoading" class="error-container">
+    <p>{{ error }}</p>
+    <button (click)="loadUserData()" class="retry-btn">Retry</button>
+</div>
+
+<!-- Main Profile Content -->
+<main class="profile-container" *ngIf="!isLoading && !error && user">
+    <!-- Welcome Banner -->
     <div class="welcome-banner">
         <div class="container">
-            <h1>Welcome, {{ user.name }}</h1>
-            <p>Your account is {{ user.status }}</p>
+            <h1>Welcome back, {{ user.name }}!</h1>
+            <p>{{ user.email }}</p>
         </div>
     </div>
 
     <div class="container profile-content">
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
+            <!-- Profile Card -->
             <div class="profile-card">
-                <div class="avatar">JD</div>
+                <div class="avatar">{{ getUserInitials() }}</div>
                 <h3>{{ user.name }}</h3>
                 <p>{{ user.email }}</p>
-                <p class="joined">Member since {{ user.joined }}</p>
+                <p class="joined">Member since {{ getMemberSince() }}</p>
             </div>
 
+            <!-- Navigation -->
             <nav class="profile-nav">
-                <a routerLink="/profile/orders" class="nav-item active">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <a (click)="setActiveSection('overview')" [class.active]="activeSection === 'overview'"
+                    class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2" />
+                        <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2" />
+                        <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2" />
+                        <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2" />
+                    </svg>
+                    Dashboard
+                </a>
+                <a (click)="setActiveSection('orders')" [class.active]="activeSection === 'orders'" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <path
                             d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15"
                             stroke="currentColor" stroke-width="2" />
                         <path d="M12 12H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                        <path d="M12 16H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                        <path d="M9 5C9 3.34315 10.3431 2 12 2C13.6569 2 15 3.34315 15 5" stroke="currentColor"
-                            stroke-width="2" />
                         <circle cx="9" cy="12" r="1" fill="currentColor" />
-                        <circle cx="9" cy="16" r="1" fill="currentColor" />
                     </svg>
-                    Orders
+                    My Orders
                 </a>
-                <a routerLink="/profile/wishlist" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path
-                            d="M19.5 12.572L12 20L4.5 12.572C3.39853 11.4762 2.77278 9.97782 2.76161 8.41289C2.75044 6.84796 3.35483 5.34115 4.43976 4.23122C5.5247 3.12129 7.00968 2.5 8.57143 2.5C10.1332 2.5 11.6182 3.12129 12.7031 4.23122L12 5L13.2969 4.23122C14.3818 3.12129 15.8668 2.5 17.4286 2.5C18.9903 2.5 20.4753 3.12129 21.5602 4.23122C22.6452 5.34115 23.2496 6.84796 23.2384 8.41289C23.2272 9.97782 22.6015 11.4762 21.5 12.572H19.5Z"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                    Wishlist
-                </a>
-                <a routerLink="/profile/contact" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <a (click)="setActiveSection('addresses')" [class.active]="activeSection === 'addresses'"
+                    class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <path
                             d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z"
                             stroke="currentColor" stroke-width="2" />
@@ -152,105 +154,371 @@
                     </svg>
                     Addresses
                 </a>
-                <a routerLink="/profile/payment" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <a (click)="setActiveSection('payments')" [class.active]="activeSection === 'payments'"
+                    class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2" />
-                        <path d="M2 10H22" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                        <path d="M6 15H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <path d="M2 10H22" stroke="currentColor" stroke-width="2" />
                     </svg>
-                    Payment Methods
+                    Payment History
                 </a>
-                <a routerLink="/profile/settings" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <a (click)="setActiveSection('settings')" [class.active]="activeSection === 'settings'"
+                    class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
                         <path
-                            d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z"
-                            stroke="currentColor" stroke-width="2" />
-                        <path
-                            d="M19.4 15C19.2 15.7 18.8 16.4 18.3 16.9L20 19C20.6 19.6 20.6 20.5 20 21C19.4 21.5 18.5 21.5 18 21L16.2 19.3C15.7 19.8 15 20.2 14.3 20.4C13.9 20.5 13.5 20.6 13 20.6C12.5 20.6 12.1 20.5 11.7 20.4C10.9 20.2 10.2 19.8 9.7 19.3L8 21C7.4 21.5 6.5 21.5 6 21C5.5 20.4 5.5 19.5 6 19L7.7 16.9C7.2 16.4 6.8 15.7 6.6 15C6.5 14.6 6.4 14.2 6.4 13.7C6.4 13.2 6.5 12.8 6.6 12.4C6.8 11.7 7.2 11 7.7 10.5L6 8C5.5 7.4 5.5 6.5 6 6C6.5 5.5 7.4 5.5 8 6L9.7 8.1C10.2 7.6 10.9 7.2 11.6 7C12 6.9 12.4 6.8 12.9 6.8C13.4 6.8 13.8 6.9 14.2 7C14.9 7.2 15.6 7.6 16.1 8.1L17.9 6C18.5 5.5 19.4 5.5 19.9 6C20.4 6.6 20.4 7.5 19.9 8L18.2 10.1C18.7 10.6 19.1 11.3 19.3 12C19.4 12.4 19.5 12.8 19.5 13.3C19.5 13.8 19.4 14.2 19.3 14.6H19.4Z"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            d="M12 1V3M12 21V23M4.22 4.22L5.64 5.64M18.36 18.36L19.78 19.78M1 12H3M21 12H23M4.22 19.78L5.64 18.36M18.36 5.64L19.78 4.22"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                     </svg>
                     Settings
                 </a>
-                <a routerLink="/logout" class="nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <a (click)="logout()" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <path
                             d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                        <path d="M16 17L21 12L16 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                        <path d="M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round" />
+                            stroke="currentColor" stroke-width="2" />
+                        <path d="M16 17L21 12L16 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <path d="M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                     </svg>
                     Logout
                 </a>
             </nav>
+
+            <!-- Decorative Image -->
             <div class="random-image-container">
-                <img src="https://i.pinimg.com/736x/d1/d0/84/d1d084b862d95e03101d0bf3bddc51be.jpg" alt="Random Image"
-                    class="random-image" style="width: 100%; height: 1000px; border-radius: 12px; margin-top: 30px;" />
+                <img src="https://i.pinimg.com/736x/d1/d0/84/d1d084b862d95e03101d0bf3bddc51be.jpg" alt="Decorative"
+                    class="random-image" />
             </div>
         </aside>
 
-        <!-- Main Content -->
+        <!-- Main Dashboard Content -->
         <div class="dashboard">
-            <!-- Account Stats -->
-            <div class="stats-section">
-                <div class="stat-card">
-                    <div class="stat-value">{{ stats.orders }}</div>
-                    <div class="stat-label">Active Orders</div>
+            <!-- Dashboard Overview -->
+            <div *ngIf="activeSection === 'overview'">
+                <!-- Account Stats -->
+                <div class="stats-section">
+                    <div class="stat-card">
+                        <div class="stat-value">{{ stats.orders }}</div>
+                        <div class="stat-label">Active Orders</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ orders.length }}</div>
+                        <div class="stat-label">Total Orders</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ addresses.length }}</div>
+                        <div class="stat-label">Saved Addresses</div>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value">{{ stats.wishlist }}</div>
-                    <div class="stat-label">Wishlist Items</div>
+
+                <!-- Recent Orders Preview -->
+                <section class="recent-orders" *ngIf="orders.length > 0">
+                    <div class="section-header">
+                        <h2>Recent Orders</h2>
+                        <button (click)="setActiveSection('orders')" class="view-all-btn">View All</button>
+                    </div>
+                    <div class="orders-list">
+                        <div *ngFor="let order of orders.slice(0, 3)" class="order-item">
+                            <div class="order-info">
+                                <h3>Order #{{ order.order_id }}</h3>
+                                <div class="order-status" [ngClass]="getOrderStatusClass(order.order_status)">
+                                    {{ order.order_status }}
+                                </div>
+                            </div>
+                            <div class="order-date">{{ formatDate(order.created_at) }}</div>
+                            <div class="order-details">
+                                <span class="order-total">KSh {{ order.total_amount.toLocaleString() }}</span>
+                            </div>
+                            <button (click)="viewOrderDetails(order.order_id)" class="view-details">View
+                                Details</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- No Orders Message -->
+                <section class="recent-orders" *ngIf="orders.length === 0">
+                    <h2>Recent Orders</h2>
+                    <div class="empty-state">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
+                            <path
+                                d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15"
+                                stroke="currentColor" stroke-width="2" />
+                        </svg>
+                        <p>You haven't placed any orders yet.</p>
+                        <button routerLink="/shop" class="shop-btn">Start Shopping</button>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Orders Section -->
+            <div *ngIf="activeSection === 'orders'" class="section-content">
+                <h2 class="section-title">My Orders</h2>
+
+                <div *ngIf="orders.length > 0" class="orders-grid">
+                    <div *ngFor="let order of orders" class="order-card">
+                        <div class="order-header">
+                            <div>
+                                <h3>Order #{{ order.order_id }}</h3>
+                                <p class="order-date">{{ formatDate(order.created_at) }}</p>
+                            </div>
+                            <div class="order-status-badge" [ngClass]="getOrderStatusClass(order.order_status)">
+                                {{ order.order_status }}
+                            </div>
+                        </div>
+                        <div class="order-body">
+                            <div class="order-total-amount">
+                                <span class="label">Total Amount:</span>
+                                <span class="amount">KSh {{ order.total_amount.toLocaleString() }}</span>
+                            </div>
+                        </div>
+                        <div class="order-footer">
+                            <button (click)="viewOrderDetails(order.order_id)" class="view-details-btn">View
+                                Details</button>
+                        </div>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value">{{ stats.points }}</div>
-                    <div class="stat-label">Reward Points</div>
+
+                <div *ngIf="orders.length === 0" class="empty-state">
+                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none">
+                        <path
+                            d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15"
+                            stroke="currentColor" stroke-width="2" />
+                    </svg>
+                    <h3>No orders yet</h3>
+                    <p>Start shopping to place your first order!</p>
+                    <button routerLink="/shop" class="shop-btn">Browse Products</button>
                 </div>
             </div>
 
-            <!-- Recent Orders -->
-            <section class="recent-orders">
-                <h2>Recent Orders</h2>
-                <div class="orders-list">
-                    <div *ngFor="let order of orders" class="order-item">
-                        <div class="order-info">
-                            <h3>Order {{ order.id }}</h3>
-                            <div class="order-status" [class.in-progress]="order.status === 'In Progress'">
-                                {{ order.status }}
+            <!-- Addresses Section -->
+            <div *ngIf="activeSection === 'addresses'" class="section-content">
+                <div class="section-header">
+                    <h2 class="section-title">Saved Addresses</h2>
+                </div>
+
+                <div *ngIf="addresses.length > 0" class="addresses-grid">
+                    <div *ngFor="let address of addresses" class="address-card">
+                        <div class="address-header">
+                            <h3>{{ address.address_id }}</h3>
+                            <span *ngIf="address.is_default" class="default-badge">Default</span>
+                        </div>
+
+                        <!-- View Mode -->
+                        <div *ngIf="editingAddressId !== address.address_id" class="address-content">
+                            <p><strong>Address:</strong></p>
+                            <p>{{ address.street }}</p>
+                            <p *ngIf="address.building">{{ address.building }}</p>
+                            <p>{{ address.city }}, {{ address.county }} {{ address.postal_code }}</p>
+                            <p>{{ address.country }}</p>
+
+                            <div class="address-actions">
+                                <button (click)="startEditAddress(address)" class="edit-btn">Edit</button>
+                                <button *ngIf="!address.is_default" (click)="setDefaultAddress(address.address_id)"
+                                    class="default-btn">Set as Default</button>
+                                <button (click)="deleteAddress(address.address_id)" class="delete-btn">Delete</button>
                             </div>
                         </div>
-                        <div class="order-date">{{ order.date }}</div>
-                        <div class="order-details">
-                            <span>{{ order.items }} item{{ order.items > 1 ? 's' : '' }}</span>
-                            <span class="order-total">{{ order.total }}</span>
-                        </div>
-                        <button class="view-details">View Details</button>
-                    </div>
-                </div>
-            </section>
 
-            <!-- Recommended Products -->
-            <section class="recommended-products">
-                <h2>Recommended Products</h2>
-                <div class="products-grid">
-                    <div *ngFor="let product of recommendedProducts" class="product-card">
-                        <div class="product-image">
-                            <div class="placeholder">{{ product.name.charAt(0) }}</div>
+                        <!-- Edit Mode -->
+                        <div *ngIf="editingAddressId === address.address_id" class="address-edit-form">
+                            <div class="form-group">
+                                <label>Address Line 1</label>
+                                <input type="text" [(ngModel)]="editAddressData.street" class="form-input" />
+                            </div>
+                            <div class="form-group">
+                                <label>Address Line 2 (Optional)</label>
+                                <input type="text" [(ngModel)]="editAddressData.building" class="form-input" />
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>City</label>
+                                    <input type="text" [(ngModel)]="editAddressData.city" class="form-input" />
+                                </div>
+                                <div class="form-group">
+                                    <label>State/County</label>
+                                    <input type="text" [(ngModel)]="editAddressData.county" class="form-input" />
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Postal Code</label>
+                                    <input type="text" [(ngModel)]="editAddressData.postal_code" class="form-input" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Country</label>
+                                    <input type="text" [(ngModel)]="editAddressData.country" class="form-input" />
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button (click)="saveAddress(address.address_id)" class="save-btn">Save</button>
+                                <button (click)="cancelEditAddress()" class="cancel-btn">Cancel</button>
+                            </div>
                         </div>
-                        <div class="product-info">
-                            <h3>{{ product.name }}</h3>
-                            <p class="category">{{ product.category }}</p>
-                            <p class="price">{{ product.price }}</p>
-                            <p class="discount">{{ product.discount }}</p>
+                    </div>
+
+                    <!-- Add New Address Card -->
+                    <div class="address-card add-address-card">
+                        <h3>Add New Address</h3>
+                        <div class="form-group">
+                            <label> Address Line 1</label>
+                            <input type="text" [(ngModel)]="newAddress.street" class="form-input"
+                                placeholder="Street address" />
                         </div>
-                        <button class="add-to-cart">Add to Cart</button>
+                        <div class="form-group">
+                            <label>Address Line 2 (Optional)</label>
+                            <input type="text" [(ngModel)]="newAddress.building" class="form-input"
+                                placeholder="Apartment, suite, etc." />
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>City</label>
+                                <input type="text" [(ngModel)]="newAddress.city" class="form-input"
+                                    placeholder="Nairobi" />
+                            </div>
+                            <div class="form-group">
+                                <label>State/County</label>
+                                <input type="text" [(ngModel)]="newAddress.county" class="form-input"
+                                    placeholder="Nairobi County" />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Postal Code</label>
+                                <input type="text" [(ngModel)]="newAddress.postal_code" class="form-input"
+                                    placeholder="00100" />
+                            </div>
+                            <div class="form-group">
+                                <label>Country</label>
+                                <input type="text" [(ngModel)]="newAddress.country" class="form-input" value="Kenya"
+                                    readonly />
+                            </div>
+                        </div>
+                        <button (click)="addNewAddress()" class="add-btn">Add Address</button>
                     </div>
                 </div>
-            </section>
+            </div>
+
+            <div *ngIf="addresses.length === 0" class="empty-state">
+                <svg width="80" height="80" viewBox="0 0 24 24" fill="none">
+                    <path
+                        d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z"
+                        stroke="currentColor" stroke-width="2" />
+                    <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2" />
+                </svg>
+                <h3>No saved addresses</h3>
+                <p>Add your first delivery address!</p>
+            </div>
+        </div>
+
+        <!-- Payments Section -->
+        <div *ngIf="activeSection === 'payments'" class="section-content">
+            <h2 class="section-title">Payment History</h2>
+
+            <div *ngIf="payments.length > 0" class="payments-grid">
+                <div *ngFor="let payment of payments" class="payment-card">
+                    <div class="payment-header">
+                        <div>
+                            <h3>Payment #{{ payment.payment_id }}</h3>
+                            <p class="payment-date">{{ formatDate(payment.created_at) }}</p>
+                        </div>
+                        <div class="payment-status-badge" [ngClass]="getPaymentStatusClass(payment.payment_status)">
+                            {{ payment.payment_status }}
+                        </div>
+                    </div>
+                    <div class="payment-body">
+                        <div class="payment-info">
+                            <span class="label">Order ID:</span>
+                            <span class="value">#{{ payment.order_id }}</span>
+                        </div>
+                        <div class="payment-info">
+                            <span class="label">Payment Method:</span>
+                            <span class="value">{{ payment.payment_method }}</span>
+                        </div>
+                        <div class="payment-info">
+                            <span class="label">Amount:</span>
+                            <span class="value amount">KSh {{ payment.amount.toLocaleString() }}</span>
+                        </div>
+                        <div class="payment-info" *ngIf="payment.transaction_id">
+                            <span class="label">Transaction ID:</span>
+                            <span class="value">{{ payment.transaction_id }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div *ngIf="payments.length === 0" class="empty-state">
+                <svg width="80" height="80" viewBox="0 0 24 24" fill="none">
+                    <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2" />
+                    <path d="M2 10H22" stroke="currentColor" stroke-width="2" />
+                </svg>
+                <h3>No payment history</h3>
+                <p>Your payment transactions will appear here.</p>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div *ngIf="activeSection === 'settings'" class="section-content">
+            <h2 class="section-title">Account Settings</h2>
+
+            <div class="settings-card">
+                <h3>Personal Information</h3>
+
+                <!-- View Mode -->
+                <div *ngIf="!isEditingProfile" class="profile-info">
+                    <div class="info-row">
+                        <span class="label">Name:</span>
+                        <span class="value">{{ user.name }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Email:</span>
+                        <span class="value">{{ user.email }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Phone:</span>
+                        <span class="value">{{ user.phone || 'Not provided' }}</span>
+                    </div>
+                    <button (click)="toggleEditProfile()" class="edit-profile-btn">Edit Profile</button>
+                </div>
+
+                <!-- Edit Mode -->
+                <div *ngIf="isEditingProfile" class="profile-edit-form">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" [(ngModel)]="editUserData.name" class="form-input" />
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" [(ngModel)]="editUserData.email" class="form-input" />
+                    </div>
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="tel" [(ngModel)]="editUserData.phone" class="form-input" placeholder="+254..." />
+                    </div>
+
+                    <div class="form-actions">
+                        <button (click)="saveProfile()" class="save-btn">Save Changes</button>
+                        <button (click)="cancelEditProfile()" class="cancel-btn">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-card">
+                <h3>Security</h3>
+                <p>Change your password or update security settings</p>
+                <button class="secondary-btn" disabled>Change Password (Coming Soon)</button>
+            </div>
+
+            <div class="settings-card danger-zone">
+                <h3>Danger Zone</h3>
+                <p>Permanently delete your account and all associated data</p>
+                <button class="danger-btn" disabled>Delete Account (Coming Soon)</button>
+            </div>
         </div>
     </div>
 </main>
 
+<!-- Footer -->
 <footer class="footer">
     <div class="container">
         <div class="footer-content">
@@ -260,7 +528,6 @@
                 <div class="contact-info">
                     <p>Email: techwaveelectronics4&#64;gmail.com</p>
                     <p>Phone: +254 742 841406 / +254 741 677623</p>
-
                     <div class="social-icons">
                         <p><a href="https://wa.me/+254742841406" target="_blank"><i
                                     class="fa-brands fa-whatsapp"></i></a></p>
