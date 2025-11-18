@@ -24,8 +24,8 @@ import { PrivacypolicyComponent } from './legal/privacypolicy/privacypolicy.comp
 
 
 export const routes: Routes = [
-    { path: '', redirectTo: 'homepage', pathMatch: 'full' },
-    { path: 'homepage', component: HomepageComponent },
+    { path: '', redirectTo: 'home', pathMatch: 'full' },
+    { path: 'home', component: HomepageComponent },
     { path: 'shop', component: ShopComponent },
     { path: 'categories/Phones', component: PhonesComponent },
     { path: 'categories/Laptops', component: LaptopsComponent },

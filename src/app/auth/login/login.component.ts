@@ -17,7 +17,7 @@ export class LoginComponent implements OnInit {
   isLoading = false;
   loginMessage = '';
   errorMessage = '';
-  returnUrl: string = '/homepage'; // Default fallback
+  returnUrl: string = '/home'; // Default fallback
 
   constructor(
     private fb: FormBuilder,
@@ -33,7 +33,7 @@ export class LoginComponent implements OnInit {
 
   ngOnInit(): void {
     // Get the returnUrl from query parameters
-    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/homepage';
+    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/home';
     console.log('Return URL:', this.returnUrl);
   }
 

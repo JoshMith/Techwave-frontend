@@ -143,7 +143,7 @@ export class CartService {
     this.setLoading(true);
     this.clearError();
 
-    console.log('🛒 Starting cart initialization...');
+    // console.log('🛒 Starting cart initialization...');
 
     this.initializationPromise = new Promise<boolean>((resolve) => {
       if (this.currentUser?.user_id) {
@@ -201,7 +201,7 @@ export class CartService {
         return;
       }
 
-      console.log('🛒 Loading guest cart with session:', sessionId);
+      // console.log('🛒 Loading guest cart with session:', sessionId);
 
       this.apiService.getCartBySessionId(sessionId).subscribe({
         next: (cart) => {
@@ -298,7 +298,7 @@ export class CartService {
       return true;
     }
 
-    console.log('🔄 Ensuring cart is ready...');
+    // console.log('🔄 Ensuring cart is ready...');
     return await this.initializeCart();
   }
 

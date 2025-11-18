@@ -27,7 +27,7 @@ interface Specification {
   styleUrls: ['./product.component.css']
 })
 export class ProductComponent implements OnInit, OnDestroy {
-  returnUrl: string = '/homepage'; // Default fallback
+  returnUrl: string = '/home'; // Default fallback
   constructor(
     private router: Router,
     public route: ActivatedRoute,
@@ -72,7 +72,7 @@ export class ProductComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     // Get the returnUrl from query parameters
-    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/homepage';
+    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/home';
     console.log('Return URL:', this.returnUrl);
 
     // Subscribe to cart state
