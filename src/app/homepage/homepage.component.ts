@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, Inject, PLATFORM_ID, HostListener } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../services/api.service';
@@ -52,12 +52,25 @@ export class HomepageComponent implements OnInit {
   currentUser: any = null;
   guestUser: GuestUser | null = null;
 
+  heroImages: string[] = [
+    'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500&h=500&fit=crop',
+    'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=500&h=500&fit=crop',
+    'https://images.unsplash.com/photo-1511385348-a52b4a160dc2?w=500&h=500&fit=crop',
+    'https://images.unsplash.com/photo-1496171367470-9ed9a91ea931?w=500&h=500&fit=crop',
+    'https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=500&h=500&fit=crop',
+    'https://images.unsplash.com/photo-1468436139062-f60a71c5c892?w=500&h=500&fit=crop'
+  ];
+
+  currentHeroImage: string = '';
+  private heroImageInterval: any;
+
   ngOnInit(): void {
     this.loadCategories();
     if (this.isBrowser) {
       this.loadCurrentUser();
       this.loadGuestUser();
       this.subscribeToCartState();
+      this.startHeroImageRotation();
     }
   }
 
@@ -65,10 +78,12 @@ export class HomepageComponent implements OnInit {
     if (this.cartSubscription) {
       this.cartSubscription.unsubscribe();
     }
+    if (this.heroImageInterval) {
+      clearInterval(this.heroImageInterval);
+    }
   }
 
   private cartSubscription?: Subscription;
-
 
   /**
    * Subscribe to cart state from CartService
@@ -223,10 +238,10 @@ export class HomepageComponent implements OnInit {
           console.log('✅ User loaded in homepage:', this.currentUser.user?.user_id);
         }
       });
-      } catch (error) {
-        console.error('❌ Failed to load user from localStorage:', error);
-      }
+    } catch (error) {
+      console.error('❌ Failed to load user from localStorage:', error);
     }
+  }
 
   /**
    * Load or create guest user session
@@ -264,6 +279,142 @@ export class HomepageComponent implements OnInit {
       created_at: new Date().toISOString()
     };
   }
+
+  /**
+ * Start rotating hero images
+ */
+  startHeroImageRotation(): void {
+    // Set initial image
+    this.currentHeroImage = this.getRandomHeroImage();
+
+    // Change image every 5 seconds
+    this.heroImageInterval = setInterval(() => {
+      this.currentHeroImage = this.getRandomHeroImage();
+    }, 5000);
+  }
+
+  /**
+   * Get random hero image from the array
+   */
+  getRandomHeroImage(): string {
+    const randomIndex = Math.floor(Math.random() * this.heroImages.length);
+    return this.heroImages[randomIndex];
+  }
+
+  /**
+   * Manually change to next hero image
+   */
+  nextHeroImage(): void {
+    const currentIndex = this.heroImages.indexOf(this.currentHeroImage);
+    const nextIndex = (currentIndex + 1) % this.heroImages.length;
+    this.currentHeroImage = this.heroImages[nextIndex];
+
+    // Reset the interval
+    if (this.heroImageInterval) {
+      clearInterval(this.heroImageInterval);
+      this.heroImageInterval = setInterval(() => {
+        this.currentHeroImage = this.getRandomHeroImage();
+      }, 5000);
+    }
+  }
+
+  /**
+   * Manually change to previous hero image
+   */
+  previousHeroImage(): void {
+    const currentIndex = this.heroImages.indexOf(this.currentHeroImage);
+    const prevIndex = (currentIndex - 1 + this.heroImages.length) % this.heroImages.length;
+    this.currentHeroImage = this.heroImages[prevIndex];
+
+    // Reset the interval
+    if (this.heroImageInterval) {
+      clearInterval(this.heroImageInterval);
+      this.heroImageInterval = setInterval(() => {
+        this.currentHeroImage = this.getRandomHeroImage();
+      }, 5000);
+    }
+  }
+
+  /**
+   * Set specific hero image
+   */
+  setHeroImage(imageUrl: string): void {
+    this.currentHeroImage = imageUrl;
+
+    // Reset the interval
+    if (this.heroImageInterval) {
+      clearInterval(this.heroImageInterval);
+      this.heroImageInterval = setInterval(() => {
+        this.currentHeroImage = this.getRandomHeroImage();
+      }, 5000);
+    }
+  }
+
+  /**
+ * Handle image load
+ */
+  onImageLoad(): void {
+    console.log('Hero image loaded successfully');
+  }
+
+  /**
+   * Handle image error
+   */
+  onImageError(): void {
+    console.error('Failed to load hero image:', this.currentHeroImage);
+    // Fallback to a default image or skip to next
+    this.nextHeroImage();
+  }
+
+  // Add these properties to your component class
+isMobileMenuOpen: boolean = false;
+isMobileCategoriesOpen: boolean = false;
+
+/**
+ * Toggle mobile menu
+ */
+toggleMobileMenu(): void {
+  this.isMobileMenuOpen = !this.isMobileMenuOpen;
+  // Close categories when closing main menu
+  if (!this.isMobileMenuOpen) {
+    this.isMobileCategoriesOpen = false;
+  }
+}
+
+/**
+ * Close mobile menu
+ */
+closeMobileMenu(): void {
+  this.isMobileMenuOpen = false;
+  this.isMobileCategoriesOpen = false;
+}
+
+/**
+ * Toggle mobile categories dropdown
+ */
+toggleMobileCategories(): void {
+  this.isMobileCategoriesOpen = !this.isMobileCategoriesOpen;
+}
+
+/**
+ * Handle window resize to close mobile menu on larger screens
+ */
+@HostListener('window:resize', ['$event'])
+onResize(event: any): void {
+  if (window.innerWidth > 1024 && this.isMobileMenuOpen) {
+    this.closeMobileMenu();
+  }
+}
+
+/**
+ * Handle escape key to close mobile menu
+ */
+@HostListener('document:keydown.escape', ['$event'])
+onKeydownHandler(event: KeyboardEvent): void {
+  if (this.isMobileMenuOpen) {
+    this.closeMobileMenu();
+  }
+}
 
   /**
    * Navigate to cart

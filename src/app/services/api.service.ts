@@ -6,8 +6,8 @@ import { catchError, map, Observable, of } from 'rxjs';
   providedIn: 'root'
 })
 export class ApiService {
-  public apiUrl = 'http://localhost:3000'; // Development URL
-  // public apiUrl = 'https://miffiest-tom-pyramidally.ngrok-free.dev'; // Ngrok Production Testing URL
+  // public apiUrl = 'http://localhost:3000'; // Development URL
+  public apiUrl = 'https://miffiest-tom-pyramidally.ngrok-free.dev'; // Ngrok Production Testing URL
   // public apiUrl = 'https://techwave-backend-lepy.onrender.com'; // Production URL
   private httpOptions = {
     headers: new HttpHeaders({
@@ -435,6 +435,10 @@ export class ApiService {
 
   getPaymentById(id: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/payments/${id}`, this.httpOptions);
+  }
+
+  getPaymentByUserId(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/payments/user/payments`, this.httpOptions);
   }
 
   createPayment(paymentData: any): Observable<any> {

@@ -32,10 +32,16 @@ interface Address {
 interface Order {
   order_id: number;
   user_id: number;
-  order_status: string;
   total_amount: number;
+  status: string; // Changed from order_status to status
+  notes?: string;
   created_at: string;
   order_items?: OrderItem[];
+  name?: string;
+  email?: string;
+  phone?: string;
+
+  isExpanded?: boolean
 }
 
 interface OrderItem {
@@ -44,17 +50,24 @@ interface OrderItem {
   product_id: number;
   quantity: number;
   unit_price: number;
-  subtotal: number;
+  discount: number;
   product_title?: string;
+  product_description?: string;
 }
 
 interface Payment {
   payment_id: number;
   order_id: number;
-  payment_method: string;
+  method: string; // Changed from payment_method to method
   amount: number;
-  payment_status: string;
-  transaction_id?: string;
+  mpesa_code?: string;
+  mpesa_phone?: string;
+  transaction_reference?: string; // Changed from transaction_id to transaction_reference
+  is_confirmed: boolean;
+  confirmed_at?: string;
+  // Additional fields from API
+  total_amount?: number;
+  status?: string;
   created_at: string;
 }
 
@@ -124,13 +137,13 @@ export class ProfileComponent implements OnInit {
         if (response && response.user) {
           this.user = response.user;
           this.editUserData = { ...this.user };
-          
+
           // Load user-specific data
           this.loadOrders();
           this.loadAddresses();
           this.loadPayments();
           this.loadRecommendedProducts();
-          
+
           this.isLoading = false;
         } else {
           this.error = 'User not found. Please login.';
@@ -147,28 +160,147 @@ export class ProfileComponent implements OnInit {
   }
 
   /**
-   * Load user orders
+   * Load user orders using new API
    */
   loadOrders(): void {
     if (!this.user) return;
 
     this.apiService.getOrdersByUserId().subscribe({
       next: (response) => {
-        // Filter orders for current user
-        this.orders = response.filter((order: Order) => 
-          order.user_id === this.user!.user_id
-        ).sort((a: Order, b: Order) => 
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-        
-        this.stats.orders = this.orders.filter(o => 
-          o.order_status === 'pending' || o.order_status === 'processing'
+        // Transform the API response to match our interface
+        this.orders = this.transformOrdersResponse(response);
+
+        this.stats.orders = this.orders.filter(o =>
+          o.status === 'pending' || o.status === 'processing'
         ).length;
       },
       error: (err) => {
         console.error('Failed to load orders:', err);
+        this.orders = [];
       }
     });
+  }
+
+  /**
+ * Get count of active orders
+ * Active orders are those that are not completed, cancelled, or delivered
+ */
+  getActiveOrdersCount(): number {
+    if (!this.orders || this.orders.length === 0) return 0;
+
+    const activeStatuses = ['pending', 'processing', 'shipped', 'confirmed', 'accepted'];
+
+    return this.orders.filter(order =>
+      activeStatuses.includes(order.status?.toLowerCase())
+    ).length;
+  }
+
+  /**
+   * Get active orders
+   */
+  getActiveOrders(): Order[] {
+    if (!this.orders || this.orders.length === 0) return [];
+
+    const activeStatuses = ['pending', 'processing', 'shipped', 'confirmed', 'accepted'];
+
+    return this.orders.filter(order =>
+      activeStatuses.includes(order.status?.toLowerCase())
+    );
+  }
+
+  /**
+   * Get completed orders
+   */
+  getCompletedOrders(): Order[] {
+    if (!this.orders || this.orders.length === 0) return [];
+
+    const completedStatuses = ['delivered', 'completed'];
+
+    return this.orders.filter(order =>
+      completedStatuses.includes(order.status?.toLowerCase())
+    );
+  }
+
+  /**
+   * Get cancelled orders
+   */
+  getCancelledOrders(): Order[] {
+    if (!this.orders || this.orders.length === 0) return [];
+
+    const cancelledStatuses = ['cancelled', 'refunded', 'failed'];
+
+    return this.orders.filter(order =>
+      cancelledStatuses.includes(order.status?.toLowerCase())
+    );
+  }
+
+  /**
+   * Check if an order is active
+   */
+  isOrderActive(order: Order): boolean {
+    const activeStatuses = ['pending', 'processing', 'shipped', 'confirmed', 'accepted'];
+    return activeStatuses.includes(order.status?.toLowerCase());
+  }
+
+  /**
+   * Check if an order is completed
+   */
+  isOrderCompleted(order: Order): boolean {
+    const completedStatuses = ['delivered', 'completed'];
+    return completedStatuses.includes(order.status?.toLowerCase());
+  }
+
+  /**
+   * Check if an order is cancelled
+   */
+  isOrderCancelled(order: Order): boolean {
+    const cancelledStatuses = ['cancelled', 'refunded', 'failed'];
+    return cancelledStatuses.includes(order.status?.toLowerCase());
+  }
+
+  /**
+   * Transform orders API response to match our Order interface
+   */
+  private transformOrdersResponse(apiResponse: any[]): Order[] {
+    // Group by order_id since API returns multiple rows per order (one per order item)
+    const ordersMap = new Map<number, Order>();
+
+    apiResponse.forEach((row: any) => {
+      if (!ordersMap.has(row.order_id)) {
+        // Create new order entry
+        ordersMap.set(row.order_id, {
+          order_id: row.order_id,
+          user_id: row.user_id,
+          total_amount: row.total_amount,
+          status: row.status,
+          notes: row.notes,
+          created_at: row.created_at,
+          name: row.name,
+          email: row.email,
+          phone: row.phone,
+          order_items: []
+        });
+      }
+
+      // Add order item to the order
+      const order = ordersMap.get(row.order_id);
+      if (order && row.order_item_id) {
+        order.order_items!.push({
+          order_item_id: row.order_item_id,
+          order_id: row.order_id,
+          product_id: row.product_id,
+          quantity: row.quantity,
+          unit_price: row.unit_price,
+          discount: row.discount,
+          product_title: row.product_title,
+          product_description: row.product_description
+        });
+      }
+    });
+
+    return Array.from(ordersMap.values()).sort((a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
   }
 
   /**
@@ -189,25 +321,43 @@ export class ProfileComponent implements OnInit {
   }
 
   /**
-   * Load user payments
+   * Load user payments using new API
    */
   loadPayments(): void {
     if (!this.user) return;
 
-    this.apiService.getPayments().subscribe({
+    this.apiService.getPaymentByUserId().subscribe({
       next: (response) => {
-        // Filter payments for user's orders
-        const userOrderIds = this.orders.map(o => o.order_id);
-        this.payments = response.filter((payment: Payment) => 
-          userOrderIds.includes(payment.order_id)
-        ).sort((a: Payment, b: Payment) => 
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
+        // Transform the API response to match our Payment interface
+        this.payments = this.transformPaymentsResponse(response);
       },
       error: (err) => {
         console.error('Failed to load payments:', err);
+        this.payments = [];
       }
     });
+  }
+
+  /**
+   * Transform payments API response to match our Payment interface
+   */
+  private transformPaymentsResponse(apiResponse: any[]): Payment[] {
+    return apiResponse.map((row: any) => ({
+      payment_id: row.payment_id,
+      order_id: row.order_id,
+      method: row.method,
+      amount: row.amount,
+      mpesa_code: row.mpesa_code,
+      mpesa_phone: row.mpesa_phone,
+      transaction_reference: row.transaction_reference,
+      is_confirmed: row.is_confirmed,
+      confirmed_at: row.confirmed_at,
+      total_amount: row.total_amount,
+      status: row.status,
+      created_at: row.created_at
+    })).sort((a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
   }
 
   /**
@@ -253,7 +403,22 @@ export class ProfileComponent implements OnInit {
 
     this.apiService.updateUser(this.user.user_id.toString(), this.editUserData).subscribe({
       next: (response) => {
-        // this.user = { ...this.user, ...this.editUserData };
+        // current user is non-null because of the guard above
+        const current = this.user as User;
+
+        // API may return either the updated user directly or an object with a `user` property.
+        // Treat response as a partial user and merge with existing required fields to produce a full User.
+        const apiUser = (response && (response.user ?? response)) as Partial<User> | undefined;
+
+        this.user = {
+          user_id: apiUser?.user_id ?? current.user_id,
+          name: apiUser?.name ?? current.name,
+          email: apiUser?.email ?? current.email,
+          phone: apiUser?.phone ?? current.phone,
+          created_at: apiUser?.created_at ?? current.created_at,
+          role: apiUser?.role ?? current.role
+        };
+
         this.isEditingProfile = false;
         alert('Profile updated successfully!');
       },
@@ -374,14 +539,50 @@ export class ProfileComponent implements OnInit {
   }
 
   /**
-   * View order details
+   * View order details - toggle expanded view
    */
   viewOrderDetails(orderId: number): void {
-    this.router.navigate(['/orders', orderId]);
+    // Toggle the expanded state for the clicked order
+    this.orders = this.orders.map(order => {
+      if (order.order_id === orderId) {
+        return {
+          ...order,
+          isExpanded: !order.isExpanded
+        };
+      }
+      // Optionally collapse other orders when one is expanded
+      return {
+        ...order,
+        isExpanded: false
+      };
+    });
   }
 
   /**
-   * Get order status class
+   * Get order item total
+   */
+  getOrderItemTotal(item: OrderItem): number {
+    return (item.unit_price * item.quantity) - (item.discount || 0);
+  }
+
+  /**
+   * Get order subtotal (sum of all items)
+   */
+  getOrderSubtotal(order: Order): number {
+    if (!order.order_items) return 0;
+    return order.order_items.reduce((total, item) => total + this.getOrderItemTotal(item), 0);
+  }
+
+  /**
+   * Get order discount total
+   */
+  getOrderDiscountTotal(order: Order): number {
+    if (!order.order_items) return 0;
+    return order.order_items.reduce((total, item) => total + (item.discount || 0), 0);
+  }
+
+  /**
+   * Get order status class - updated for new status field
    */
   getOrderStatusClass(status: string): string {
     const statusMap: { [key: string]: string } = {
@@ -394,27 +595,41 @@ export class ProfileComponent implements OnInit {
     return statusMap[status.toLowerCase()] || '';
   }
 
+
   /**
-   * Get payment status class
-   */
-  getPaymentStatusClass(status: string): string {
-    const statusMap: { [key: string]: string } = {
-      'pending': 'status-pending',
-      'completed': 'status-completed',
-      'failed': 'status-failed'
-    };
-    return statusMap[status.toLowerCase()] || '';
+ * Get payment status class - updated for new structure
+ */
+  getPaymentStatusClass(payment: Payment): string {
+    if (payment.is_confirmed) {
+      return 'status-completed';
+    } else if (payment.method === 'mpesa' && !payment.is_confirmed) {
+      return 'status-pending';
+    } else {
+      return 'status-failed';
+    }
   }
 
+  /**
+   * Get payment status text
+   */
+  getPaymentStatusText(payment: Payment): string {
+    if (payment.is_confirmed) {
+      return 'completed';
+    } else if (payment.method === 'mpesa' && !payment.is_confirmed) {
+      return 'pending';
+    } else {
+      return 'failed';
+    }
+  }
   /**
    * Format date
    */
   formatDate(dateString: string): string {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
   }
 
