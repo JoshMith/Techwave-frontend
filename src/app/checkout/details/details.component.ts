@@ -555,9 +555,8 @@ export class DetailsComponent implements OnInit {
     this.isProcessing = false;
 
     // Navigate to payment
-    this.router.navigate(['/checkout/payment'], {
-      city: paymentData
-    });
+    this.router.navigate(['/checkout/payment']
+    );
   }
 
 
