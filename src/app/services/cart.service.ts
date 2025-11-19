@@ -59,26 +59,44 @@ export class CartService {
     }
   }
 
+
   /**
-   * Load authenticated user from localStorage
-   */
+* Load authenticated user from API
+*/
   private loadCurrentUser(): void {
     if (!this.isBrowser) return;
 
-    try {
-      const userStr = this.apiService.getCurrentUser().subscribe(user => {
-        if (userStr) {
-          this.currentUser = user;
+    this.apiService.getCurrentUser().subscribe({
+      next: (response) => {
+        // Check if user is authenticated
+        if (response?.authenticated && response?.user) {
+          this.currentUser = response;
           this.updateCartState({ isGuest: false });
-          localStorage.setItem('currentUser', JSON.stringify(user.user));
-          sessionStorage.setItem('sellerData', JSON.stringify(user.seller || {}));
+
+          // Store user data
+          localStorage.setItem('currentUser', JSON.stringify(response.user));
+          if (response.seller) {
+            sessionStorage.setItem('sellerData', JSON.stringify(response.seller));
+          }
+
           console.log('✅ Authenticated user loaded:', this.currentUser.user?.user_id);
+        } else {
+          // User not authenticated - this is OK
+          console.log('ℹ️ No authenticated user - continuing as guest');
+          this.currentUser = null;
+          this.updateCartState({ isGuest: true });
         }
-      });
-      } catch (error) {
-        console.warn('⚠️ Failed to load user from localStorage:', error);
+      },
+      error: (error) => {
+        // Only log actual errors (not 401)
+        if (error.status !== 401) {
+          console.warn('⚠️ Error loading user:', error);
+        }
+        this.currentUser = null;
+        this.updateCartState({ isGuest: true });
       }
-    }
+    });
+  }
 
   /**
    * Load or create guest user session
