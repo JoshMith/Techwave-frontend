@@ -66,36 +66,35 @@ export class CartService {
   private loadCurrentUser(): void {
     if (!this.isBrowser) return;
 
-    this.apiService.getCurrentUser().subscribe({
-      next: (response) => {
-        // Check if user is authenticated
-        if (response?.authenticated && response?.user) {
-          this.currentUser = response;
-          this.updateCartState({ isGuest: false });
+    try {
+      const userStr = localStorage.getItem('currentUser');
+      const sellerStr = sessionStorage.getItem('sellerData');
 
-          // Store user data
-          localStorage.setItem('currentUser', JSON.stringify(response.user));
-          if (response.seller) {
-            sessionStorage.setItem('sellerData', JSON.stringify(response.seller));
-          }
+      if (userStr) {
+        const storedUser = JSON.parse(userStr);
+        // Reconstruct shape similar to the former API response
+        this.currentUser = {
+          authenticated: true,
+          user: storedUser,
+          ...(sellerStr ? { seller: JSON.parse(sellerStr) } : {})
+        };
 
-          console.log('✅ Authenticated user loaded:', this.currentUser.user?.user_id);
-        } else {
-          // User not authenticated - this is OK
-          console.log('ℹ️ No authenticated user - continuing as guest');
-          this.currentUser = null;
-          this.updateCartState({ isGuest: true });
-        }
-      },
-      error: (error) => {
-        // Only log actual errors (not 401)
-        if (error.status !== 401) {
-          console.warn('⚠️ Error loading user:', error);
-        }
+        this.updateCartState({ isGuest: false });
+
+        // Best-effort logging of available user id(s)
+        const uid =
+          storedUser?.user_id ?? storedUser?.user?.user_id ?? storedUser;
+        console.log('✅ Authenticated user loaded from storage:', uid);
+      } else {
         this.currentUser = null;
         this.updateCartState({ isGuest: true });
+        console.log('ℹ️ No authenticated user in storage - continuing as guest');
       }
-    });
+    } catch (error) {
+      console.warn('⚠️ Failed to load current user from storage:', error);
+      this.currentUser = null;
+      this.updateCartState({ isGuest: true });
+    }
   }
 
   /**
