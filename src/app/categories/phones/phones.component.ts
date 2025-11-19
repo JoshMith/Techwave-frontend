@@ -6,6 +6,8 @@ import { forkJoin, map, switchMap, Subscription, catchError, of } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { CartService } from '../../services/cart.service';
 import { ProductService } from '../../services/product.service';
+import { HeaderComponent } from '../../shared/header/header.component';
+import { FooterComponent } from '../../shared/footer/footer.component';
 
 
 interface Product {
@@ -51,7 +53,7 @@ interface Filters {
 @Component({
   selector: 'app-phones',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, HeaderComponent, FooterComponent],
   templateUrl: './phones.component.html',
   styleUrls: ['./phones.component.css']
 })

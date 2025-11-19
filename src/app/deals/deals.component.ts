@@ -6,6 +6,8 @@ import { Observable, catchError, forkJoin, map, of, switchMap, Subscription } fr
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../services/api.service';
 import { CartService } from '../services/cart.service';
+import { HeaderComponent } from '../shared/header/header.component';
+import { FooterComponent } from '../shared/footer/footer.component';
 
 interface Product {
   product_id: number;
@@ -50,7 +52,7 @@ interface Deal {
 @Component({
   selector: 'app-deals',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, RouterLink],
+  imports: [CommonModule, RouterModule, FormsModule, HeaderComponent, FooterComponent],
   templateUrl: './deals.component.html',
   styleUrl: './deals.component.css'
 })

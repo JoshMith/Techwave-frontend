@@ -5,6 +5,8 @@ import { RouterModule, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { CartService } from '../../services/cart.service';
 import { Subscription } from 'rxjs';
+import { HeaderComponent } from '../../shared/header/header.component';
+import { FooterComponent } from '../../shared/footer/footer.component';
 
 interface CartItem {
   cart_item_id: number;
@@ -35,7 +37,7 @@ interface Cart {
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterModule, HeaderComponent, FooterComponent],
   templateUrl: './cart.component.html',
   styleUrl: './cart.component.css'
 })

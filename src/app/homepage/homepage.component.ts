@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, Inject, PLATFORM_ID, HostListener } from '@angular/core';
+import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { CartService } from '../services/cart.service';
 import { finalize } from 'rxjs/operators';
-import { Subscription } from 'rxjs';
+import { HeaderComponent } from '../shared/header/header.component';
+import { FooterComponent } from '../shared/footer/footer.component';
 
 interface Category {
   category_id: number;
@@ -20,14 +21,9 @@ interface Category {
   key?: string;
 }
 
-interface GuestUser {
-  session_id: string;
-  created_at: string;
-}
-
 @Component({
   selector: 'app-homepage',
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, HeaderComponent, FooterComponent],
   templateUrl: './homepage.component.html',
   styleUrl: './homepage.component.css'
 })
@@ -37,7 +33,6 @@ export class HomepageComponent implements OnInit {
   constructor(
     private router: Router,
     private apiService: ApiService,
-    private cartService: CartService,
     @Inject(PLATFORM_ID) private platformId: any
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
@@ -47,10 +42,7 @@ export class HomepageComponent implements OnInit {
   isLoading = true;
   error: string | null = null;
 
-  // Cart related
-  cartCount = 0;
-  currentUser: any = null;
-  guestUser: GuestUser | null = null;
+  
 
   heroImages: string[] = [
     'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500&h=500&fit=crop',
@@ -67,34 +59,17 @@ export class HomepageComponent implements OnInit {
   ngOnInit(): void {
     this.loadCategories();
     if (this.isBrowser) {
-      this.loadCurrentUser();
-      this.loadGuestUser();
-      this.subscribeToCartState();
       this.startHeroImageRotation();
     }
   }
 
   ngOnDestroy(): void {
-    if (this.cartSubscription) {
-      this.cartSubscription.unsubscribe();
-    }
     if (this.heroImageInterval) {
       clearInterval(this.heroImageInterval);
     }
   }
 
-  private cartSubscription?: Subscription;
-
-  /**
-   * Subscribe to cart state from CartService
-   */
-  private subscribeToCartState(): void {
-    this.cartSubscription = this.cartService.cartState$.subscribe(state => {
-      this.cartCount = state.item_count;
-    });
-    // Initialize cart
-    this.cartService.initializeCart();
-  }
+  
 
   /**
    * Load categories from API
@@ -225,61 +200,7 @@ export class HomepageComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 
-  /**
-   * Load authenticated user from server
-   */
-  private loadCurrentUser(): void {
-    if (!this.isBrowser) return;
-
-    try {
-      const userStr = this.apiService.getCurrentUser().subscribe(user => {
-        if (userStr) {
-          this.currentUser = user;
-          console.log('✅ User loaded in homepage:', this.currentUser.user?.user_id);
-        }
-      });
-    } catch (error) {
-      console.error('❌ Failed to load user from localStorage:', error);
-    }
-  }
-
-  /**
-   * Load or create guest user session
-   */
-  private loadGuestUser(): void {
-    if (!this.isBrowser) return;
-
-    try {
-      const guestStr = localStorage.getItem('guestUser');
-
-      if (guestStr) {
-        this.guestUser = JSON.parse(guestStr);
-        console.log('✅ Guest user loaded in homepage:', this.guestUser?.session_id);
-      } else if (!this.currentUser) {
-        // Create new guest user if no authenticated user
-        this.guestUser = this.createGuestUser();
-        localStorage.setItem('guestUser', JSON.stringify(this.guestUser));
-        console.log('🆕 New guest user created in homepage:', this.guestUser.session_id);
-      }
-    } catch (error) {
-      console.warn('⚠️ Failed to load/create guest user:', error);
-    }
-  }
-
-  /**
-   * Create a new guest user with unique session ID
-   */
-  private createGuestUser(): GuestUser {
-    const timestamp = Date.now();
-    const randomStr = Math.random().toString(36).substring(2, 11);
-    const session_id = `session_${timestamp}_${randomStr}`;
-
-    return {
-      session_id,
-      created_at: new Date().toISOString()
-    };
-  }
-
+  
   /**
  * Start rotating hero images
  */
@@ -364,62 +285,5 @@ export class HomepageComponent implements OnInit {
     console.error('Failed to load hero image:', this.currentHeroImage);
     // Fallback to a default image or skip to next
     this.nextHeroImage();
-  }
-
-  // Add these properties to your component class
-isMobileMenuOpen: boolean = false;
-isMobileCategoriesOpen: boolean = false;
-
-/**
- * Toggle mobile menu
- */
-toggleMobileMenu(): void {
-  this.isMobileMenuOpen = !this.isMobileMenuOpen;
-  // Close categories when closing main menu
-  if (!this.isMobileMenuOpen) {
-    this.isMobileCategoriesOpen = false;
-  }
-}
-
-/**
- * Close mobile menu
- */
-closeMobileMenu(): void {
-  this.isMobileMenuOpen = false;
-  this.isMobileCategoriesOpen = false;
-}
-
-/**
- * Toggle mobile categories dropdown
- */
-toggleMobileCategories(): void {
-  this.isMobileCategoriesOpen = !this.isMobileCategoriesOpen;
-}
-
-/**
- * Handle window resize to close mobile menu on larger screens
- */
-@HostListener('window:resize', ['$event'])
-onResize(event: any): void {
-  if (window.innerWidth > 1024 && this.isMobileMenuOpen) {
-    this.closeMobileMenu();
-  }
-}
-
-/**
- * Handle escape key to close mobile menu
- */
-@HostListener('document:keydown.escape', ['$event'])
-onKeydownHandler(event: KeyboardEvent): void {
-  if (this.isMobileMenuOpen) {
-    this.closeMobileMenu();
-  }
-}
-
-  /**
-   * Navigate to cart
-   */
-  goToCart(): void {
-    this.router.navigate(['/cart']);
   }
 }

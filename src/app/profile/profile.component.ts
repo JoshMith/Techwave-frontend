@@ -4,6 +4,8 @@ import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { CartService } from '../services/cart.service';
 import { FormsModule } from '@angular/forms';
+import { HeaderComponent } from '../shared/header/header.component';
+import { FooterComponent } from '../shared/footer/footer.component';
 
 interface User {
   user_id: number;
@@ -73,7 +75,7 @@ interface Payment {
 
 @Component({
   selector: 'app-profile',
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, FormsModule, HeaderComponent, FooterComponent],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.css'
 })
@@ -147,14 +149,14 @@ export class ProfileComponent implements OnInit {
           this.isLoading = false;
         } else {
           this.error = 'User not found. Please login.';
-          this.router.navigate(['/login']);
+          this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
         }
       },
       error: (err) => {
         console.error('Failed to load user data:', err);
         this.error = 'Failed to load user data. Please login.';
         this.isLoading = false;
-        this.router.navigate(['/login']);
+        this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
       }
     });
   }
@@ -674,7 +676,7 @@ export class ProfileComponent implements OnInit {
         this.cartService.logout();
         localStorage.removeItem('currentUser');
         sessionStorage.removeItem('sellerData');
-        this.router.navigate(['/login']);
+        this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
       }
     });
   }

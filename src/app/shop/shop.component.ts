@@ -9,6 +9,8 @@ import { Subscription, catchError, forkJoin, map, of } from 'rxjs';
 import { ApiService } from '../services/api.service';
 import { CartService } from '../services/cart.service';
 import { ProductService } from '../services/product.service';
+import { HeaderComponent } from '../shared/header/header.component';
+import { FooterComponent } from '../shared/footer/footer.component';
 
 interface Product {
   product_id: number;
@@ -51,7 +53,7 @@ interface Category {
 @Component({
   selector: 'app-shop',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, RouterLink],
+  imports: [CommonModule, RouterModule, FormsModule, HeaderComponent, FooterComponent],
   templateUrl: './shop.component.html',
   styleUrl: './shop.component.css'
 })

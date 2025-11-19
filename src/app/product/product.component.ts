@@ -7,6 +7,8 @@ import { CartService } from '../services/cart.service';
 import { ApiService } from '../services/api.service';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { HeaderComponent } from '../shared/header/header.component';
+import { FooterComponent } from '../shared/footer/footer.component';
 
 interface Thumbnail {
   imageSrc: string;
@@ -22,7 +24,7 @@ interface Specification {
 
 @Component({
   selector: 'app-product',
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, HeaderComponent, FooterComponent],
   templateUrl: './product.component.html',
   styleUrls: ['./product.component.css']
 })

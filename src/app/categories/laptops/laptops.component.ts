@@ -6,6 +6,8 @@ import { Observable, forkJoin, map, switchMap, Subscription, catchError, of } fr
 import { ApiService } from '../../services/api.service';
 import { CartService } from '../../services/cart.service';
 import { ProductService } from '../../services/product.service';
+import { HeaderComponent } from '../../shared/header/header.component';
+import { FooterComponent } from '../../shared/footer/footer.component';
 
 interface Product {
   product_id: number;
@@ -38,7 +40,7 @@ interface ProductImage {
 @Component({
   selector: 'app-laptops',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, HeaderComponent, FooterComponent],
   templateUrl: './laptops.component.html',
   styleUrls: ['./laptops.component.css']
 })

@@ -7,6 +7,8 @@ import { Observable, Subscription, catchError, forkJoin, map, of, switchMap } fr
 import { ApiService } from '../../services/api.service';
 import { CartService } from '../../services/cart.service';
 import { ProductService } from '../../services/product.service';
+import { HeaderComponent } from '../../shared/header/header.component';
+import { FooterComponent } from '../../shared/footer/footer.component';
 
 interface Product {
   product_id: number;
@@ -39,7 +41,7 @@ interface ProductImage {
 @Component({
   selector: 'app-gaming',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, HeaderComponent, FooterComponent],
   templateUrl: './gaming.component.html',
   styleUrls: ['./gaming.component.css']
 })
