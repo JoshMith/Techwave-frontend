@@ -5,7 +5,10 @@
             <img routerLink="/" src="favicon.ico" width="50px" alt="Logo">
         </a>
         <!-- Hamburger Menu Button -->
-        <button class="menu-toggle" (click)="toggleMobileMenu()" aria-label="Toggle menu">
+        <button class="menu-toggle" 
+                [class.active]="isMobileMenuOpen"
+                (click)="toggleMobileMenu()" 
+                aria-label="Toggle menu">
             <span></span>
             <span></span>
             <span></span>
@@ -113,7 +116,13 @@
         </div>
     </nav>
 
-    <!-- Mobile Navigation Menu -->
+    <!-- Overlay (darkens the background when menu is open) -->
+    <div class="mobile-overlay" 
+         [class.active]="isMobileMenuOpen" 
+         (click)="closeMobileMenu()">
+    </div>
+
+    <!-- Mobile Navigation Menu (Sidebar) -->
     <div class="mobile-nav" [class.active]="isMobileMenuOpen">
         <button class="mobile-close-btn" (click)="closeMobileMenu()" aria-label="Close menu">
             &times;
