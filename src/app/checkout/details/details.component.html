@@ -170,7 +170,7 @@
         <!-- Order Items -->
         <div class="summary-items">
           <div *ngFor="let item of orderItems" class="summary-item">
-            <img [src]="item.image_url || 'assets/images/placeholder-product.png'" [alt]="item.product_title"
+            <img [src]="item.image_url || '/images/product-placeholder.jpg'" [alt]="item.product_title"
               class="item-image">
             <div class="item-details">
               <h4>{{item.product_title}}</h4>

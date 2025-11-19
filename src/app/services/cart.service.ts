@@ -181,9 +181,9 @@ export class CartService {
    */
   private loadUserCart(): Promise<boolean> {
     return new Promise((resolve) => {
-      console.log('🛒 Loading cart for user:', this.currentUser.user_id);
+      console.log('🛒 Loading cart for user:', this.currentUser.user.user.user_id);
 
-      this.apiService.getCartByUserId(this.currentUser.user_id).subscribe({
+      this.apiService.getCartByUserId(this.currentUser.user.user_id).subscribe({
         next: (cart) => {
           this.handleCartLoaded(cart);
           resolve(true);
@@ -191,7 +191,7 @@ export class CartService {
         error: (err) => {
           console.warn('⚠️ User cart not found:', err.status);
           if (err.status === 404) {
-            this.createCartForUser(this.currentUser.user_id).then(resolve);
+            this.createCartForUser(this.currentUser.user.user_id).then(resolve);
           } else {
             this.handleError('Failed to load user cart');
             resolve(false);
@@ -485,7 +485,7 @@ export class CartService {
    * Check if operating as guest
    */
   public isGuestUser(): boolean {
-    return !this.currentUser && !!this.guestUser;
+    return !this.currentUser.user && !!this.guestUser;
   }
 
   /**

@@ -18,7 +18,7 @@
       <button class="nav-link" [class.active]="currentView === 'promotions'"
         (click)="navigateTo('promotions')">Promotions</button>
       <button class="nav-link" [class.active]="currentView === 'profile'"
-        (click)="navigateTo('profile')">Profile</button>
+        (click)="onProfileClick()">Profile</button>
     </div>
     <div class="profile-section">
       <button class="notification-btn" title="Notifications" (click)="onNotificationClick()">

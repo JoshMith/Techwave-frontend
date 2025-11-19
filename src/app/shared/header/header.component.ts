@@ -69,10 +69,10 @@ ngOnDestroy(): void {
     if (!this.isBrowser) return;
 
     try {
-      const userStr = this.apiService.getCurrentUser().subscribe(user => {
+      const userStr = this.apiService.getCurrentUser().subscribe(response => {
         if (userStr) {
-          this.currentUser = user;
-          console.log('✅ User loaded in homepage:', this.currentUser.user?.user_id);
+          this.currentUser = response;
+          console.log('✅ User loaded in homepage:', this.currentUser);
         }
       });
     } catch (error) {

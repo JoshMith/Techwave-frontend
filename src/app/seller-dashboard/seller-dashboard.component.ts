@@ -257,6 +257,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   } = {};
   isLoadingOrderDetails = false;
   isSubmittingProduct = false;
+  navigate: any;
 
   constructor(
     private apiService: ApiService,
@@ -1309,7 +1310,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   }
 
   onProfileClick(): void {
-    this.navigateTo('profile');
+    this.router.navigate(['/profile']);
   }
 
   refreshData(): void {

@@ -55,16 +55,7 @@ export class ApiService {
   }
 
   getCurrentUser(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/users/userLoggedIn`, this.httpOptions).pipe(
-      catchError(error => {
-        // If 401 (unauthorized), return null user instead of throwing error
-        if (error.status === 401) {
-          return of({ authenticated: false, user: null, seller: null });
-        }
-        // For other errors, still throw
-        throw error;
-      })
-    );
+    return this.http.get(`${this.apiUrl}/users/userLoggedIn`, this.httpOptions);
   }
 
   getCurrentUserProfile(id: string): Observable<any> {

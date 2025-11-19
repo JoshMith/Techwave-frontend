@@ -676,7 +676,7 @@ export class ProfileComponent implements OnInit {
         this.cartService.logout();
         localStorage.removeItem('currentUser');
         sessionStorage.removeItem('sellerData');
-        this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
+        this.router.navigate(['/login']);
       }
     });
   }
