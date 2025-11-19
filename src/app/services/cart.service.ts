@@ -59,39 +59,49 @@ export class CartService {
     }
   }
 
-
   /**
-* Load authenticated user from API
-*/
-  private loadCurrentUser(): void {
+   * Load authenticated user from localStorage
+   */
+  public loadCurrentUser(): void {
     if (!this.isBrowser) return;
 
     try {
-      const userStr = localStorage.getItem('currentUser');
-      const sellerStr = sessionStorage.getItem('sellerData');
+      this.apiService.getCurrentUser().subscribe({
+        next: (resp: any) => {
+          // resp may be null when not logged in
+          if (resp && resp.user) {
+            // set current user and persist minimal info
+            this.currentUser = resp.user;
+            try {
+              localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+              sessionStorage.setItem('sellerData', JSON.stringify(resp.seller || {}));
+            } catch (e) {
+              console.warn('⚠️ Failed to persist user data to storage:', e);
+            }
 
-      if (userStr) {
-        const storedUser = JSON.parse(userStr);
-        // Reconstruct shape similar to the former API response
-        this.currentUser = {
-          authenticated: true,
-          user: storedUser,
-          ...(sellerStr ? { seller: JSON.parse(sellerStr) } : {})
-        };
+            // mark as authenticated and ensure cart is initialized for this user
+            this.updateCartState({ isGuest: false });
+            console.log('✅ Authenticated user loaded:', this.currentUser.user_id ?? this.currentUser.id);
 
-        this.updateCartState({ isGuest: false });
-
-        // Best-effort logging of available user id(s)
-        const uid =
-          storedUser?.user_id ?? storedUser?.user?.user_id ?? storedUser;
-        console.log('✅ Authenticated user loaded from storage:', uid);
-      } else {
-        this.currentUser = null;
-        this.updateCartState({ isGuest: true });
-        console.log('ℹ️ No authenticated user in storage - continuing as guest');
-      }
+            // initialize or reinitialize cart for the logged in user
+            this.initializeCart().then(ok => {
+              if (!ok) console.warn('⚠️ Failed to initialize cart for authenticated user');
+            });
+          } else {
+            // no authenticated user
+            this.currentUser = null;
+            this.updateCartState({ isGuest: true });
+            console.log('ℹ️ No authenticated user found, operating as guest');
+          }
+        },
+        error: (err) => {
+          console.warn('⚠️ Failed to load current user:', err);
+          this.currentUser = null;
+          this.updateCartState({ isGuest: true });
+        }
+      });
     } catch (error) {
-      console.warn('⚠️ Failed to load current user from storage:', error);
+      console.warn('⚠️ Unexpected error while loading current user:', error);
       this.currentUser = null;
       this.updateCartState({ isGuest: true });
     }
@@ -180,9 +190,9 @@ export class CartService {
    */
   private loadUserCart(): Promise<boolean> {
     return new Promise((resolve) => {
-      console.log('🛒 Loading cart for user:', this.currentUser.user.user.user_id);
+      console.log('🛒 Loading cart for user:', this.currentUser.user_id);
 
-      this.apiService.getCartByUserId(this.currentUser.user.user_id).subscribe({
+      this.apiService.getCartByUserId(this.currentUser.user_id).subscribe({
         next: (cart) => {
           this.handleCartLoaded(cart);
           resolve(true);
@@ -190,7 +200,7 @@ export class CartService {
         error: (err) => {
           console.warn('⚠️ User cart not found:', err.status);
           if (err.status === 404) {
-            this.createCartForUser(this.currentUser.user.user_id).then(resolve);
+            this.createCartForUser(this.currentUser.user_id).then(resolve);
           } else {
             this.handleError('Failed to load user cart');
             resolve(false);
@@ -484,7 +494,7 @@ export class CartService {
    * Check if operating as guest
    */
   public isGuestUser(): boolean {
-    return !this.currentUser.user && !!this.guestUser;
+    return !this.currentUser && !!this.guestUser;
   }
 
   /**

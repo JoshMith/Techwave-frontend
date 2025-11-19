@@ -18,6 +18,7 @@ interface GuestUser {
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.css']
 })
+
 export class HeaderComponent implements OnInit, OnDestroy {
 constructor(
     private router: Router,
@@ -39,7 +40,6 @@ private cartSubscription?: Subscription;
 
 ngOnInit(): void {
     if (this.isBrowser) {
-      this.loadCurrentUser();
       this.loadGuestUser();
       this.subscribeToCartState();
     }
@@ -61,24 +61,7 @@ ngOnDestroy(): void {
     // Initialize cart
     this.cartService.initializeCart();
   }
-
-  /**
-     * Load authenticated user from server
-     */
-  private loadCurrentUser(): void {
-    if (!this.isBrowser) return;
-
-    try {
-      const userStr = this.apiService.getCurrentUser().subscribe(response => {
-        if (userStr) {
-          this.currentUser = response;
-          console.log('✅ User loaded in homepage:', this.currentUser);
-        }
-      });
-    } catch (error) {
-      console.error('❌ Failed to load user from localStorage:', error);
-    }
-  }
+  
 
   /**
    * Load or create guest user session
