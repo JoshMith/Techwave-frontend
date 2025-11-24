@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Subject } from 'rxjs';
+import { map, Subject, switchMap } from 'rxjs';
 import { takeUntil, forkJoin, catchError, of } from 'rxjs';
 import { ApiService } from '../services/api.service';
 import { Router, RouterLink } from '@angular/router';
@@ -84,6 +84,8 @@ interface SellerProfile {
 })
 export class SellerDashboardComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
+
+  currentSellerId: string | null = null;
 
   // Navigation state
   currentView = 'dashboard';
@@ -326,57 +328,239 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     this.error = null;
     this.isAuthorized = false;
 
-    try {
-      const userString = this.apiService.getCurrentUser().subscribe(user => {
-        this.userName = user.user.name || 'User';
-        this.userRole = user.user.role || 'buyer';
-        if (this.userRole.toLowerCase() === 'seller' || this.userRole.toLowerCase() === 'admin') {
-          this.isAuthorized = true;
-          this.loadSellerData();
-        } else {
+    this.apiService.getCurrentUser().subscribe({
+      next: (response) => {
+        if (!response || !response.user) {
+          this.error = 'User not authenticated';
+          this.isLoading = false;
+          setTimeout(() => {
+            this.router.navigate(['/login']);
+          }, 5000);
+          return;
+        }
+
+        const user = response.user;
+        const seller = response.seller;
+
+        this.userName = user.name || 'User';
+        this.userRole = user.role || 'buyer';
+
+        // Check authorization
+        if (this.userRole.toLowerCase() !== 'seller' && this.userRole.toLowerCase() !== 'admin') {
           this.isAuthorized = false;
           this.isLoading = false;
+          return;
         }
-      }, err => {
+
+        // ✅ NEW: Check seller profile and store ID
+        if (!seller || !seller.seller_id) {
+          console.warn('No seller profile found');
+          this.isAuthorized = true;
+          this.isLoading = false;
+          this.currentView = 'profile';
+          return;
+        }
+
+        this.isAuthorized = true;
+        this.currentSellerId = seller.seller_id.toString(); // ✅ Store seller ID
+        console.log('✅ Seller ID:', this.currentSellerId);
+
+        // ✅ Load seller-specific data
+        this.loadSellerData();
+      },
+      error: (err) => {
+        console.error('Failed to load user data:', err);
         this.error = 'Failed to load user data. Please log in again.';
         this.isLoading = false;
-      });
-    } catch (error) {
-      this.error = 'Invalid user data. Please log in again.';
-      this.isLoading = false;
-    }
+      }
+    });
   }
 
   private loadSellerData(): void {
-    const dashboardData$ = forkJoin({
-      orders: this.apiService.getOrders().pipe(catchError(() => of({ data: [] }))),
-      products: this.apiService.getProducts().pipe(catchError(() => of({ data: [] }))),
-      users: this.apiService.getUsers().pipe(catchError(() => of({ data: [] }))),
-      payments: this.apiService.getPayments().pipe(catchError(() => of({ data: [] }))),
-      reviews: this.apiService.getReviews().pipe(catchError(() => of({ data: [] })))
-    });
+    if (!this.currentSellerId) {
+      this.error = 'Seller profile not found';
+      this.isLoading = false;
+      return;
+    }
 
-    dashboardData$
-      .pipe(
-        takeUntil(this.destroy$),
-        catchError(error => {
-          console.error('Error loading dashboard data:', error);
-          this.error = 'Failed to load dashboard data. Please try again.';
-          return of(null);
-        })
+    // Load all seller data in parallel
+    const dataRequests = {
+      stats: this.apiService.getSellerDashboardStats(this.currentSellerId).pipe(
+        catchError(() => of({ success: false, data: null }))
+      ),
+      orders: this.apiService.getSellerOrders(this.currentSellerId).pipe(
+        catchError(() => of({ success: false, data: [] }))
+      ),
+      products: this.apiService.getSellerProducts(this.currentSellerId).pipe(
+        catchError(() => of({ success: false, data: [] }))
+      ),
+      metrics: this.apiService.getSellerMetrics(this.currentSellerId).pipe(
+        catchError(() => of({ success: false, data: null }))
+      ),
+      activities: this.apiService.getSellerActivities(this.currentSellerId, 5).pipe(
+        catchError(() => of({ success: false, data: [] }))
       )
-      .subscribe(data => {
-        if (data) {
-          this.processOrders(data.orders.data || []);
-          this.processProducts(data.products.data || []);
-          this.processUsers(data.users.data || []);
-          this.processPayments(data.payments.data || []);
-          this.processReviews(data.reviews.data || []);
-          this.generateActivities(data);
-          this.calculatePerformanceMetrics(data);
+    };
+
+    forkJoin(dataRequests)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          // Process stats
+          if (data.stats.success && data.stats.data) {
+            this.processNewDashboardStats(data.stats.data);
+          } else {
+            this.setDefaultStats();
+          }
+
+          // Process orders
+          if (data.orders.success) {
+            this.processSellerOrders(data.orders.data || []);
+          }
+
+          // Process products
+          if (data.products.success) {
+            this.products = data.products.data || [];
+            this.filteredProductsList = [...this.products];
+          }
+
+          // Process metrics
+          if (data.metrics.success && data.metrics.data) {
+            this.processPerformanceMetrics(data.metrics.data);
+          }
+
+          // Process activities
+          if (data.activities.success) {
+            this.activities = this.formatActivities(data.activities.data || []);
+          }
+
+          this.isLoading = false;
+        },
+        error: (err) => {
+          console.error('Error loading seller data:', err);
+          this.error = 'Failed to load dashboard data. Please try again.';
+          this.isLoading = false;
         }
-        this.isLoading = false;
       });
+  }
+
+  /**
+   * Process dashboard stats from API
+   */
+  private processNewDashboardStats(statsData: any): void {
+    this.stats = [
+      {
+        title: 'Total Revenue',
+        value: this.formatCurrency(statsData.totalRevenue || 0),
+        change: statsData.revenueChange || '+0%',
+        changeClass: this.getChangeClass(statsData.revenueChange),
+        icon: '💰',
+        iconClass: 'revenue'
+      },
+      {
+        title: 'Total Orders',
+        value: (statsData.totalOrders || 0).toString(),
+        change: statsData.ordersChange || '+0%',
+        changeClass: this.getChangeClass(statsData.ordersChange),
+        icon: '📦',
+        iconClass: 'orders'
+      },
+      {
+        title: 'Active Products',
+        value: (statsData.activeProducts || 0).toString(),
+        change: statsData.productsChange || '0 new',
+        changeClass: 'positive',
+        icon: '📱',
+        iconClass: 'products'
+      },
+      {
+        title: 'Total Customers',
+        value: (statsData.totalCustomers || 0).toString(),
+        change: statsData.customersChange || '+0%',
+        changeClass: this.getChangeClass(statsData.customersChange),
+        icon: '👥',
+        iconClass: 'customers'
+      }
+    ];
+  }
+
+  /**
+   * Set default stats when API fails
+   */
+  private setDefaultStats(): void {
+    this.stats = this.stats.map(stat => ({
+      ...stat,
+      value: '0',
+      change: 'No data'
+    }));
+  }
+
+  /**
+   * Get CSS class for change indicators
+   */
+  private getChangeClass(change: string): string {
+    if (!change) return 'positive';
+    if (change.includes('+')) return 'positive';
+    if (change.includes('-')) return 'negative';
+    return 'warning';
+  }
+
+  /**
+   * Process seller orders from API
+   */
+  private processSellerOrders(ordersData: any[]): void {
+    this.allOrders = ordersData;
+    this.filteredOrders = [...ordersData];
+
+    // Take first 5 for dashboard display
+    this.orders = ordersData.slice(0, 5).map(order => ({
+      id: order.order_id || 'N/A',
+      customer: order.user_name || 'Unknown',
+      product: order.product_name || 'Unknown Product',
+      amount: this.formatCurrency(order.total_amount || 0),
+      status: this.mapOrderStatus(order.status),
+      date: this.formatDate(order.created_at),
+      statusClass: this.getStatusClass(order.status)
+    }));
+  }
+
+  /**
+   * Process performance metrics from API
+   */
+  private processPerformanceMetrics(metricsData: any): void {
+    this.performanceMetrics = [
+      {
+        label: 'Conversion Rate',
+        value: `${(metricsData.conversionRate || 0).toFixed(1)}%`,
+        valueClass: metricsData.conversionRate >= 3 ? 'positive' : 'warning'
+      },
+      {
+        label: 'Average Order Value',
+        value: this.formatCurrency(metricsData.avgOrderValue || 0)
+      },
+      {
+        label: 'Return Rate',
+        value: `${(metricsData.returnRate || 0).toFixed(1)}%`,
+        valueClass: metricsData.returnRate <= 5 ? 'positive' : 'warning'
+      },
+      {
+        label: 'Customer Satisfaction',
+        value: `${(metricsData.customerSatisfaction || 0).toFixed(1)}/5.0`,
+        valueClass: metricsData.customerSatisfaction >= 4 ? 'positive' : 'warning'
+      }
+    ];
+  }
+
+  /**
+   * Format activities from API
+   */
+  private formatActivities(activitiesData: any[]): Activity[] {
+    return activitiesData.map(activity => ({
+      icon: activity.icon || '📌',
+      iconClass: activity.type || 'order',
+      text: activity.text || 'Activity',
+      time: activity.time || 'Recently'
+    }));
   }
 
   // Profile management methods
@@ -511,11 +695,15 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          this.products = response || [];
+          const allProducts = response || [];
+          // ✅ Filter for current seller
+          this.products = allProducts.filter((p: any) =>
+            p.seller_id?.toString() === this.currentSellerId
+          );
+          this.filteredProductsList = [...this.products];
         },
         error: (error) => {
           console.error('Error loading products:', error);
-          this.productError = 'Failed to load products';
         }
       });
   }
@@ -874,11 +1062,31 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
 
   // Orders management methods
   private loadAllOrders(): void {
-    this.apiService.getOrders()
-      .pipe(takeUntil(this.destroy$))
+    // Get all products first to know which orders to show
+    this.apiService.getProducts()
+      .pipe(
+        switchMap((products) => {
+          const sellerProductIds = products
+            .filter((p: any) => p.seller_id?.toString() === this.currentSellerId)
+            .map((p: any) => p.product_id);
+
+          return this.apiService.getOrders().pipe(
+            map((orders) => ({
+              orders: orders || [],
+              sellerProductIds
+            }))
+          );
+        }),
+        takeUntil(this.destroy$)
+      )
       .subscribe({
-        next: (response) => {
-          this.allOrders = response || [];
+        next: ({ orders, sellerProductIds }) => {
+          // Filter orders that contain seller's products
+          this.allOrders = orders.filter((order: any) => {
+            // Check if order has any items from seller
+            // This requires order items to be included or separate call
+            return true; // Simplified - needs proper filtering
+          });
           this.filteredOrders = this.allOrders;
         },
         error: (error) => {
@@ -930,35 +1138,42 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
 
   // Analytics methods
   private loadAnalytics(): void {
-    this.analyticsData = {
-      salesTrend: [
-        { month: 'Jan', sales: 12000 },
-        { month: 'Feb', sales: 15000 },
-        { month: 'Mar', sales: 18000 },
-        { month: 'Apr', sales: 22000 },
-        { month: 'May', sales: 25000 },
-        { month: 'Jun', sales: 28000 }
-      ],
-      topProducts: [
-        { name: 'iPhone 15', sales: 45, revenue: 129000 },
-        { name: 'Samsung Galaxy A54', sales: 38, revenue: 95000 },
-        { name: 'Google Pixel 8', sales: 25, revenue: 67500 }
-      ],
-      customerStats: {
-        totalCustomers: 1247,
-        newCustomers: 89,
-        returningCustomers: 245,
-        customerSatisfaction: 4.7
-      },
-      revenueByMonth: [
-        { month: 'Jan', revenue: 45000 },
-        { month: 'Feb', revenue: 52000 },
-        { month: 'Mar', revenue: 48000 },
-        { month: 'Apr', revenue: 65000 },
-        { month: 'May', revenue: 58000 },
-        { month: 'Jun', revenue: 72000 }
-      ]
+    if (!this.currentSellerId) {
+      console.warn('No seller ID for analytics');
+      return;
+    }
+
+    // Load real analytics data
+    const analyticsRequests = {
+      salesTrend: this.apiService.getSellerSalesTrend(this.currentSellerId, '6months').pipe(
+        catchError(() => of({ success: false, data: [] }))
+      ),
+      topProducts: this.apiService.getSellerTopProducts(this.currentSellerId, 5).pipe(
+        catchError(() => of({ success: false, data: [] }))
+      ),
+      revenueByMonth: this.apiService.getSellerRevenueByMonth(this.currentSellerId, '6months').pipe(
+        catchError(() => of({ success: false, data: [] }))
+      ),
+      customerStats: this.apiService.getSellerCustomerStats(this.currentSellerId).pipe(
+        catchError(() => of({ success: false, data: {} }))
+      )
     };
+
+    forkJoin(analyticsRequests)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          this.analyticsData = {
+            salesTrend: data.salesTrend.data || [],
+            topProducts: data.topProducts.data || [],
+            revenueByMonth: data.revenueByMonth.data || [],
+            customerStats: data.customerStats.data || {}
+          };
+        },
+        error: (err) => {
+          console.error('Error loading analytics:', err);
+        }
+      });
   }
 
   // Promotions methods

@@ -452,4 +452,84 @@ export class ApiService {
   deletePayment(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/payments/${id}`, this.httpOptions);
   }
+
+  // ========== NEW: Seller-Specific Dashboard APIs ==========
+
+  /**
+   * Get seller dashboard statistics
+   */
+  getSellerDashboardStats(sellerId: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/sellers/${sellerId}/dashboard-stats`, this.httpOptions);
+  }
+
+  /**
+   * Get seller-specific orders
+   */
+  getSellerOrders(sellerId: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/orders/seller/${sellerId}`, this.httpOptions);
+  }
+
+  /**
+   * Get seller-specific products
+   */
+  getSellerProducts(sellerId: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/products/seller/${sellerId}`, this.httpOptions);
+  }
+
+  /**
+   * Get sales trend analytics
+   */
+  getSellerSalesTrend(sellerId: string, period: string = '6months'): Observable<any> {
+    return this.http.get(
+      `${this.apiUrl}/sellers/${sellerId}/analytics/sales-trend?period=${period}`,
+      this.httpOptions
+    );
+  }
+
+  /**
+   * Get top selling products
+   */
+  getSellerTopProducts(sellerId: string, limit: number = 5): Observable<any> {
+    return this.http.get(
+      `${this.apiUrl}/sellers/${sellerId}/analytics/top-products?limit=${limit}`,
+      this.httpOptions
+    );
+  }
+
+  /**
+   * Get revenue by month
+   */
+  getSellerRevenueByMonth(sellerId: string, period: string = '6months'): Observable<any> {
+    return this.http.get(
+      `${this.apiUrl}/sellers/${sellerId}/analytics/revenue-by-month?period=${period}`,
+      this.httpOptions
+    );
+  }
+
+  /**
+   * Get performance metrics
+   */
+  getSellerMetrics(sellerId: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/sellers/${sellerId}/metrics`, this.httpOptions);
+  }
+
+  /**
+   * Get customer statistics
+   */
+  getSellerCustomerStats(sellerId: string): Observable<any> {
+    return this.http.get(
+      `${this.apiUrl}/sellers/${sellerId}/analytics/customer-stats`,
+      this.httpOptions
+    );
+  }
+
+  /**
+   * Get recent activities
+   */
+  getSellerActivities(sellerId: string, limit: number = 5): Observable<any> {
+    return this.http.get(
+      `${this.apiUrl}/sellers/${sellerId}/activities?limit=${limit}`,
+      this.httpOptions
+    );
+  }
 }
