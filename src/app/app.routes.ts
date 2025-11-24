@@ -21,6 +21,7 @@ import { SignupComponent } from './auth/signup/signup.component';
 import { OrdersComponent } from './checkout/orders/orders.component';
 import { TermsofserviceComponent } from './legal/termsofservice/termsofservice.component';
 import { PrivacypolicyComponent } from './legal/privacypolicy/privacypolicy.component';
+import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard.component';
 
 
 export const routes: Routes = [
@@ -48,7 +49,8 @@ export const routes: Routes = [
     { path: 'signup', component: SignupComponent },
     { path: 'forgot-pwd', component: ForgotPwdComponent },
     { path: 'termsofservice', component: TermsofserviceComponent },
-    { path: 'privacypolicy', component: PrivacypolicyComponent }
+    { path: 'privacypolicy', component: PrivacypolicyComponent },
+    { path: 'admin', component: AdminDashboardComponent }
     
 ];
 

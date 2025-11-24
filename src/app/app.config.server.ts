@@ -29,7 +29,8 @@ const serverConfig: ApplicationConfig = {
       { path: 'signup', renderMode: RenderMode.Server },
       { path: 'forgot-pwd', renderMode: RenderMode.Server },
       { path: 'termsofservice', renderMode: RenderMode.Server },
-      { path: 'privacypolicy', renderMode: RenderMode.Server }
+      { path: 'privacypolicy', renderMode: RenderMode.Server },
+      { path: 'admin', renderMode: RenderMode.Server }
     ])
   ]
 };

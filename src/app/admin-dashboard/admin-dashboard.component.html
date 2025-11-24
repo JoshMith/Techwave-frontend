@@ -1,1 +1,521 @@
-<p>admin-dashboard works!</p>
+<div class="admin-dashboard">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <h1>Admin Dashboard</h1>
+      <div class="header-actions">
+        <button class="btn btn-refresh" (click)="refresh()" [disabled]="isLoading">
+          <span class="icon">🔄</span>
+          <span>Refresh</span>
+        </button>
+        <button class="btn btn-alerts" (click)="toggleAlertsPanel()" [class.has-alerts]="totalAlerts > 0">
+          <span class="icon">🔔</span>
+          <span>Alerts</span>
+          <span class="badge" *ngIf="totalAlerts > 0">{{ totalAlerts }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div class="alert alert-danger" *ngIf="error">
+    <strong>Error:</strong> {{ error }}
+    <button class="btn-close" (click)="error = null">×</button>
+  </div>
+
+  <!-- System Alerts Panel -->
+  <div class="alerts-panel" *ngIf="showAlertsPanel && systemAlerts.length > 0">
+    <div class="alerts-header">
+      <h3>System Alerts</h3>
+      <button class="btn-close" (click)="toggleAlertsPanel()">×</button>
+    </div>
+    <div class="alerts-list">
+      <div *ngFor="let alert of systemAlerts" [class]="'alert ' + getAlertClass(alert.type)">
+        <div class="alert-content">
+          <strong>{{ alert.category | titlecase }}:</strong> {{ alert.message }}
+          <span class="badge" *ngIf="alert.count">{{ alert.count }}</span>
+        </div>
+        <button class="btn-dismiss" (click)="dismissAlert(alert)">×</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-overlay" *ngIf="loading.stats">
+    <div class="spinner"></div>
+    <p>Loading dashboard...</p>
+  </div>
+
+  <!-- Main Content -->
+  <div class="dashboard-content" *ngIf="hasData">
+    
+    <!-- Navigation Tabs -->
+    <div class="dashboard-tabs">
+      <button 
+        class="tab-button" 
+        [class.active]="selectedTab === 'overview'"
+        (click)="selectTab('overview')">
+        Overview
+      </button>
+      <button 
+        class="tab-button" 
+        [class.active]="selectedTab === 'analytics'"
+        (click)="selectTab('analytics')">
+        Analytics
+      </button>
+      <button 
+        class="tab-button" 
+        [class.active]="selectedTab === 'products'"
+        (click)="selectTab('products')">
+        Products
+      </button>
+      <button 
+        class="tab-button" 
+        [class.active]="selectedTab === 'orders'"
+        (click)="selectTab('orders')">
+        Orders
+      </button>
+      <button 
+        class="tab-button" 
+        [class.active]="selectedTab === 'users'"
+        (click)="selectTab('users')">
+        Users
+      </button>
+    </div>
+
+    <!-- Overview Tab -->
+    <div class="tab-content" *ngIf="selectedTab === 'overview'">
+      
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <!-- Users Card -->
+        <div class="stat-card">
+          <div class="stat-icon users">👥</div>
+          <div class="stat-content">
+            <h3>Total Users</h3>
+            <p class="stat-number">{{ dashboardStats?.users?.total || 0 }}</p>
+            <div class="stat-details">
+              <span>Customers: {{ dashboardStats?.users?.customers || 0 }}</span>
+              <span>Sellers: {{ dashboardStats?.users?.sellers || 0 }}</span>
+            </div>
+            <div class="stat-growth">
+              <span class="growth-badge positive">
+                +{{ dashboardStats?.users?.newLast30Days || 0 }} this month
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Products Card -->
+        <div class="stat-card">
+          <div class="stat-icon products">📦</div>
+          <div class="stat-content">
+            <h3>Total Products</h3>
+            <p class="stat-number">{{ dashboardStats?.products?.total || 0 }}</p>
+            <div class="stat-details">
+              <span>In Stock: {{ dashboardStats?.products?.inStock || 0 }}</span>
+              <span>Out of Stock: {{ dashboardStats?.products?.outOfStock || 0 }}</span>
+            </div>
+            <div class="stat-warning" *ngIf="dashboardStats?.products?.lowStock > 0">
+              <span class="warning-badge">
+                ⚠️ {{ dashboardStats?.products?.lowStock }} low stock
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Orders Card -->
+        <div class="stat-card">
+          <div class="stat-icon orders">🛒</div>
+          <div class="stat-content">
+            <h3>Total Orders</h3>
+            <p class="stat-number">{{ dashboardStats?.orders?.total || 0 }}</p>
+            <div class="stat-details">
+              <span>Pending: {{ dashboardStats?.orders?.pending || 0 }}</span>
+              <span>Processing: {{ dashboardStats?.orders?.processing || 0 }}</span>
+            </div>
+            <div class="stat-growth">
+              <span class="growth-badge positive">
+                +{{ dashboardStats?.orders?.last7Days || 0 }} this week
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Revenue Card -->
+        <div class="stat-card highlight">
+          <div class="stat-icon revenue">💰</div>
+          <div class="stat-content">
+            <h3>Total Revenue</h3>
+            <p class="stat-number">{{ formatCurrency(dashboardStats?.revenue?.total || 0) }}</p>
+            <div class="stat-details">
+              <span>Last 30 Days: {{ formatCurrency(dashboardStats?.revenue?.last30Days || 0) }}</span>
+              <span>Avg Order: {{ formatCurrency(dashboardStats?.revenue?.averageOrderValue || 0) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions & Recent Activity -->
+      <div class="two-column-layout">
+        
+        <!-- Recent Orders -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Recent Orders</h3>
+            <a routerLink="/admin/orders" class="btn-link">View All →</a>
+          </div>
+          <div class="card-body">
+            <div *ngIf="loading.orders" class="loading">Loading...</div>
+            <div *ngIf="!loading.orders && recentOrders.length === 0" class="empty-state">
+              No recent orders
+            </div>
+            <div class="orders-list" *ngIf="!loading.orders && recentOrders.length > 0">
+              <div class="order-item" *ngFor="let order of recentOrders">
+                <div class="order-info">
+                  <strong>{{ order.customerName }}</strong>
+                  <span class="order-id">#{{ order.orderId.substring(0, 8) }}</span>
+                </div>
+                <div class="order-meta">
+                  <span class="order-amount">{{ formatCurrency(order.totalAmount) }}</span>
+                  <span [class]="'badge ' + getStatusBadgeClass(order.status)">
+                    {{ order.status }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Low Stock Alerts -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Low Stock Products</h3>
+            <a routerLink="/admin/inventory" class="btn-link">View All →</a>
+          </div>
+          <div class="card-body">
+            <div *ngIf="loading.lowStock" class="loading">Loading...</div>
+            <div *ngIf="!loading.lowStock && lowStockProducts.length === 0" class="empty-state success">
+              ✓ All products well-stocked
+            </div>
+            <div class="stock-list" *ngIf="!loading.lowStock && lowStockProducts.length > 0">
+              <div class="stock-item" *ngFor="let product of lowStockProducts">
+                <div class="stock-info">
+                  <strong>{{ product.title }}</strong>
+                  <span class="category">{{ product.categoryName }}</span>
+                </div>
+                <div class="stock-level">
+                  <span class="stock-badge warning">{{ product.stock }} left</span>
+                  <span class="seller">by {{ product.sellerName }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Analytics Tab -->
+    <div class="tab-content" *ngIf="selectedTab === 'analytics'">
+      
+      <!-- Revenue Chart -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Revenue Trends (Last 6 Months)</h3>
+        </div>
+        <div class="card-body">
+          <div *ngIf="loading.revenue" class="loading">Loading chart...</div>
+          <div *ngIf="!loading.revenue && revenueChart" class="chart-container">
+            <div class="simple-chart">
+              <div class="chart-bars">
+                <div 
+                  class="chart-bar" 
+                  *ngFor="let value of revenueChart.values; let i = index"
+                  [style.height.%]="(value / getMaxValue(revenueChart.values)) * 100"
+                  [title]="revenueChart.labels[i] + ': ' + formatCurrency(value)">
+                  <span class="bar-label">{{ formatCurrency(value) }}</span>
+                </div>
+              </div>
+              <div class="chart-labels">
+                <span *ngFor="let label of revenueChart.labels">{{ label }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Performance Metrics -->
+      <div class="metrics-grid">
+        
+        <!-- Top Products -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Top Products</h3>
+          </div>
+          <div class="card-body">
+            <div *ngIf="loading.products" class="loading">Loading...</div>
+            <div class="ranking-list" *ngIf="!loading.products">
+              <div class="ranking-item" *ngFor="let product of topProducts; let i = index">
+                <span class="rank">{{ i + 1 }}</span>
+                <div class="item-info">
+                  <strong>{{ product.title }}</strong>
+                  <span class="meta">{{ product.unitsSold || 0 }} units sold</span>
+                </div>
+                <span class="value">{{ formatCurrency(product.revenue) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Customers -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Top Customers</h3>
+          </div>
+          <div class="card-body">
+            <div *ngIf="loading.customers" class="loading">Loading...</div>
+            <div class="ranking-list" *ngIf="!loading.customers">
+              <div class="ranking-item" *ngFor="let customer of topCustomers; let i = index">
+                <span class="rank">{{ i + 1 }}</span>
+                <div class="item-info">
+                  <strong>{{ customer.name }}</strong>
+                  <span class="meta">{{ customer.totalOrders }} orders</span>
+                </div>
+                <span class="value">{{ formatCurrency(customer.totalSpent) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category Performance -->
+        <div class="card full-width">
+          <div class="card-header">
+            <h3>Category Performance</h3>
+          </div>
+          <div class="card-body">
+            <div *ngIf="loading.categories" class="loading">Loading...</div>
+            <div class="category-grid" *ngIf="!loading.categories">
+              <div class="category-card" *ngFor="let category of categoryPerformance">
+                <h4>{{ category.categoryName }}</h4>
+                <div class="category-stats">
+                  <div class="stat">
+                    <span class="label">Products:</span>
+                    <span class="value">{{ category.productCount }}</span>
+                  </div>
+                  <div class="stat">
+                    <span class="label">Sales:</span>
+                    <span class="value">{{ category.unitsSold }}</span>
+                  </div>
+                  <div class="stat">
+                    <span class="label">Revenue:</span>
+                    <span class="value">{{ formatCurrency(category.revenue) }}</span>
+                  </div>
+                  <div class="stat">
+                    <span class="label">Rating:</span>
+                    <span class="value rating">{{ getRatingStars(category.averageRating) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Products Tab -->
+    <div class="tab-content" *ngIf="selectedTab === 'products'">
+      <div class="card">
+        <div class="card-header">
+          <h3>Product Management</h3>
+          <a routerLink="/admin/products" class="btn btn-primary">Manage Products</a>
+        </div>
+        <div class="card-body">
+          <div class="stats-row">
+            <div class="stat-box">
+              <span class="label">Total Products</span>
+              <span class="value">{{ dashboardStats?.products?.total || 0 }}</span>
+            </div>
+            <div class="stat-box">
+              <span class="label">In Stock</span>
+              <span class="value">{{ dashboardStats?.products?.inStock || 0 }}</span>
+            </div>
+            <div class="stat-box">
+              <span class="label">Low Stock</span>
+              <span class="value warning">{{ dashboardStats?.products?.lowStock || 0 }}</span>
+            </div>
+            <div class="stat-box">
+              <span class="label">Out of Stock</span>
+              <span class="value danger">{{ dashboardStats?.products?.outOfStock || 0 }}</span>
+            </div>
+          </div>
+
+          <div class="section-divider"></div>
+
+          <h4>Top Selling Products</h4>
+          <div class="products-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Product</th>
+                  <th>Category</th>
+                  <th>Stock</th>
+                  <th>Units Sold</th>
+                  <th>Revenue</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let product of topProducts; let i = index">
+                  <td>{{ i + 1 }}</td>
+                  <td><strong>{{ product.title }}</strong></td>
+                  <td>{{ product.categoryName }}</td>
+                  <td>
+                    <span [class.text-warning]="product.stock < 10" [class.text-danger]="product.stock === 0">
+                      {{ product.stock }}
+                    </span>
+                  </td>
+                  <td>{{ product.unitsSold || 0 }}</td>
+                  <td>{{ formatCurrency(product.revenue) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Orders Tab -->
+    <div class="tab-content" *ngIf="selectedTab === 'orders'">
+      <div class="card">
+        <div class="card-header">
+          <h3>Order Management</h3>
+          <a routerLink="/admin/orders" class="btn btn-primary">Manage Orders</a>
+        </div>
+        <div class="card-body">
+          <div class="stats-row">
+            <div class="stat-box">
+              <span class="label">Total Orders</span>
+              <span class="value">{{ dashboardStats?.orders?.total || 0 }}</span>
+            </div>
+            <div class="stat-box">
+              <span class="label">Pending</span>
+              <span class="value warning">{{ dashboardStats?.orders?.pending || 0 }}</span>
+            </div>
+            <div class="stat-box">
+              <span class="label">Processing</span>
+              <span class="value">{{ dashboardStats?.orders?.processing || 0 }}</span>
+            </div>
+            <div class="stat-box">
+              <span class="label">Delivered</span>
+              <span class="value success">{{ dashboardStats?.orders?.delivered || 0 }}</span>
+            </div>
+          </div>
+
+          <div class="section-divider"></div>
+
+          <h4>Recent Orders</h4>
+          <div class="orders-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                  <th>Items</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let order of recentOrders">
+                  <td>#{{ order.orderId.substring(0, 8) }}</td>
+                  <td>{{ order.customerName }}</td>
+                  <td>{{ formatCurrency(order.totalAmount) }}</td>
+                  <td>
+                    <span [class]="'badge ' + getStatusBadgeClass(order.status)">
+                      {{ order.status }}
+                    </span>
+                  </td>
+                  <td>{{ formatDate(order.createdAt) }}</td>
+                  <td>{{ order.itemCount }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Users Tab -->
+    <div class="tab-content" *ngIf="selectedTab === 'users'">
+      <div class="card">
+        <div class="card-header">
+          <h3>User Management</h3>
+          <a routerLink="/admin/users" class="btn btn-primary">Manage Users</a>
+        </div>
+        <div class="card-body">
+          <div class="stats-row">
+            <div class="stat-box">
+              <span class="label">Total Users</span>
+              <span class="value">{{ dashboardStats?.users?.total || 0 }}</span>
+            </div>
+            <div class="stat-box">
+              <span class="label">Customers</span>
+              <span class="value">{{ dashboardStats?.users?.customers || 0 }}</span>
+            </div>
+            <div class="stat-box">
+              <span class="label">Sellers</span>
+              <span class="value">{{ dashboardStats?.users?.sellers || 0 }}</span>
+            </div>
+            <div class="stat-box">
+              <span class="label">New (30 days)</span>
+              <span class="value success">+{{ dashboardStats?.users?.newLast30Days || 0 }}</span>
+            </div>
+          </div>
+
+          <div class="section-divider"></div>
+
+          <h4>Recent Users</h4>
+          <div class="users-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Orders</th>
+                  <th>Total Spent</th>
+                  <th>Joined</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let user of recentUsers">
+                  <td><strong>{{ user.name }}</strong></td>
+                  <td>{{ user.email }}</td>
+                  <td>
+                    <span class="badge badge-info">{{ user.role }}</span>
+                  </td>
+                  <td>{{ user.orderCount || 0 }}</td>
+                  <td>{{ formatCurrency(user.totalSpent || 0) }}</td>
+                  <td>{{ formatDate(user.createdAt) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- No Data State -->
+  <div class="empty-state-large" *ngIf="!hasData && !loading.stats && !error">
+    <div class="empty-icon">📊</div>
+    <h2>No Dashboard Data</h2>
+    <p>Unable to load dashboard statistics</p>
+    <button class="btn btn-primary" (click)="refresh()">Try Again</button>
+  </div>
+
+</div>
