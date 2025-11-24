@@ -8,15 +8,16 @@
       <span class="seller-badge">Seller Portal</span>
     </div>
     <div class="nav-items">
-      <button class="nav-link" [class.active]="currentView === 'dashboard'" (click)="goToDashboard()">Dashboard</button>
+      <button class="nav-link" [class.active]="currentView === 'dashboard'"
+        (click)="goToDashboard()" [disabled]="!profileLoading && !sellerProfile && !editingProfile">Dashboard</button>
       <button class="nav-link" [class.active]="currentView === 'products'"
-        (click)="navigateTo('products')">Products</button>
+        (click)="navigateTo('products')" [disabled]="!profileLoading && !sellerProfile && !editingProfile">Products</button>
       <button class="nav-link" [class.active]="currentView === 'manage-orders'"
-        (click)="navigateTo('manage-orders')">Orders</button>
+        (click)="navigateTo('manage-orders')" [disabled]="!profileLoading && !sellerProfile && !editingProfile">Orders</button>
       <button class="nav-link" [class.active]="currentView === 'analytics'"
-        (click)="navigateTo('analytics')">Analytics</button>
+        (click)="navigateTo('analytics')" [disabled]="!profileLoading && !sellerProfile && !editingProfile">Analytics</button>
       <button class="nav-link" [class.active]="currentView === 'promotions'"
-        (click)="navigateTo('promotions')">Promotions</button>
+        (click)="navigateTo('promotions')" [disabled]="!profileLoading && !sellerProfile && !editingProfile">Promotions</button>
       <button class="nav-link" [class.active]="currentView === 'profile'"
         (click)="onProfileClick()">Profile</button>
     </div>
@@ -87,12 +88,13 @@
             <div>
               <div class="stat-title">{{stat.title}}</div>
               <div class="stat-value">{{stat.value}}</div>
-              <div class="stat-change {{stat.changeClass}}">
-                <span class="change-arrow">↗</span>
+              <div class="stat-change" [ngClass]="stat.changeClass">
+                <span class="change-arrow" *ngIf="stat.changeClass === 'positive'">↗</span>
+                <span class="change-arrow" *ngIf="stat.changeClass === 'negative'">↘</span>
                 <span>{{stat.change}}</span>
               </div>
             </div>
-            <div class="stat-icon {{stat.iconClass}}">{{stat.icon}}</div>
+            <div class="stat-icon" [ngClass]="stat.iconClass">{{stat.icon}}</div>
           </div>
         </div>
       </div>
@@ -117,7 +119,7 @@
                   <tr>
                     <th>Order ID</th>
                     <th>Customer</th>
-                    <th>Product</th>
+                    <th>Items</th>
                     <th>Amount</th>
                     <th>Status</th>
                     <th>Date</th>
@@ -125,11 +127,11 @@
                 </thead>
                 <tbody>
                   <tr *ngFor="let order of orders" (click)="onOrderClick(order.id)">
-                    <td><span class="order-id">{{order.id}}</span></td>
+                    <td><span class="order-id">#{{order.id}}</span></td>
                     <td>{{order.customer}}</td>
                     <td>{{order.product}}</td>
                     <td>{{order.amount}}</td>
-                    <td><span class="status-badge {{order.statusClass}}">{{order.status}}</span></td>
+                    <td><span class="status-badge" [ngClass]="order.statusClass">{{order.status}}</span></td>
                     <td>{{order.date}}</td>
                   </tr>
                 </tbody>
@@ -148,9 +150,19 @@
               </select>
             </div>
             <div class="chart-container">
-              📈 Sales Chart Placeholder
-              <br>
-              <small>Chart integration would show sales trends here</small>
+              <div class="mock-chart" *ngIf="analyticsData.revenueByMonth.length > 0">
+                <div class="chart-bars">
+                  <div *ngFor="let data of analyticsData.revenueByMonth" class="chart-bar">
+                    <div class="bar revenue-bar" [style.height.px]="(data.revenue / 10000) * 2"></div>
+                    <span class="bar-label">{{data.month}}</span>
+                  </div>
+                </div>
+              </div>
+              <div *ngIf="analyticsData.revenueByMonth.length === 0">
+                📈 Sales Chart
+                <br>
+                <small>Sales data will appear here once you have orders</small>
+              </div>
             </div>
           </div>
         </div>
@@ -182,7 +194,7 @@
                 <small>Your activities will appear here</small>
               </div>
               <div class="activity-item" *ngFor="let activity of activities">
-                <div class="activity-icon {{activity.iconClass}}">{{activity.icon}}</div>
+                <div class="activity-icon" [ngClass]="activity.iconClass">{{activity.icon}}</div>
                 <div class="activity-content">
                   <div class="activity-text">{{activity.text}}</div>
                   <div class="activity-time">{{activity.time}}</div>
@@ -200,7 +212,7 @@
               <div style="display: flex; justify-content: space-between; align-items: center;"
                 *ngFor="let metric of performanceMetrics">
                 <span style="color: #6b7280;">{{metric.label}}</span>
-                <span style="font-weight: 600;" [class]="metric.valueClass">{{metric.value}}</span>
+                <span style="font-weight: 600;" [ngClass]="metric.valueClass">{{metric.value}}</span>
               </div>
               <div style="margin-top: 1rem;">
                 <button class="btn btn-primary" style="width: 100%; justify-content: center;"
@@ -400,19 +412,19 @@
                   </ng-template>
                 </td>
                 <td>
-                  <span [class]="product.stock <= 5 ? 'stock-low' : 'stock-good'">
+                  <span [ngClass]="product.stock <= 5 ? 'stock-low' : 'stock-good'">
                     {{product.stock}}
                   </span>
                 </td>
 
                 <td>
-                  <span class="status-badge" [class]="product.status === 'active' ? 'delivered' : 'cancelled'">
+                  <span class="status-badge" [ngClass]="product.status === 'active' ? 'delivered' : 'cancelled'">
                     {{product.status || 'active'}}
                   </span>
                 </td>
                 <td>
                   <span class="rating">
-                    {{product.rating}}
+                    ⭐ {{product.rating || 0}}
                   </span>
                 </td>
                 <td>
@@ -549,7 +561,7 @@
         <div class="card">
           <div class="card-header">
             <h2 class="card-title">Order Summary</h2>
-            <span class="status-badge" [class]="getStatusClass(selectedOrder.status)">
+            <span class="status-badge" [ngClass]="getStatusClass(selectedOrder.status)">
               {{mapOrderStatus(selectedOrder.status)}}
             </span>
           </div>
@@ -572,7 +584,7 @@
             <div>
               <label class="profile-label">Payment Status</label>
               <div class="profile-value">
-                <span class="status-badge" [class]="orderDetails.payment?.confirmed ? 'delivered' : 'pending'">
+                <span class="status-badge" [ngClass]="orderDetails.payment?.confirmed ? 'delivered' : 'pending'">
                   {{orderDetails.payment?.confirmed ? 'Paid' : 'Pending'}}
                 </span>
               </div>
@@ -731,13 +743,16 @@
             <h3 class="card-title">Sales Trend</h3>
           </div>
           <div class="chart-container">
-            <div class="mock-chart">
+            <div class="mock-chart" *ngIf="analyticsData.salesTrend.length > 0">
               <div class="chart-bars">
                 <div *ngFor="let data of analyticsData.salesTrend" class="chart-bar">
                   <div class="bar" [style.height.px]="(data.sales / 1000) * 2"></div>
                   <span class="bar-label">{{data.month}}</span>
                 </div>
               </div>
+            </div>
+            <div *ngIf="analyticsData.salesTrend.length === 0">
+              📈 Sales trend data will appear here
             </div>
           </div>
         </div>
@@ -748,6 +763,9 @@
             <h3 class="card-title">Top Selling Products</h3>
           </div>
           <div class="top-products">
+            <div *ngIf="analyticsData.topProducts.length === 0" class="empty-state">
+              <p>No product sales data yet</p>
+            </div>
             <div *ngFor="let product of analyticsData.topProducts" class="product-item">
               <div class="product-details">
                 <div class="product-name">{{product.name}}</div>
@@ -764,20 +782,12 @@
           </div>
           <div class="stats-list">
             <div class="stat-item">
-              <span class="stat-label">Total Customers</span>
-              <span class="stat-value">{{analyticsData.customerStats.totalCustomers}}</span>
+              <span class="stat-label">Total Orders</span>
+              <span class="stat-value">{{analyticsData.customerStats.totalCustomers || 0}}</span>
             </div>
             <div class="stat-item">
-              <span class="stat-label">New Customers</span>
-              <span class="stat-value">{{analyticsData.customerStats.newCustomers}}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Returning Customers</span>
-              <span class="stat-value">{{analyticsData.customerStats.returningCustomers}}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Satisfaction Score</span>
-              <span class="stat-value">{{analyticsData.customerStats.customerSatisfaction}}/5.0</span>
+              <span class="stat-label">Customer Satisfaction</span>
+              <span class="stat-value">{{analyticsData.customerStats.customerSatisfaction || 0}}/5.0</span>
             </div>
           </div>
         </div>
@@ -788,13 +798,16 @@
             <h3 class="card-title">Monthly Revenue</h3>
           </div>
           <div class="chart-container">
-            <div class="mock-chart">
+            <div class="mock-chart" *ngIf="analyticsData.revenueByMonth.length > 0">
               <div class="chart-bars">
                 <div *ngFor="let data of analyticsData.revenueByMonth" class="chart-bar">
-                  <div class="bar revenue-bar" [style.height.px]="(data.revenue / 2000) * 2"></div>
+                  <div class="bar revenue-bar" [style.height.px]="(data.revenue / 10000) * 2"></div>
                   <span class="bar-label">{{data.month}}</span>
                 </div>
               </div>
+            </div>
+            <div *ngIf="analyticsData.revenueByMonth.length === 0">
+              📈 Revenue trend will appear here
             </div>
           </div>
         </div>
@@ -899,7 +912,7 @@
                   </span>
                 </div>
                 <div class="offer-status">
-                  <span class="status-badge" [class]="offer.isActive ? 'delivered' : 'cancelled'">
+                  <span class="status-badge" [ngClass]="offer.isActive ? 'delivered' : 'cancelled'">
                     {{offer.isActive ? 'Active' : 'Inactive'}}
                   </span>
                 </div>
@@ -913,7 +926,9 @@
     <!-- ===== PROFILE VIEW ===== -->
     <div *ngIf="currentView === 'profile'">
       <div class="page-header">
-        <button class="back-btn" (click)="goToDashboard()">← Back to Dashboard</button>
+        <button class="back-btn" (click)="goToDashboard()" [disabled]="!profileLoading && !sellerProfile && !editingProfile">
+          ← Back to Dashboard
+        </button>
         <h1 class="page-title">Business Profile</h1>
         <button *ngIf="sellerProfile && !editingProfile" class="btn btn-primary" (click)="onEditProfile()">
           ✏️ Edit Profile
@@ -936,19 +951,45 @@
 
       <!-- No Profile Yet - Create Form -->
       <div *ngIf="!profileLoading && !sellerProfile && !editingProfile">
-        <div class="card">
-          <div class="card-header">
-            <h2 class="card-title">Create Your Business Profile</h2>
-          </div>
-          <div style="text-align: center; padding: 2rem 0; color: #6b7280;">
-            <div style="font-size: 3rem; margin-bottom: 1rem;">🏪</div>
-            <p style="margin-bottom: 1rem; font-size: 1.1rem;">You haven't set up your business profile yet.</p>
-            <p style="margin-bottom: 2rem; color: #9ca3af;">Complete your profile to start selling on TechWave.</p>
-            <button class="btn btn-primary" (click)="editingProfile = true">
-              Create Business Profile
-            </button>
+        <div *ngIf="userRole?.toLowerCase() === 'seller'; else nonSeller">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Create Your Business Profile</h2>
+            </div>
+            <div style="text-align: center; padding: 2rem 0; color: #6b7280;">
+              <div style="font-size: 3rem; margin-bottom: 1rem;">🏪</div>
+              <p style="margin-bottom: 1rem; font-size: 1.1rem;">You don't have a business profile yet.</p>
+              <p style="margin-bottom: 2rem; color: #9ca3af;">As a seller, you can create your business profile to start selling on TechWave.</p>
+              <button class="btn btn-primary" (click)="editingProfile = true">
+                Create Business Profile
+              </button>
+            </div>
           </div>
         </div>
+
+        <ng-template #nonSeller>
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Business Profile Required</h2>
+            </div>
+            <div style="text-align: center; padding: 2rem 1.5rem; color: #6b7280;">
+              <div style="font-size: 3rem; margin-bottom: 1rem;">❗</div>
+              <p style="margin-bottom: 1rem; font-size: 1.05rem;">
+                Only users with the seller role can create a business profile.
+              </p>
+              <p style="margin-bottom: 1rem; color: #9ca3af;">
+                If you believe you should have seller access, please contact Customer Care to request seller enrollment.
+              </p>
+              <div style="display:flex; gap:0.5rem; justify-content:center; margin-top:1rem;">
+                <a class="btn btn-secondary" href="mailto:support@techwave.com">Email Customer Care</a>
+                <a class="btn btn-primary" routerLink="/help">Contact Support</a>
+              </div>
+              <div style="margin-top:1rem; color:#9ca3af; font-size:0.9rem;">
+                Logged in as: <strong>{{userName}}</strong> ({{userRole || 'N/A'}})
+              </div>
+            </div>
+          </div>
+        </ng-template>
       </div>
 
       <!-- View Profile (Not Editing) -->

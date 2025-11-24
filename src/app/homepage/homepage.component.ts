@@ -197,7 +197,7 @@ export class HomepageComponent implements OnInit {
   }
 
   sellerPortal(): void {
-    this.router.navigate(['/login']);
+    this.router.navigate(['/seller-dashboard']);
   }
 
   

@@ -64,7 +64,7 @@ export class LoginComponent implements OnInit {
           // Redirect to the intended destination or based on role
           if (response.user?.role === 'seller') {
             sessionStorage.setItem('sellerData', JSON.stringify(response.sellerData || {}));
-            this.router.navigate(['/seller-dashboard']);
+            this.router.navigateByUrl(this.returnUrl);
           } else {
             // Use the returnUrl from query parameters
             this.router.navigateByUrl(this.returnUrl);

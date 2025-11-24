@@ -73,6 +73,16 @@ interface Payment {
   created_at: string;
 }
 
+interface Seller {
+  seller_id: number;
+  user_id: number;
+  business_name: string;
+  business_license: string;
+  tax_id: string;
+  total_sales?: number;
+  created_at?: string;
+}
+
 @Component({
   selector: 'app-profile',
   imports: [CommonModule, FormsModule, HeaderComponent, FooterComponent],
@@ -85,6 +95,14 @@ export class ProfileComponent implements OnInit {
   isLoading = true;
   error: string | null = null;
 
+  // Seller data
+  sellerProfile: Seller | null = null;
+  isEditingSeller = false;
+  editSellerData: Partial<Seller> = {};
+  sellerError: string | null = null;
+  sellerSuccess: string | null = null;
+  isLoadingSeller = false;
+
   // Edit modes
   isEditingProfile = false;
   isEditingAddress = false;
@@ -94,7 +112,9 @@ export class ProfileComponent implements OnInit {
   editUserData: Partial<User> = {};
   editAddressData: Partial<Address> = {};
   newAddress: Partial<Address> = {
-    country: 'Kenya'
+    country: 'Kenya',
+    full_name: '',
+    phone: ''
   };
 
   // Account stats
@@ -114,7 +134,7 @@ export class ProfileComponent implements OnInit {
   cartCount = 0;
 
   // Active section
-  activeSection: 'overview' | 'orders' | 'addresses' | 'payments' | 'settings' = 'overview';
+  activeSection: 'overview' | 'orders' | 'addresses' | 'payments' | 'settings' | 'seller' = 'overview';
 
   constructor(
     private router: Router,
@@ -145,6 +165,12 @@ export class ProfileComponent implements OnInit {
           this.loadAddresses();
           this.loadPayments();
           this.loadRecommendedProducts();
+          
+          // Load seller profile ONLY if user role is 'seller'
+          // Admin role does NOT have access to seller features
+          if (this.user?.role === 'seller') {
+            this.loadSellerProfile();
+          }
 
           this.isLoading = false;
         } else {
@@ -159,6 +185,149 @@ export class ProfileComponent implements OnInit {
         this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
       }
     });
+  }
+
+  /**
+   * Load seller profile
+   * Only called for users with 'seller' role
+   */
+  loadSellerProfile(): void {
+    if (!this.user) return;
+
+    this.isLoadingSeller = true;
+    this.sellerError = null;
+
+    // Get all sellers and find the one for this user
+    this.apiService.getSellers().subscribe({
+      next: (response) => {
+        const sellers = Array.isArray(response) ? response : [response];
+        const sellerData = sellers.find((s: Seller) => s.user_id === this.user!.user_id);
+        
+        if (sellerData) {
+          this.sellerProfile = sellerData;
+          this.editSellerData = { ...sellerData };
+        }
+        
+        this.isLoadingSeller = false;
+      },
+      error: (err) => {
+        console.error('Failed to load seller profile:', err);
+        this.sellerError = 'Failed to load seller profile.';
+        this.isLoadingSeller = false;
+      }
+    });
+  }
+
+  /**
+   * Toggle edit seller mode
+   */
+  toggleEditSeller(): void {
+    this.isEditingSeller = !this.isEditingSeller;
+    if (this.isEditingSeller) {
+      if (this.sellerProfile) {
+        this.editSellerData = { ...this.sellerProfile };
+      } else {
+        // Initialize new seller data with user_id
+        this.editSellerData = {
+          user_id: this.user?.user_id,
+          business_name: '',
+          business_license: '',
+          tax_id: ''
+        };
+      }
+    }
+    // Clear messages when toggling
+    this.sellerError = null;
+    this.sellerSuccess = null;
+  }
+
+  /**
+   * Save seller profile (create or update)
+   */
+  saveSeller(): void {
+    if (!this.user || !this.editSellerData) return;
+
+    // Validate required fields
+    if (!this.editSellerData.business_name || !this.editSellerData.business_license || !this.editSellerData.tax_id) {
+      this.sellerError = 'Please fill in all required fields.';
+      return;
+    }
+
+    this.isLoadingSeller = true;
+    this.sellerError = null;
+    this.sellerSuccess = null;
+
+    const sellerData = {
+      user_id: this.user.user_id,
+      business_name: this.editSellerData.business_name,
+      business_license: this.editSellerData.business_license,
+      tax_id: this.editSellerData.tax_id
+    };
+
+    if (this.sellerProfile) {
+      // Update existing seller profile
+      this.apiService.updateSeller(this.sellerProfile.seller_id.toString(), sellerData).subscribe({
+        next: (response) => {
+          this.sellerProfile = response.seller || response;
+          this.isEditingSeller = false;
+          this.sellerSuccess = 'Seller profile updated successfully!';
+          this.isLoadingSeller = false;
+          
+          // Clear success message after 3 seconds
+          setTimeout(() => {
+            this.sellerSuccess = null;
+          }, 3000);
+        },
+        error: (err) => {
+          console.error('Failed to update seller profile:', err);
+          this.sellerError = err.error?.message || 'Failed to update seller profile. Please try again.';
+          this.isLoadingSeller = false;
+        }
+      });
+    } else {
+      // Create new seller profile
+      this.apiService.createSeller(sellerData).subscribe({
+        next: (response) => {
+          this.sellerProfile = response.seller || response;
+          this.isEditingSeller = false;
+          this.sellerSuccess = 'Seller profile created successfully!';
+          this.isLoadingSeller = false;
+          
+          // Clear success message after 3 seconds
+          setTimeout(() => {
+            this.sellerSuccess = null;
+          }, 3000);
+        },
+        error: (err) => {
+          console.error('Failed to create seller profile:', err);
+          this.sellerError = err.error?.message || 'Failed to create seller profile. Please try again.';
+          this.isLoadingSeller = false;
+        }
+      });
+    }
+  }
+
+  /**
+   * Cancel seller edit
+   */
+  cancelEditSeller(): void {
+    this.isEditingSeller = false;
+    if (this.sellerProfile) {
+      this.editSellerData = { ...this.sellerProfile };
+    } else {
+      this.editSellerData = {};
+    }
+    this.sellerError = null;
+    this.sellerSuccess = null;
+  }
+
+  /**
+   * Check if user is a seller
+   * Note: Only users with 'seller' role can access seller features
+   * Admin role does NOT have seller access
+   */
+  isSeller(): boolean {
+    return this.user?.role === 'seller';
   }
 
   /**
@@ -313,10 +482,25 @@ export class ProfileComponent implements OnInit {
 
     this.apiService.getAddressByUserId(this.user.user_id.toString()).subscribe({
       next: (response) => {
-        this.addresses = Array.isArray(response) ? response : [response];
+        // Handle different response formats
+        if (!response) {
+          this.addresses = [];
+        } else if (Array.isArray(response)) {
+          this.addresses = response;
+        } else if (response.address) {
+          this.addresses = [response.address];
+        } else if (response.addresses) {
+          this.addresses = response.addresses;
+        } else {
+          this.addresses = [response];
+        }
       },
       error: (err) => {
         console.error('Failed to load addresses:', err);
+        // Don't show error if it's just a 404 (no addresses found)
+        if (err.status !== 404) {
+          console.error('Error loading addresses:', err.message);
+        }
         this.addresses = [];
       }
     });
@@ -451,18 +635,32 @@ export class ProfileComponent implements OnInit {
    * Save address changes
    */
   saveAddress(addressId: number): void {
+    if (!this.editAddressData || Object.keys(this.editAddressData).length === 0) {
+      alert('No changes to save.');
+      return;
+    }
+
     this.apiService.updateAddress(addressId.toString(), this.editAddressData).subscribe({
       next: (response) => {
+        // Handle different response formats
+        const updatedAddress = response.address || response;
+        
         const index = this.addresses.findIndex(a => a.address_id === addressId);
         if (index !== -1) {
-          this.addresses[index] = { ...this.addresses[index], ...this.editAddressData };
+          // Merge the updated data with existing address
+          this.addresses[index] = {
+            ...this.addresses[index],
+            ...updatedAddress
+          };
         }
+        
         this.editingAddressId = null;
+        this.editAddressData = {};
         alert('Address updated successfully!');
       },
       error: (err) => {
         console.error('Failed to update address:', err);
-        alert('Failed to update address. Please try again.');
+        alert(err.error?.message || 'Failed to update address. Please try again.');
       }
     });
   }
@@ -481,21 +679,45 @@ export class ProfileComponent implements OnInit {
   addNewAddress(): void {
     if (!this.user) return;
 
-    const addressData = {
-      ...this.newAddress,
+    // Validate required fields
+    if (!this.newAddress.street || !this.newAddress.city || !this.newAddress.postal_code) {
+      alert('Please fill in all required fields: Street, City, and Postal Code.');
+      return;
+    }
+
+    // Prepare address data with all required fields
+    const addressData: any = {
       user_id: this.user.user_id,
+      full_name: this.newAddress.full_name || this.user.name,
+      phone: this.newAddress.phone || this.user.phone || '',
+      street: this.newAddress.street,
+      building: this.newAddress.building || '',
+      city: this.newAddress.city,
+      state: this.newAddress.state || this.newAddress.city, // Default state to city if not provided
+      county: this.newAddress.county || this.newAddress.city, // Default county to city if not provided
+      postal_code: this.newAddress.postal_code,
+      country: this.newAddress.country || 'Kenya',
       is_default: this.addresses.length === 0
     };
 
     this.apiService.createAddress(addressData).subscribe({
       next: (response) => {
-        this.addresses.push(response.address);
-        this.newAddress = { country: 'Kenya' };
+        // Handle different response formats
+        const newAddress = response.address || response;
+        this.addresses.push(newAddress);
+        
+        // Reset form
+        this.newAddress = { 
+          country: 'Kenya',
+          full_name: this.user?.name,
+          phone: this.user?.phone
+        };
+        
         alert('Address added successfully!');
       },
       error: (err) => {
         console.error('Failed to add address:', err);
-        alert('Failed to add address. Please try again.');
+        alert(err.error?.message || 'Failed to add address. Please try again.');
       }
     });
   }
@@ -636,6 +858,18 @@ export class ProfileComponent implements OnInit {
   }
 
   /**
+   * Format currency
+   */
+  formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: 'KES',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount).replace('KES', 'KSh');
+  }
+
+  /**
    * Get user initials
    */
   getUserInitials(): string {
@@ -684,7 +918,7 @@ export class ProfileComponent implements OnInit {
   /**
    * Switch active section
    */
-  setActiveSection(section: 'overview' | 'orders' | 'addresses' | 'payments' | 'settings'): void {
+  setActiveSection(section: 'overview' | 'orders' | 'addresses' | 'payments' | 'settings' | 'seller'): void {
     this.activeSection = section;
   }
 }

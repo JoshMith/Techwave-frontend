@@ -84,6 +84,16 @@
                     </svg>
                     Settings
                 </a>
+                <a *ngIf="isSeller()" (click)="setActiveSection('seller')" [class.active]="activeSection === 'seller'"
+                    class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 3H7L10 16H18L21 8H7" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <circle cx="10" cy="20" r="1" fill="currentColor" />
+                        <circle cx="18" cy="20" r="1" fill="currentColor" />
+                    </svg>
+                    Seller Profile
+                </a>
                 <a (click)="logout()" class="nav-item">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <path
@@ -285,6 +295,7 @@
             </div>
 
             <!-- Addresses Section -->
+            <!-- Addresses Section -->
             <div *ngIf="activeSection === 'addresses'" class="section-content">
                 <div class="section-header">
                     <h2 class="section-title">Saved Addresses</h2>
@@ -293,13 +304,14 @@
                 <div *ngIf="addresses.length > 0" class="addresses-grid">
                     <div *ngFor="let address of addresses" class="address-card">
                         <div class="address-header">
-                            <h3>Address: #{{ address.address_id }}</h3>
+                            <h3>Address #{{ address.address_id }}</h3>
                             <span *ngIf="address.is_default" class="default-badge">Default</span>
                         </div>
 
                         <!-- View Mode -->
                         <div *ngIf="editingAddressId !== address.address_id" class="address-content">
-                            <p></p>
+                            <p><strong>{{ address.full_name }}</strong></p>
+                            <p>{{ address.phone }}</p>
                             <p>{{ address.street }}</p>
                             <p *ngIf="address.building">{{ address.building }}</p>
                             <p>{{ address.city }}, {{ address.county }} {{ address.postal_code }}</p>
@@ -316,32 +328,53 @@
                         <!-- Edit Mode -->
                         <div *ngIf="editingAddressId === address.address_id" class="address-edit-form">
                             <div class="form-group">
-                                <label>Address Line 1</label>
-                                <input type="text" [(ngModel)]="editAddressData.street" class="form-input" />
+                                <label>Full Name *</label>
+                                <input type="text" [(ngModel)]="editAddressData.full_name" class="form-input"
+                                    placeholder="Your full name" required />
                             </div>
                             <div class="form-group">
-                                <label>Address Line 2 (Optional)</label>
-                                <input type="text" [(ngModel)]="editAddressData.building" class="form-input" />
+                                <label>Phone Number *</label>
+                                <input type="tel" [(ngModel)]="editAddressData.phone" class="form-input"
+                                    placeholder="+254..." required />
+                            </div>
+                            <div class="form-group">
+                                <label>Street Address *</label>
+                                <input type="text" [(ngModel)]="editAddressData.street" class="form-input"
+                                    placeholder="Street address" required />
+                            </div>
+                            <div class="form-group">
+                                <label>Building/Apartment (Optional)</label>
+                                <input type="text" [(ngModel)]="editAddressData.building" class="form-input"
+                                    placeholder="Apartment, suite, etc." />
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label>City</label>
-                                    <input type="text" [(ngModel)]="editAddressData.city" class="form-input" />
+                                    <label>City *</label>
+                                    <input type="text" [(ngModel)]="editAddressData.city" class="form-input"
+                                        placeholder="Nairobi" required />
                                 </div>
                                 <div class="form-group">
-                                    <label>State/County</label>
-                                    <input type="text" [(ngModel)]="editAddressData.county" class="form-input" />
+                                    <label>County *</label>
+                                    <input type="text" [(ngModel)]="editAddressData.county" class="form-input"
+                                        placeholder="Nairobi County" required />
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label>Postal Code</label>
-                                    <input type="text" [(ngModel)]="editAddressData.postal_code" class="form-input" />
+                                    <label>State</label>
+                                    <input type="text" [(ngModel)]="editAddressData.state" class="form-input"
+                                        placeholder="State" />
                                 </div>
                                 <div class="form-group">
-                                    <label>Country</label>
-                                    <input type="text" [(ngModel)]="editAddressData.country" class="form-input" />
+                                    <label>Postal Code *</label>
+                                    <input type="text" [(ngModel)]="editAddressData.postal_code" class="form-input"
+                                        placeholder="00100" required />
                                 </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Country</label>
+                                <input type="text" [(ngModel)]="editAddressData.country" class="form-input"
+                                    value="Kenya" readonly />
                             </div>
 
                             <div class="form-actions">
@@ -355,38 +388,67 @@
                     <div class="address-card add-address-card">
                         <h3>Add New Address</h3>
                         <div class="form-group">
-                            <label> Address Line 1</label>
-                            <input type="text" [(ngModel)]="newAddress.street" class="form-input"
-                                placeholder="Street address" />
+                            <label>Full Name *</label>
+                            <input type="text" [(ngModel)]="newAddress.full_name" class="form-input"
+                                placeholder="Your full name" required />
                         </div>
                         <div class="form-group">
-                            <label>Address Line 2 (Optional)</label>
+                            <label>Phone Number *</label>
+                            <input type="tel" [(ngModel)]="newAddress.phone" class="form-input" placeholder="+254..."
+                                required />
+                        </div>
+                        <div class="form-group">
+                            <label>Street Address *</label>
+                            <input type="text" [(ngModel)]="newAddress.street" class="form-input"
+                                placeholder="Street address" required />
+                        </div>
+                        <div class="form-group">
+                            <label>Building/Apartment (Optional)</label>
                             <input type="text" [(ngModel)]="newAddress.building" class="form-input"
                                 placeholder="Apartment, suite, etc." />
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label>City</label>
+                                <label>City *</label>
                                 <input type="text" [(ngModel)]="newAddress.city" class="form-input"
-                                    placeholder="Nairobi" />
+                                    placeholder="Nairobi" required />
+                            </div>
+                            <div class="form-group">
+                                <label>County *</label>
+                                <input type="text" [(ngModel)]="newAddress.county" class="form-input"
+                                    placeholder="Nairobi County" required />
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Postal Code</label>
+                                <label>State</label>
+                                <input type="text" [(ngModel)]="newAddress.state" class="form-input"
+                                    placeholder="State (optional)" />
+                            </div>
+                            <div class="form-group">
+                                <label>Postal Code *</label>
                                 <input type="text" [(ngModel)]="newAddress.postal_code" class="form-input"
-                                    placeholder="00100" />
+                                    placeholder="00100" required />
                             </div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Country</label>
-                                <input type="text" [(ngModel)]="newAddress.country" class="form-input" value="Kenya"
-                                    readonly />
-                            </div>
+                        <div class="form-group">
+                            <label>Country</label>
+                            <input type="text" [(ngModel)]="newAddress.country" class="form-input" value="Kenya"
+                                readonly />
                         </div>
                         <button (click)="addNewAddress()" class="add-btn">Add Address</button>
                     </div>
+                </div>
+
+                <div *ngIf="addresses.length === 0" class="empty-state">
+                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none">
+                        <path
+                            d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z"
+                            stroke="currentColor" stroke-width="2" />
+                        <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2" />
+                    </svg>
+                    <h3>No saved addresses</h3>
+                    <p>Add your first delivery address!</p>
                 </div>
             </div>
 
@@ -506,7 +568,190 @@
                 <button class="danger-btn" disabled>Delete Account (Coming Soon)</button>
             </div>
         </div>
+        <!-- Seller Profile Section -->
+        <!-- Seller Profile Section -->
+        <div *ngIf="activeSection === 'seller'" class="section-content">
+            <h2 class="section-title">Seller Profile</h2>
+
+            <!-- Loading State -->
+            <div *ngIf="isLoadingSeller" class="loading-container" style="min-height: 200px;">
+                <div class="spinner"></div>
+                <p>Loading seller profile...</p>
+            </div>
+
+            <!-- Success Message -->
+            <div *ngIf="sellerSuccess && !isLoadingSeller" class="alert alert-success"
+                style="background: #d1fae5; border: 1px solid #10b981; color: #065f46; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                ✓ {{ sellerSuccess }}
+            </div>
+
+            <!-- Error Message -->
+            <div *ngIf="sellerError && !isLoadingSeller" class="alert alert-error"
+                style="background: #fee2e2; border: 1px solid #ef4444; color: #991b1b; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                ✗ {{ sellerError }}
+            </div>
+
+            <!-- No Seller Profile Yet -->
+            <div *ngIf="!isLoadingSeller && !sellerProfile && !isEditingSeller" class="settings-card">
+                <div style="text-align: center; padding: 2rem 0; color: #6b7280;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">🏪</div>
+                    <h3 style="margin-bottom: 1rem; font-size: 1.5rem; color: #1e293b;">No Seller Profile</h3>
+                    <p style="margin-bottom: 2rem; color: #64748b;">You haven't set up your seller profile yet. Create
+                        one to start selling on TechWave.</p>
+                    <button (click)="toggleEditSeller()" class="edit-profile-btn">
+                        Create Seller Profile
+                    </button>
+                </div>
+            </div>
+
+            <!-- View Seller Profile -->
+            <div *ngIf="!isLoadingSeller && sellerProfile && !isEditingSeller">
+                <div class="settings-card">
+                    <h3>Business Information</h3>
+
+                    <div class="profile-info">
+                        <div class="info-row">
+                            <span class="label">Business Name:</span>
+                            <span class="value">{{ sellerProfile.business_name }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Business License:</span>
+                            <span class="value">{{ sellerProfile.business_license }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Tax ID / KRA PIN:</span>
+                            <span class="value">{{ sellerProfile.tax_id }}</span>
+                        </div>
+                        <div class="info-row" *ngIf="sellerProfile.total_sales !== undefined">
+                            <span class="label">Total Sales:</span>
+                            <span class="value" style="color: #10b981; font-weight: 600;">{{
+                                formatCurrency(sellerProfile.total_sales || 0) }}</span>
+                        </div>
+                        <div class="info-row" *ngIf="sellerProfile.created_at">
+                            <span class="label">Member Since:</span>
+                            <span class="value">{{ formatDate(sellerProfile.created_at) }}</span>
+                        </div>
+                    </div>
+
+                    <button (click)="toggleEditSeller()" class="edit-profile-btn">Edit Seller Profile</button>
+                </div>
+
+                <!-- Seller Stats -->
+                <div
+                    style="margin-top: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-title">Profile Status</div>
+                                <div class="stat-value" style="font-size: 1.5rem;">
+                                    <span class="status-badge status-delivered">✓ Active</span>
+                                </div>
+                            </div>
+                            <div class="stat-icon"
+                                style="background: linear-gradient(135deg, #10b981, #059669); color: white; width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                                ✓
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-title">Business Verified</div>
+                                <div class="stat-value" style="font-size: 1.5rem;">
+                                    <span class="status-badge status-processing">⏳ Pending</span>
+                                </div>
+                            </div>
+                            <div class="stat-icon"
+                                style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                                🔍
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions for Sellers -->
+                <div class="settings-card" style="margin-top: 2rem;">
+                    <h3>Seller Actions</h3>
+                    <p style="color: #64748b; margin-bottom: 1rem;">Manage your seller account and products</p>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <button routerLink="/seller-dashboard" class="edit-profile-btn"
+                            style="flex: 1; min-width: 200px;">
+                            📊 Go to Seller Dashboard
+                        </button>
+                        <button routerLink="/seller-dashboard" class="secondary-btn" style="flex: 1; min-width: 200px;">
+                            📦 Manage Products
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit Seller Profile Form -->
+            <div *ngIf="!isLoadingSeller && isEditingSeller">
+                <div class="settings-card">
+                    <h3>{{ sellerProfile ? 'Edit' : 'Create' }} Seller Profile</h3>
+
+                    <form class="profile-edit-form">
+                        <div class="form-group">
+                            <label>Business Name *</label>
+                            <input type="text" [(ngModel)]="editSellerData.business_name" name="businessName"
+                                class="form-input" placeholder="Enter your business name" required />
+                            <small style="color: #6b7280; font-size: 0.85rem; margin-top: 0.25rem; display: block;">
+                                This is the name that will appear on your products and store page.
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Business License *</label>
+                            <input type="text" [(ngModel)]="editSellerData.business_license" name="businessLicense"
+                                class="form-input" placeholder="Enter your business license number" required />
+                            <small style="color: #6b7280; font-size: 0.85rem; margin-top: 0.25rem; display: block;">
+                                Your official business registration or license number.
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tax ID / KRA PIN *</label>
+                            <input type="text" [(ngModel)]="editSellerData.tax_id" name="taxId" class="form-input"
+                                placeholder="Enter your Tax ID or KRA PIN" required />
+                            <small style="color: #6b7280; font-size: 0.85rem; margin-top: 0.25rem; display: block;">
+                                Your tax identification number for compliance purposes.
+                            </small>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" (click)="saveSeller()" class="save-btn" [disabled]="isLoadingSeller">
+                                {{ isLoadingSeller ? 'Saving...' : (sellerProfile ? 'Update Profile' : 'Create Profile')
+                                }}
+                            </button>
+                            <button type="button" (click)="cancelEditSeller()" class="cancel-btn"
+                                [disabled]="isLoadingSeller">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Information Card -->
+                <div class="settings-card" style="margin-top: 2rem; background: #f8fafc; border: 2px dashed #cbd5e1;">
+                    <div style="display: flex; gap: 1rem; align-items: start;">
+                        <div style="font-size: 2rem;">ℹ️</div>
+                        <div>
+                            <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; color: #1f2937;">
+                                Important Information</h3>
+                            <ul style="color: #6b7280; font-size: 0.9rem; padding-left: 1.5rem; line-height: 1.8;">
+                                <li>All fields marked with * are required to complete your seller profile.</li>
+                                <li>Your business information will be verified by our team.</li>
+                                <li>Accurate information helps build trust with customers.</li>
+                                <li>You can update your seller profile information at any time.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
 </main>
 
 <!-- Footer -->
