@@ -66,6 +66,13 @@ logo, img {
   transform: translateY(-2px);
 }
 
+.nav-link:disabled,
+.nav-link.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .profile-section {
   display: flex;
   align-items: center;

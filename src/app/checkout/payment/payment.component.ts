@@ -189,7 +189,7 @@ export class PaymentComponent implements OnInit {
     if (this.selectedPaymentMethod === 'mpesa') {
       const phone = this.paymentForm.value.mpesaPhone;
       if (!phone || !this.mpesaService.isValidKenyanPhone(phone)) {
-        this.error = 'Please enter a valid Kenyan phone number (e.g., 0712345678)';
+        this.error = 'Please enter a valid Kenyan phone number (e.g., +254712345678)';
         this.paymentForm.get('mpesaPhone')?.markAsTouched();
         return;
       }
@@ -209,6 +209,7 @@ export class PaymentComponent implements OnInit {
     // Create order first
     this.createOrder();
   }
+
 
   createOrder(): void {
     if (!this.paymentInfo || !this.currentUser) {
@@ -310,9 +311,9 @@ export class PaymentComponent implements OnInit {
   }
 
 
-   /**
-   * Process M-Pesa STK Push Payment
-   */
+  /**
+  * Process M-Pesa STK Push Payment
+  */
   private processMpesaPayment(): void {
     const phone = this.paymentForm.value.mpesaPhone;
     const formattedPhone = this.mpesaService.formatPhoneNumber(phone);
@@ -345,7 +346,7 @@ export class PaymentComponent implements OnInit {
 
             if (stkResponse.success) {
               this.mpesaCheckoutRequestID = stkResponse.checkoutRequestID;
-              
+
               // Show user message
               alert(stkResponse.customerMessage || 'Please check your phone for M-Pesa prompt');
 
@@ -367,7 +368,7 @@ export class PaymentComponent implements OnInit {
       }
     });
   }
-  
+
   /**
    * Start polling M-Pesa payment status
    */
@@ -383,7 +384,7 @@ export class PaymentComponent implements OnInit {
         if (status.status === 'completed') {
           console.log('✅ M-Pesa payment confirmed!');
           this.mpesaPolling = false;
-          
+
           // Update payment confirmation
           this.apiService.confirmPayment(this.orderId!.toString()).subscribe({
             next: () => {
@@ -401,7 +402,7 @@ export class PaymentComponent implements OnInit {
           console.error('❌ M-Pesa payment failed:', status.resultDesc);
           this.mpesaPolling = false;
           this.handleError(`Payment failed: ${status.resultDesc}`);
-          
+
           // Update order status to failed
           this.apiService.updateOrder(this.orderId!.toString(), { status: 'failed' }).subscribe();
         }
@@ -415,7 +416,7 @@ export class PaymentComponent implements OnInit {
       complete: () => {
         console.log('🏁 M-Pesa polling completed');
         this.mpesaPolling = false;
-        
+
         if (this.mpesaTimeout) {
           this.handleError('Payment confirmation timeout. We will update your order once payment is confirmed.');
         }
@@ -439,7 +440,7 @@ export class PaymentComponent implements OnInit {
     this.apiService.createPayment(paymentData).subscribe({
       next: (response) => {
         console.log('✅ Card payment created:', response);
-        
+
         // In production, integrate with actual payment gateway
         // For demo, auto-confirm
         this.confirmPaymentRecord(response.payment_id);

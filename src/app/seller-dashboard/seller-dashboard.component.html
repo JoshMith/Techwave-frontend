@@ -8,18 +8,16 @@
       <span class="seller-badge">Seller Portal</span>
     </div>
     <div class="nav-items">
-      <button class="nav-link" [class.active]="currentView === 'dashboard'"
-        (click)="goToDashboard()" [disabled]="!profileLoading && !sellerProfile && !editingProfile">Dashboard</button>
+      <button class="nav-link" [class.active]="currentView === 'dashboard'" (click)="goToDashboard()" [disabled]="!isSeller">Dashboard</button>
       <button class="nav-link" [class.active]="currentView === 'products'"
-        (click)="navigateTo('products')" [disabled]="!profileLoading && !sellerProfile && !editingProfile">Products</button>
+        (click)="navigateTo('products')" [disabled]="!isSeller">Products</button>
       <button class="nav-link" [class.active]="currentView === 'manage-orders'"
-        (click)="navigateTo('manage-orders')" [disabled]="!profileLoading && !sellerProfile && !editingProfile">Orders</button>
+        (click)="navigateTo('manage-orders')" [disabled]="!isSeller">Orders</button>
       <button class="nav-link" [class.active]="currentView === 'analytics'"
-        (click)="navigateTo('analytics')" [disabled]="!profileLoading && !sellerProfile && !editingProfile">Analytics</button>
+        (click)="navigateTo('analytics')" [disabled]="!isSeller">Analytics</button>
       <button class="nav-link" [class.active]="currentView === 'promotions'"
-        (click)="navigateTo('promotions')" [disabled]="!profileLoading && !sellerProfile && !editingProfile">Promotions</button>
-      <button class="nav-link" [class.active]="currentView === 'profile'"
-        (click)="onProfileClick()">Profile</button>
+        (click)="navigateTo('promotions')" [disabled]="!isSeller">Promotions</button>
+      <button class="nav-link" [class.active]="currentView === 'profile'" (click)="onProfileClick()">Profile</button>
     </div>
     <div class="profile-section">
       <button class="notification-btn" title="Notifications" (click)="onNotificationClick()">
@@ -926,7 +924,8 @@
     <!-- ===== PROFILE VIEW ===== -->
     <div *ngIf="currentView === 'profile'">
       <div class="page-header">
-        <button class="back-btn" (click)="goToDashboard()" [disabled]="!profileLoading && !sellerProfile && !editingProfile">
+        <button class="back-btn" (click)="goToDashboard()"
+          [disabled]="!profileLoading && !sellerProfile && !editingProfile">
           ← Back to Dashboard
         </button>
         <h1 class="page-title">Business Profile</h1>
@@ -953,13 +952,14 @@
       <div *ngIf="!profileLoading && !sellerProfile && !editingProfile">
         <div *ngIf="userRole?.toLowerCase() === 'seller'; else nonSeller">
           <div class="card">
-            <div class="card-header">
-              <h2 class="card-title">Create Your Business Profile</h2>
-            </div>
-            <div style="text-align: center; padding: 2rem 0; color: #6b7280;">
-              <div style="font-size: 3rem; margin-bottom: 1rem;">🏪</div>
+        <div class="card-header">
+          <h2 class="card-title">Create Your Business Profile</h2>
+        </div>
+        <div style="text-align: center; padding: 2rem 0; color: #6b7280;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">🏪</div>
               <p style="margin-bottom: 1rem; font-size: 1.1rem;">You don't have a business profile yet.</p>
-              <p style="margin-bottom: 2rem; color: #9ca3af;">As a seller, you can create your business profile to start selling on TechWave.</p>
+              <p style="margin-bottom: 2rem; color: #9ca3af;">As a seller, you can create your business profile to start
+                selling on TechWave.</p>
               <button class="btn btn-primary" (click)="editingProfile = true">
                 Create Business Profile
               </button>

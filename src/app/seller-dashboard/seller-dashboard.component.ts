@@ -260,6 +260,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   isLoadingOrderDetails = false;
   isSubmittingProduct = false;
   navigate: any;
+  isSeller: boolean = false
 
   constructor(
     private apiService: ApiService,
@@ -341,6 +342,10 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
 
         const user = response.user;
         const seller = response.seller;
+
+        if(seller){
+          this.isSeller = true
+        }
 
         this.userName = user.name || 'User';
         this.userRole = user.role || 'buyer';

@@ -87,13 +87,10 @@ export class DetailsComponent implements OnInit {
   ];
   selectedDelivery = 'pickup';
 
-  // Processing cities
+  // Processing states
   isProcessing = false;
   error = '';
   isLoading = false;
-
-  // Login redirect timer
-  private loginRedirectTimer: any = null;
 
   constructor(
     private router: Router,
@@ -104,87 +101,51 @@ export class DetailsComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadCurrentUser();
     if (this.isBrowser) {
       this.loadCurrentUser();
     }
   }
 
-  ngOnDestroy(): void {
-    // Clear timer if component is destroyed
-    if (this.loginRedirectTimer) {
-      clearTimeout(this.loginRedirectTimer);
-    }
-  }
-
   /**
-   * Load current user - MAIN ENTRY POINT
+   * Load current user - REQUIRE LOGIN
    */
   loadCurrentUser(): void {
-    try {
-      const storedUser = this.apiService.getCurrentUser().subscribe(user => {
-        if (!user) {
-          console.log('ℹ️ No user logged in - prompting for login');
-          this.handleNoUserLogin();
+    this.isLoading = true;
+    
+    this.apiService.getCurrentUser().subscribe({
+      next: (response) => {
+        if (!response || !response.user) {
+          console.log('ℹ️ No user logged in - redirecting to login');
+          this.redirectToLogin();
           return;
         }
 
-        this.currentUser = user;
+        this.currentUser = response;
         this.isGuest = false;
         this.error = '';
-        this.isLoading = false;
-
-        // console.log('✅ User loaded, loading profile and addresses...');
 
         // Load user profile and addresses FIRST, then checkout data
-        this.loadUserProfileAndAddresses(user.user.user_id);
-      });
-      if (storedUser) {
-        this.currentUser = storedUser;
-        this.isGuest = false;
-        this.error = '';
-        this.isLoading = false;
+        this.loadUserProfileAndAddresses(response.user.user_id);
+      },
+      error: (err) => {
+        console.error('❌ Error loading user data:', err);
+        this.redirectToLogin();
       }
-      if (!storedUser) {
-        console.log('ℹ️ No user logged in - prompting for login');
-        this.handleNoUserLogin();
-        this.error = 'You must be logged in to proceed with checkout.';
-        this.isLoading = true;
-      }
-    } catch (error) {
-      console.error('❌ Error loading user data:', error);
-      this.handleNoUserLogin();
-      this.error = 'Failed to load user data. Please login again.';
-      this.isLoading = true;
-      confirm('An error occurred while loading your user data. Please login again.');
-    }
+    });
   }
 
   /**
-   * Handle when no user is logged in - prompt for login
+   * Redirect to login with return URL
    */
-  private handleNoUserLogin(): void {
-    this.isGuest = true;
-    this.setupGuestCheckout();
-
-    // Wait 2 seconds before showing alert
-    this.loginRedirectTimer = setTimeout(() => {
-      const shouldLogin = confirm(
-        'You need to be logged in to complete checkout.\n\n' +
-        'Would you like to login now?\n\n' +
-        'Click OK to login, or Cancel to continue as guest (limited functionality).'
-      );
-
-      if (shouldLogin) {
-        // Redirect to login with return URL
-        this.router.navigate(['/login'], {
-          queryParams: { returnUrl: '/checkout/details' }
-        });
-      } else {
-        // Continue as guest but load checkout data
-        this.loadCheckoutData();
-      }
-    }, 2000);
+  private redirectToLogin(): void {
+    this.error = 'You must be logged in to proceed with checkout.';
+    this.isLoading = false;
+    
+    setTimeout(() => {
+      this.router.navigate(['/login'], {
+        queryParams: { returnUrl: '/checkout/details' }
+      });
+    }, 1500);
   }
 
   /**
@@ -196,7 +157,6 @@ export class DetailsComponent implements OnInit {
         this.currentUser = { ...this.currentUser, ...user };
         this.contactInfo.email = user.email || '';
         this.contactInfo.phone = user.phone || '';
-        // console.log('✅ User profile loaded, now loading addresses...');
 
         // Now load addresses, then checkout data
         this.loadAddresses(() => {
@@ -215,11 +175,11 @@ export class DetailsComponent implements OnInit {
   }
 
   /**
-   * Load addresses with callback - FIXED to ensure completion
+   * Load addresses with callback
    */
   loadAddresses(callback?: () => void): void {
-    if (!this.currentUser.user?.user_id || this.isGuest) {
-      console.log('ℹ️ No addresses to load (guest or no user)');
+    if (!this.currentUser?.user?.user_id) {
+      console.log('ℹ️ No user to load addresses for');
       this.isLoadingAddresses = false;
       callback?.();
       return;
@@ -228,25 +188,20 @@ export class DetailsComponent implements OnInit {
     this.isLoadingAddresses = true;
     this.addressError = null;
 
-    // console.log('🔄 Loading addresses for user:', this.currentUser.user_id);
-
     this.apiService.getAddressByUserId(this.currentUser.user.user_id.toString()).subscribe({
       next: (res: any) => {
         const addresses: Address[] = Array.isArray(res)
           ? res
           : (res?.addresses || res?.data || []);
 
-        // console.log('✅ Addresses loaded:', addresses);
         this.addresses = addresses;
 
         // Auto-select default address
         const defaultAddress = addresses.find((addr: Address) => addr.is_default);
         if (defaultAddress) {
           this.selectedAddressId = defaultAddress.address_id;
-          // console.log('✅ Auto-selected default address:', this.selectedAddressId);
         } else if (addresses.length > 0) {
           this.selectedAddressId = addresses[0].address_id;
-          // console.log('✅ Auto-selected first address:', this.selectedAddressId);
         } else {
           console.log('ℹ️ No addresses found, showing address form');
           this.showAddressForm = true;
@@ -267,12 +222,9 @@ export class DetailsComponent implements OnInit {
   }
 
   /**
-   * Process checkout data - FIXED to use current selectedAddressId
+   * Process checkout data
    */
   private processCheckoutData(data: any): void {
-    // console.log('🔄 Processing checkout data...');
-    // console.log('📌 Using selectedAddressId:', this.selectedAddressId);
-
     // Normalize items and compute subtotals
     const items: OrderItem[] = (data.items || []).map((it: any) => {
       const qty = Number(it.quantity ?? 1);
@@ -297,7 +249,7 @@ export class DetailsComponent implements OnInit {
 
     const total = subtotal + shipping + tax - couponDiscount;
 
-    // CRITICAL FIX: Use the CURRENT selectedAddressId, don't default to 0
+    // Use the CURRENT selectedAddressId
     const addressId = this.selectedAddressId ? Number(this.selectedAddressId) : 0;
 
     this.orderData = {
@@ -309,26 +261,25 @@ export class DetailsComponent implements OnInit {
       tax,
       couponDiscount,
       items,
-      isGuest: data.isGuest !== undefined ? !!data.isGuest : true
+      isGuest: false // No guest checkout allowed
     };
 
     this.orderItems = this.orderData.items;
-    this.isGuest = this.orderData.isGuest;
+    this.isGuest = false;
 
     // Save to localStorage for persistence
     if (this.isBrowser) {
       localStorage.setItem('checkout_data', JSON.stringify(this.orderData));
     }
 
-    // console.log('✅ Checkout data loaded with addressId:', this.orderData.addressId);
-    // console.log('✅ Full orderData:', this.orderData);
+    console.log('✅ Checkout data loaded with addressId:', this.orderData.addressId);
   }
 
   /**
    * Load checkout data from localStorage
    */
   private loadCheckoutData(): void {
-    // if (!this.isBrowser) return;
+    if (!this.isBrowser) return;
 
     const checkoutData = localStorage.getItem('checkout_data');
     if (!checkoutData) {
@@ -339,6 +290,7 @@ export class DetailsComponent implements OnInit {
     try {
       const data = JSON.parse(checkoutData);
       this.processCheckoutData(data);
+      this.isLoading = false;
     } catch (error) {
       console.error('❌ Error parsing checkout data:', error);
       this.showErrorAndRedirect('Invalid order data. Please restart your order.');
@@ -350,47 +302,39 @@ export class DetailsComponent implements OnInit {
    */
   private showErrorAndRedirect(message: string): void {
     this.error = message;
+    this.isLoading = false;
     setTimeout(() => {
       this.router.navigate(['/cart']);
     }, 3000);
   }
 
   /**
-   * Setup guest checkout
-   */
-  private setupGuestCheckout(): void {
-    this.isGuest = true;
-    this.contactInfo.email = '';
-    this.contactInfo.phone = '';
-    this.addresses = [];
-    this.isLoadingAddresses = false;
-    this.showAddressForm = true;
-  }
-
-  /**
-   * Save new address - FIXED to update orderData
+   * Save new address - AUTHENTICATED USERS ONLY
    */
   saveNewAddress(): void {
     if (!this.validateAddress(this.newAddress)) {
-      alert('Please fill in all required fields (Address, City, Postal Code)');
+      alert('Please fill in all required fields (Street, City, Postal Code)');
       return;
     }
 
-    // For guest users, store address locally
-    if (this.isGuest || !this.currentUser.user?.user_id) {
-      this.handleGuestAddress();
+    if (!this.currentUser?.user?.user_id) {
+      alert('You must be logged in to save an address.');
+      this.redirectToLogin();
       return;
     }
 
-    // For authenticated users, save to database
-    this.apiService.createAddress({
+    // Create address payload - DO NOT include address_id (auto-generated)
+    const addressPayload = {
       userId: this.currentUser.user.user_id,
-      city: this.newAddress.city,
       street: this.newAddress.street,
-      building: this.newAddress.building,
+      building: this.newAddress.building || '',
+      city: this.newAddress.city,
       postal_code: this.newAddress.postal_code,
-      is_default: this.newAddress.is_default
-    }).subscribe({
+      country: this.newAddress.country,
+      is_default: this.newAddress.is_default || this.addresses.length === 0
+    };
+
+    this.apiService.createAddress(addressPayload).subscribe({
       next: (res: any) => {
         const newId = res?.address_id;
         if (!newId) {
@@ -398,18 +342,19 @@ export class DetailsComponent implements OnInit {
           alert('Address saved but server response was unexpected. Please refresh addresses.');
           this.showAddressForm = false;
           this.resetAddressForm();
+          this.loadAddresses();
           return;
         }
 
         const createdAddress: Address = {
           address_id: newId,
-          user_id: this.currentUser.user?.user_id || 0,
+          user_id: this.currentUser.user.user_id,
           street: this.newAddress.street,
-          building: this.newAddress.building,
+          building: this.newAddress.building || '',
           city: this.newAddress.city,
           postal_code: this.newAddress.postal_code,
           country: this.newAddress.country,
-          is_default: this.newAddress.is_default
+          is_default: this.newAddress.is_default || this.addresses.length === 0
         };
 
         this.addresses.push(createdAddress);
@@ -417,7 +362,7 @@ export class DetailsComponent implements OnInit {
         this.showAddressForm = false;
         this.resetAddressForm();
 
-        // CRITICAL: Update orderData with the new address
+        // Update orderData with the new address
         if (this.orderData) {
           this.orderData.addressId = createdAddress.address_id;
           localStorage.setItem('checkout_data', JSON.stringify(this.orderData));
@@ -434,39 +379,13 @@ export class DetailsComponent implements OnInit {
   }
 
   /**
-   * Handle guest address - FIXED to update orderData
-   */
-  private handleGuestAddress(): void {
-    const guestAddress: Address = {
-      address_id: Date.now(),
-      user_id: 0,
-      ...this.newAddress,
-      is_default: true
-    };
-
-    this.addresses = [guestAddress];
-    this.selectedAddressId = guestAddress.address_id;
-    this.showAddressForm = false;
-    this.resetAddressForm();
-
-    // CRITICAL: Update orderData with the new address
-    if (this.orderData) {
-      this.orderData.addressId = guestAddress.address_id;
-      localStorage.setItem('checkout_data', JSON.stringify(this.orderData));
-      console.log('✅ Updated orderData with guest addressId:', this.orderData.addressId);
-    }
-
-    alert('Delivery address saved!');
-  }
-
-  /**
-   * Select address - FIXED to update orderData
+   * Select address
    */
   selectAddress(addressId: number): void {
     console.log('📍 Selecting address:', addressId);
     this.selectedAddressId = addressId;
 
-    // CRITICAL: Update orderData with the selected address
+    // Update orderData with the selected address
     if (this.orderData) {
       this.orderData.addressId = addressId;
       localStorage.setItem('checkout_data', JSON.stringify(this.orderData));
@@ -475,7 +394,7 @@ export class DetailsComponent implements OnInit {
   }
 
   /**
-   * Validate form - ENHANCED to check for valid addressId
+   * Validate form
    */
   validateForm(): boolean {
     if (!this.selectedAddressId || this.selectedAddressId === 0) {
@@ -509,7 +428,7 @@ export class DetailsComponent implements OnInit {
   }
 
   /**
-   * Proceed to payment - FIXED to use addressId
+   * Proceed to payment
    */
   proceedToPayment(): void {
     console.log('🔄 Proceeding to payment...');
@@ -519,7 +438,6 @@ export class DetailsComponent implements OnInit {
       return;
     }
 
-    // Double-check we have a valid address ID
     if (!this.selectedAddressId || this.selectedAddressId === 0) {
       alert('Please select a valid delivery address');
       return;
@@ -534,10 +452,10 @@ export class DetailsComponent implements OnInit {
     this.isProcessing = true;
     this.error = '';
 
-    // Prepare data for payment page - FIXED: use addressId
+    // Prepare data for payment page
     const paymentData = {
       cartId: this.orderData.cartId,
-      addressId: this.selectedAddressId, // This is the key fix
+      addressId: this.selectedAddressId,
       subtotal: this.orderData.subtotal,
       deliveryCost: this.selectedDeliveryOption.cost,
       finalTotal: this.finalTotal,
@@ -555,10 +473,8 @@ export class DetailsComponent implements OnInit {
     this.isProcessing = false;
 
     // Navigate to payment
-    this.router.navigate(['/checkout/payment']
-    );
+    this.router.navigate(['/checkout/payment']);
   }
-
 
   /**
    * Apply delivery cost to order

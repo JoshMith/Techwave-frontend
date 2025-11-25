@@ -86,20 +86,26 @@ export class MpesaService {
   }
 
   /**
-   * Format phone number for M-Pesa (254XXXXXXXXX)
+   * Format Kenyan phone number to +254 format required by database
    */
   formatPhoneNumber(phone: string): string {
-    let cleaned = phone.replace(/\D/g, '');
-    
-    if (cleaned.startsWith('0')) {
-      return '254' + cleaned.substring(1);
-    } else if (cleaned.startsWith('+254')) {
-      return cleaned.substring(1);
-    } else if (!cleaned.startsWith('254') && cleaned.length === 9) {
-      return '254' + cleaned;
+    // Remove any non-digit characters
+    const cleaned = phone.replace(/\D/g, '');
+
+    // Handle different formats:
+    if (cleaned.startsWith('254') && cleaned.length === 12) {
+      // Already in 254 format, add +
+      return '+' + cleaned;
+    } else if (cleaned.startsWith('0') && cleaned.length === 10) {
+      // Convert 07... to +2547...
+      return '+254' + cleaned.substring(1);
+    } else if (cleaned.startsWith('7') && cleaned.length === 9) {
+      // Convert 7... to +2547...
+      return '+254' + cleaned;
+    } else {
+      // Return as is (will fail validation but at least we tried)
+      return '+' + cleaned;
     }
-    
-    return cleaned;
   }
 
   /**
@@ -107,7 +113,8 @@ export class MpesaService {
    */
   isValidKenyanPhone(phone: string): boolean {
     const formatted = this.formatPhoneNumber(phone);
-    // Kenyan numbers: 254 7XX XXX XXX or 254 1XX XXX XXX
-    return /^254[71]\d{8}$/.test(formatted);
+    const digits = formatted.replace(/\D/g, '');
+    // Kenyan numbers must be in 2547... or 2541... followed by 8 digits (total 12 digits)
+    return /^254[71]\d{8}$/.test(digits);
   }
 }

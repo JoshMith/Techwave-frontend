@@ -1,6 +1,9 @@
-/* ========================================
-   ADMIN DASHBOARD STYLES
-   ======================================== */
+/* ===========================================
+   ADMIN DASHBOARD STYLES V2
+   - Optimized loading
+   - Full management interface
+   - Modal dialogs
+   =========================================== */
 
 /* Layout & Container */
 .admin-dashboard {
@@ -96,6 +99,33 @@
   background: #5568d3;
 }
 
+.btn-success {
+  background: #10b981;
+  color: white;
+}
+
+.btn-success:hover {
+  background: #059669;
+}
+
+.btn-info {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-info:hover {
+  background: #2563eb;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+}
+
 .btn-link {
   color: #667eea;
   text-decoration: none;
@@ -124,6 +154,33 @@
 
 .btn-close:hover {
   background: rgba(0, 0, 0, 0.1);
+}
+
+/* Icon Buttons */
+.btn-icon {
+  padding: 0.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.2rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.btn-icon:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.btn-view {
+  color: #3b82f6;
+}
+
+.btn-edit {
+  color: #f59e0b;
+}
+
+.btn-delete {
+  color: #ef4444;
 }
 
 /* Alerts */
@@ -427,6 +484,7 @@
 }
 
 .order-item, .stock-item {
+  color: #374151;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -804,6 +862,146 @@ tbody tr:hover {
   margin-bottom: 2rem;
 }
 
+/* ===========================================
+   MANAGEMENT MODALS
+   =========================================== */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content.large {
+  max-width: 1200px;
+}
+
+.modal-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #374151;
+}
+
+.modal-body {
+  padding: 2rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  padding: 1rem 2rem;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.search-box {
+  flex: 1;
+  min-width: 250px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.filter-select, .role-select, .status-select {
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: white;
+  cursor: pointer;
+}
+
+.filter-select:focus, .role-select:focus, .status-select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.bulk-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Management Table */
+.management-table {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.management-table table {
+  min-width: 800px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.stock-input {
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.stock-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .dashboard-header {
@@ -858,33 +1056,22 @@ tbody tr:hover {
   .chart-labels span {
     font-size: 0.75rem;
   }
-}
 
-/* Dark Mode Support (Optional) */
-@media (prefers-color-scheme: dark) {
-  .admin-dashboard {
-    background: #1f2937;
-    color: #f3f4f6;
+  .modal-content {
+    max-width: 100%;
+    margin: 1rem;
   }
 
-  .card, .stat-card, .alerts-panel {
-    background: #374151;
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .card-header, .alerts-header {
-    background: #4b5563;
-    border-color: #6b7280;
+  .search-box {
+    min-width: 100%;
   }
 
-  table thead {
-    background: #4b5563;
-  }
-
-  th, td {
-    border-color: #6b7280;
-  }
-
-  tbody tr:hover {
-    background: #4b5563;
+  .management-table {
+    overflow-x: scroll;
   }
 }
