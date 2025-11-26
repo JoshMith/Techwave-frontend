@@ -18,7 +18,7 @@ interface User {
 
 interface Address {
   address_id: number;
-  user_id: number;
+  user_id: any;
   full_name: string;
   email: string,
   phone: string;
@@ -115,6 +115,7 @@ export class ProfileComponent implements OnInit {
   newAddress: Partial<Address> = {
     country: 'Kenya',
     full_name: '',
+    user_id: '',
     phone: '',
     street: '',
     building: '',
@@ -221,6 +222,7 @@ export class ProfileComponent implements OnInit {
       this.newAddress = {
         country: 'Kenya',
         full_name: this.user?.name || '',
+        user_id: this.user?.user_id || '',
         phone: this.user?.phone || '',
         street: '',
         building: '',
