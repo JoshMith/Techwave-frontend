@@ -484,7 +484,7 @@
                   <div class="image-preview">
                     <div *ngFor="let image of editingProductExistingImages" class="image-preview-item">
                       <img [src]="image.image_url" [alt]="image.alt_text" class="preview-image">
-                      <button type="button" class="remove-image" (click)="removeExistingProductImage(image.image_id)">×</button>
+                      <button type="button" class="remove-image" (click)="removeExistingProductImage(image)">×</button>
                       <span *ngIf="image.is_primary" class="primary-badge">Primary</span>
                     </div>
                   </div>

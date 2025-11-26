@@ -1044,10 +1044,21 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
         .subscribe({
           next: (images) => {
             this.editingProductExistingImages = images || [];
-            console.log('Loaded existing images:', this.editingProductExistingImages);
+            console.log('✅ Loaded existing images:', this.editingProductExistingImages);
+            
+            // Debug: Log the structure of the first image
+            if (this.editingProductExistingImages.length > 0) {
+              console.log('📸 First image structure:', this.editingProductExistingImages[0]);
+              console.log('📸 Available image ID fields:', {
+                image_id: this.editingProductExistingImages[0].image_id,
+                id: this.editingProductExistingImages[0].id,
+                productImageId: this.editingProductExistingImages[0].productImageId,
+                product_image_id: this.editingProductExistingImages[0].product_image_id
+              });
+            }
           },
           error: (error) => {
-            console.warn('No existing images found:', error);
+            console.warn('⚠️ No existing images found:', error);
             this.editingProductExistingImages = [];
           }
         });
@@ -1078,22 +1089,52 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     this.editingProductImages.splice(index, 1);
   }
 
-  removeExistingProductImage(imageId: string): void {
+  removeExistingProductImage(image: any): void {
+    // Extract image ID from URL if not available in response
+    let imageId = image.image_id || 
+                  image.id || 
+                  image.productImageId || 
+                  image.product_image_id ||
+                  image.imageId;
+    
+    // If no ID found, extract filename from URL as fallback
+    if (!imageId && (image.image_url || image.full_url)) {
+      const url = image.image_url || image.full_url;
+      const matches = url.match(/product-\d+-\d+\.jpg/);
+      imageId = matches ? matches[0] : null;
+    }
+    
+    if (!imageId) {
+      console.error('❌ Image ID not found. Image object:', image);
+      console.error('Available properties:', Object.keys(image));
+      this.productError = 'Cannot delete image: ID not found';
+      setTimeout(() => this.productError = null, 3000);
+      return;
+    }
+
     if (confirm('Are you sure you want to delete this image?')) {
-      this.apiService.deleteProductImage(imageId)
+      console.log('🗑️ Deleting image with ID:', imageId);
+      console.log('Full image object:', image);
+      
+      this.apiService.deleteProductImage(imageId.toString())
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
+            // Remove the image from the array using the same ID check
             this.editingProductExistingImages = this.editingProductExistingImages.filter(
-              img => img.image_id !== imageId
+              img => {
+                const imgId = img.image_id || img.id || img.productImageId || img.product_image_id || img.imageId;
+                return imgId !== imageId;
+              }
             );
             this.productSuccess = 'Image deleted successfully!';
+            console.log('✅ Image deleted successfully');
             setTimeout(() => this.productSuccess = null, 3000);
           },
           error: (error) => {
-            console.error('Error deleting image:', error);
-            this.productError = 'Failed to delete image. Please try again.';
-            setTimeout(() => this.productError = null, 3000);
+            console.error('❌ Error deleting image:', error);
+            this.productError = `Failed to delete image: ${error.error?.message || error.message}`;
+            setTimeout(() => this.productError = null, 5000);
           }
         });
     }
