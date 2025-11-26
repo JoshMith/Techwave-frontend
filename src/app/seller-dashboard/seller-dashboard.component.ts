@@ -276,11 +276,6 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  removeSellerData(): void {
-    // localStorage.removeItem('sellerData');
-    // this.loadDashboardData();
-  }
-
   // Navigation methods
   navigateTo(view: string): void {
     this.currentView = view;
@@ -343,9 +338,9 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
         const user = response.user;
         const seller = response.seller;
 
-        if(seller){
+        if (seller) {
           this.isSeller = true
-        }
+        };
 
         this.userName = user.name || 'User';
         this.userRole = user.role || 'buyer';
@@ -357,7 +352,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
           return;
         }
 
-        // ✅ NEW: Check seller profile and store ID
+        // ✅ Check seller profile and store ID
         if (!seller || !seller.seller_id) {
           console.warn('No seller profile found');
           this.isAuthorized = true;
@@ -367,7 +362,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
         }
 
         this.isAuthorized = true;
-        this.currentSellerId = seller.seller_id.toString(); // ✅ Store seller ID
+        this.currentSellerId = seller.seller_id.toString();
         console.log('✅ Seller ID:', this.currentSellerId);
 
         // ✅ Load seller-specific data
@@ -397,26 +392,26 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: (response) => {
         console.log('✅ Dashboard stats loaded:', response);
-        
+
         if (response.success && response.data) {
           const data = response.data;
-          
+
           // Process stats
           this.processNewDashboardStats(data);
-          
+
           // Process recent orders
           if (data.orders?.recent) {
             this.orders = data.orders.recent.slice(0, 5).map((order: any) => ({
               id: order.order_id || 'N/A',
               customer: order.customer_name || 'Unknown',
-              product: 'Multiple Items', // Since one order can have multiple items
+              product: 'Multiple Items',
               amount: this.formatCurrency(order.total_amount || 0),
               status: this.mapOrderStatus(order.status),
               date: this.formatDate(order.created_at),
               statusClass: this.getStatusClass(order.status)
             }));
           }
-          
+
           // Process top products for analytics
           if (data.topProducts) {
             this.analyticsData.topProducts = data.topProducts.map((p: any) => ({
@@ -425,19 +420,19 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
               revenue: p.revenue || 0
             }));
           }
-          
+
           // Process monthly trend
           if (data.revenue?.monthlyTrend) {
             this.analyticsData.revenueByMonth = data.revenue.monthlyTrend;
           }
-          
+
           // Process performance metrics
           this.processPerformanceMetrics(data);
-          
+
           // Generate activities from recent data
           this.generateActivitiesFromData(data);
         }
-        
+
         this.isLoading = false;
       },
       error: (err) => {
@@ -450,23 +445,12 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Process dashboard stats from API - UPDATED to match actual response
+   * Process dashboard stats from API
    */
   private processNewDashboardStats(statsData: any): void {
-    // Calculate revenue change percentage
-    const revenueChange = statsData.revenue?.last30Days > 0 
-      ? `+${((statsData.revenue.last30Days / statsData.revenue.total) * 100).toFixed(1)}%` 
+    const revenueChange = statsData.revenue?.last30Days > 0
+      ? `+${((statsData.revenue.last30Days / statsData.revenue.total) * 100).toFixed(1)}%`
       : '+0%';
-
-    // Calculate orders change
-    const ordersChange = statsData.orders?.recent?.length > 0
-      ? `+${statsData.orders.recent.length} recent`
-      : '+0 recent';
-
-    // Get unique customers from recent orders
-    const uniqueCustomers = new Set(
-      statsData.orders?.recent?.map((o: any) => o.customer_email) || []
-    ).size;
 
     this.stats = [
       {
@@ -516,53 +500,22 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Get CSS class for change indicators
-   */
-  private getChangeClass(change: string): string {
-    if (!change) return 'positive';
-    if (change.includes('+')) return 'positive';
-    if (change.includes('-')) return 'negative';
-    return 'warning';
-  }
-
-  /**
-   * Process seller orders from API
-   */
-  private processSellerOrders(ordersData: any[]): void {
-    this.allOrders = ordersData;
-    this.filteredOrders = [...ordersData];
-
-    // Take first 5 for dashboard display
-    this.orders = ordersData.slice(0, 5).map(order => ({
-      id: order.order_id || 'N/A',
-      customer: order.user_name || 'Unknown',
-      product: order.product_name || 'Unknown Product',
-      amount: this.formatCurrency(order.total_amount || 0),
-      status: this.mapOrderStatus(order.status),
-      date: this.formatDate(order.created_at),
-      statusClass: this.getStatusClass(order.status)
-    }));
-  }
-
-  /**
    * Process performance metrics from API response
    */
   private processPerformanceMetrics(data: any): void {
     const totalOrders = data.orders?.total || 0;
     const totalRevenue = data.revenue?.total || 0;
     const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-    
-    // Calculate return rate (cancelled orders)
+
     const returnedOrders = data.orders?.cancelled || 0;
     const returnRate = totalOrders > 0 ? (returnedOrders / totalOrders) * 100 : 0;
-    
-    // Get customer satisfaction from reviews
+
     const avgRating = parseFloat(data.reviews?.averageRating || '0');
-    
+
     this.performanceMetrics = [
       {
         label: 'Conversion Rate',
-        value: `${((totalOrders / 100) * 100).toFixed(1)}%`, // Simplified calculation
+        value: `${((totalOrders / 100) * 100).toFixed(1)}%`,
         valueClass: totalOrders > 0 ? 'positive' : 'warning'
       },
       {
@@ -589,7 +542,6 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   private generateActivitiesFromData(data: any): void {
     const activities: Activity[] = [];
 
-    // Add order activities
     if (data.orders?.recent && data.orders.recent.length > 0) {
       data.orders.recent.slice(0, 2).forEach((order: any) => {
         activities.push({
@@ -601,7 +553,6 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
       });
     }
 
-    // Add product activities (low stock warnings)
     if (data.products?.lowStock && data.products.lowStock.length > 0) {
       data.products.lowStock.slice(0, 2).forEach((product: any) => {
         activities.push({
@@ -613,7 +564,6 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
       });
     }
 
-    // Add review activities
     if (data.reviews?.total > 0) {
       activities.push({
         icon: '⭐',
@@ -631,26 +581,14 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     }];
   }
 
-  /**
-   * Format activities from API
-   */
-  private formatActivities(activitiesData: any[]): Activity[] {
-    return activitiesData.map(activity => ({
-      icon: activity.icon || '📌',
-      iconClass: activity.type || 'order',
-      text: activity.text || 'Activity',
-      time: activity.time || 'Recently'
-    }));
-  }
-
   // Profile management methods
   private loadSellerProfile(): void {
     this.profileLoading = true;
     this.profileError = null;
 
     try {
-      const userString = this.apiService.getCurrentUser().subscribe(user => {
-        if (!userString) {
+      this.apiService.getCurrentUser().subscribe(user => {
+        if (!user || !user.user) {
           this.router.navigate(['/login'], { queryParams: { returnUrl: '/seller-dashboard' } });
           this.profileError = 'User session expired. Please log in again.';
           this.profileLoading = false;
@@ -769,21 +707,45 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     return true;
   }
 
-  // Products management methods
+  // ✅ FIX 1: Products management - Filter by seller_id properly
   private loadProducts(): void {
+    if (!this.currentSellerId) {
+      console.warn('No seller ID available for loading products');
+      this.products = [];
+      this.filteredProductsList = [];
+      return;
+    }
+
+    console.log('🔍 Loading products for seller:', this.currentSellerId);
+
     this.apiService.getProducts()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
           const allProducts = response || [];
-          // ✅ Filter for current seller
-          this.products = allProducts.filter((p: any) =>
-            p.seller_id?.toString() === this.currentSellerId
-          );
+          console.log('📦 All products loaded:', allProducts.length);
+
+          // ✅ Filter for current seller - handle both string and number IDs
+          this.products = allProducts.filter((p: any) => {
+            const productSellerId = p.seller_id?.toString();
+            const matches = productSellerId === this.currentSellerId;
+            if (matches) {
+              console.log('✅ Product matches seller:', p.title, 'Seller ID:', productSellerId);
+            }
+            return matches;
+          });
+
+          console.log(`✅ Filtered ${this.products.length} products for seller ${this.currentSellerId}`);
           this.filteredProductsList = [...this.products];
+
+          if (this.products.length === 0) {
+            console.warn('⚠️ No products found for seller', this.currentSellerId);
+          }
         },
         error: (error) => {
-          console.error('Error loading products:', error);
+          console.error('❌ Error loading products:', error);
+          this.products = [];
+          this.filteredProductsList = [];
         }
       });
   }
@@ -866,7 +828,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
       });
   }
 
-  // NEW: Image handling methods
+  // Image handling methods
   onFileSelected(event: any): void {
     const files: FileList = event.target.files;
     if (files && files.length > 0) {
@@ -884,7 +846,6 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
         }
       });
 
-      // Reset the input
       event.target.value = '';
     }
   }
@@ -942,7 +903,6 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
    * Add product with images
    */
   onAddProduct(): void {
-    // Validate images
     if (this.uploadedImages.length === 0) {
       this.productError = 'At least one product image is required';
       return;
@@ -953,14 +913,13 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     }
 
     try {
-      const userString = this.apiService.getCurrentUser().subscribe(user => {
+      this.apiService.getCurrentUser().subscribe(user => {
         const sellerString = user.seller;
 
-        if (userString) {
-          const seller = sellerString ? JSON.parse(sellerString) : null;
+        if (user) {
+          const seller = sellerString;
           console.log('✅ Creating product for seller ID:', seller?.seller_id);
 
-          // Convert specs array to JSON object
           const specsObject: { [key: string]: any } = {};
           this.specs.forEach(spec => {
             if (spec.key && spec.value) {
@@ -981,7 +940,6 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
 
           console.log('Creating product with data:', productData);
 
-          // First create the product
           this.apiService.createProduct(productData)
             .pipe(takeUntil(this.destroy$))
             .subscribe({
@@ -989,7 +947,6 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
                 const productId = response.productId;
                 console.log('Product created:', productId);
 
-                // Now upload the images
                 this.uploadImages(productId);
               },
               error: (error) => {
@@ -1013,12 +970,10 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   private uploadImages(productId: number): void {
     const formData = new FormData();
 
-    // Append all image files
     this.uploadedImages.forEach((image, index) => {
       formData.append('images', image.file);
     });
 
-    // Set first image as primary
     formData.append('setPrimary', 'true');
     formData.append('altText', this.newProduct.title);
 
@@ -1035,7 +990,6 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
           this.specs = [{ key: '', value: '' }];
           this.loadSellerData();
 
-          // Clear success message after 5 seconds
           setTimeout(() => {
             this.productSuccess = null;
           }, 5000);
@@ -1048,7 +1002,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Validate product data (images are now optional)
+   * Validate product data
    */
   private validateProduct(product: Product): boolean {
     if (!product.title.trim()) {
@@ -1099,7 +1053,6 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     this.isSubmittingProduct = false;
   }
 
-
   onEditProduct(product: any): void {
     this.editingProduct = { ...product };
   }
@@ -1140,37 +1093,69 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Orders management methods
+  // ✅ FIX 2: Orders management - Filter by seller's products
   private loadAllOrders(): void {
-    // Get all products first to know which orders to show
+    if (!this.currentSellerId) {
+      console.warn('No seller ID available for loading orders');
+      this.allOrders = [];
+      this.filteredOrders = [];
+      return;
+    }
+
+    console.log('🔍 Loading orders for seller:', this.currentSellerId);
+
+    // First get all products to know which ones belong to this seller
     this.apiService.getProducts()
       .pipe(
         switchMap((products) => {
           const sellerProductIds = products
             .filter((p: any) => p.seller_id?.toString() === this.currentSellerId)
-            .map((p: any) => p.product_id);
+            .map((p: any) => p.product_id?.toString());
 
+          console.log('📦 Seller product IDs:', sellerProductIds);
+
+          if (sellerProductIds.length === 0) {
+            console.warn('⚠️ No products found for seller');
+            return of([]);
+          }
+
+          // Get all orders
           return this.apiService.getOrders().pipe(
-            map((orders) => ({
-              orders: orders || [],
-              sellerProductIds
-            }))
+            map((orders) => {
+              // Get order items to match with seller products
+              return this.apiService.getOrderItems().pipe(
+                map((orderItems: any) => {
+                  const itemsData = orderItems.data || orderItems || [];
+
+                  // Filter orders that contain seller's products
+                  const sellerOrders = orders.filter((order: any) => {
+                    const orderHasSellerProduct = itemsData.some((item: any) =>
+                      item.order_id === order.order_id &&
+                      sellerProductIds.includes(item.product_id?.toString())
+                    );
+                    return orderHasSellerProduct;
+                  });
+
+                  console.log(`✅ Found ${sellerOrders.length} orders for seller`);
+                  return sellerOrders;
+                })
+              );
+            }),
+            switchMap(ordersObservable => ordersObservable)
           );
         }),
         takeUntil(this.destroy$)
       )
       .subscribe({
-        next: ({ orders, sellerProductIds }) => {
-          // Filter orders that contain seller's products
-          this.allOrders = orders.filter((order: any) => {
-            // Check if order has any items from seller
-            // This requires order items to be included or separate call
-            return true; // Simplified - needs proper filtering
-          });
-          this.filteredOrders = this.allOrders;
+        next: (sellerOrders: any[]) => {
+          this.allOrders = sellerOrders || [];
+          this.filteredOrders = [...this.allOrders];
+          console.log('📊 Loaded seller orders:', this.allOrders.length);
         },
         error: (error) => {
-          console.error('Error loading orders:', error);
+          console.error('❌ Error loading orders:', error);
+          this.allOrders = [];
+          this.filteredOrders = [];
         }
       });
   }
@@ -1223,15 +1208,13 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Use data from dashboard stats if available
     this.apiService.getSellerDashboardStats(this.currentSellerId).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
       next: (response) => {
         if (response.success && response.data) {
           const data = response.data;
-          
-          // Map to analytics data structure
+
           this.analyticsData = {
             salesTrend: data.revenue?.monthlyTrend || [],
             topProducts: (data.topProducts || []).map((p: any) => ({
@@ -1242,8 +1225,8 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
             revenueByMonth: data.revenue?.monthlyTrend || [],
             customerStats: {
               totalCustomers: data.orders?.total || 0,
-              newCustomers: 0, // Not in current API response
-              returningCustomers: 0, // Not in current API response
+              newCustomers: 0,
+              returningCustomers: 0,
               customerSatisfaction: parseFloat(data.reviews?.averageRating || '0')
             }
           };
@@ -1327,156 +1310,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     };
   }
 
-  // Data processing methods
-  private processOrders(ordersData: any[]): void {
-    this.stats[1].value = ordersData.length.toString();
-    this.stats[1].change = this.calculateOrdersChange(ordersData);
-
-    this.orders = ordersData
-      .slice(0, 5)
-      .map(order => ({
-        id: order.id || order._id || 'N/A',
-        customer: order.customerName || order.customer?.name || 'Unknown Customer',
-        product: order.productName || order.items?.[0]?.productName || 'Unknown Product',
-        amount: this.formatCurrency(order.totalAmount || order.total || 0),
-        status: this.mapOrderStatus(order.status),
-        date: this.formatDate(order.createdAt || order.orderDate),
-        statusClass: this.getStatusClass(order.status)
-      }));
-  }
-
-  private processProducts(productsData: any[]): void {
-    const activeProducts = productsData.filter(product =>
-      product.status === 'active' || product.isActive !== false
-    );
-    this.stats[2].value = activeProducts.length.toString();
-    this.stats[2].change = this.calculateProductsChange(activeProducts);
-  }
-
-  private processUsers(usersData: any[]): void {
-    const customers = usersData.filter(user =>
-      !user.role || user.role === 'customer' || user.role === 'user'
-    );
-    this.stats[3].value = customers.length.toString();
-    this.stats[3].change = this.calculateCustomersChange(customers);
-  }
-
-  private processPayments(paymentsData: any[]): void {
-    const successfulPayments = paymentsData.filter(payment =>
-      payment.status === 'completed' || payment.status === 'success' || payment.confirmed
-    );
-
-    const totalRevenue = successfulPayments.reduce((sum, payment) =>
-      sum + (payment.amount || 0), 0
-    );
-
-    this.stats[0].value = this.formatCurrency(totalRevenue);
-    this.stats[0].change = this.calculateRevenueChange(successfulPayments);
-  }
-
-  private processReviews(reviewsData: any[]): void {
-    if (reviewsData.length > 0) {
-      const avgRating = reviewsData.reduce((sum, review) =>
-        sum + (review.rating || 0), 0
-      ) / reviewsData.length;
-
-      this.performanceMetrics[3] = {
-        label: 'Customer Satisfaction',
-        value: `${avgRating.toFixed(1)}/5.0`,
-        valueClass: avgRating >= 4 ? 'positive' : avgRating >= 3 ? 'warning' : 'negative'
-      };
-    }
-  }
-
-  private generateActivities(data: any): void {
-    const activities: Activity[] = [];
-
-    const recentOrders = (data.orders.data || []).slice(0, 2);
-    recentOrders.forEach((order: any) => {
-      activities.push({
-        icon: '📦',
-        iconClass: 'order',
-        text: `New order received for ${order.productName || 'product'}`,
-        time: this.getRelativeTime(order.createdAt)
-      });
-    });
-
-    const recentProducts = (data.products.data || []).slice(0, 1);
-    recentProducts.forEach((product: any) => {
-      activities.push({
-        icon: '📱',
-        iconClass: 'product',
-        text: `${product.name || 'Product'} ${product.stock > 0 ? 'in stock' : 'out of stock'}`,
-        time: this.getRelativeTime(product.updatedAt || product.createdAt)
-      });
-    });
-
-    const recentReviews = (data.reviews.data || []).slice(0, 2);
-    recentReviews.forEach((review: any) => {
-      const stars = '⭐'.repeat(Math.min(review.rating || 5, 5));
-      activities.push({
-        icon: '⭐',
-        iconClass: 'review',
-        text: `New ${stars} review received`,
-        time: this.getRelativeTime(review.createdAt)
-      });
-    });
-
-    this.activities = activities.slice(0, 5);
-  }
-
-  private calculatePerformanceMetrics(data: any): void {
-    const orders = data.orders.data || [];
-
-    const totalVisits = orders.length * 10;
-    const conversionRate = orders.length > 0 ? ((orders.length / totalVisits) * 100).toFixed(1) : '0.0';
-
-    const totalRevenue = orders.reduce((sum: number, order: any) => sum + (order.totalAmount || 0), 0);
-    const avgOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
-
-    const returnedOrders = orders.filter((order: any) => order.status === 'returned' || order.status === 'cancelled');
-    const returnRate = orders.length > 0 ? ((returnedOrders.length / orders.length) * 100).toFixed(1) : '0.0';
-
-    this.performanceMetrics = [
-      {
-        label: 'Conversion Rate',
-        value: `${conversionRate}%`,
-        valueClass: parseFloat(conversionRate) >= 3 ? 'positive' : 'warning'
-      },
-      {
-        label: 'Average Order Value',
-        value: this.formatCurrency(avgOrderValue)
-      },
-      {
-        label: 'Return Rate',
-        value: `${returnRate}%`,
-        valueClass: parseFloat(returnRate) <= 5 ? 'positive' : 'warning'
-      },
-      ...this.performanceMetrics.slice(3)
-    ];
-  }
-
   // Utility methods
-  private calculateOrdersChange(orders: any[]): string {
-    const change = Math.floor(Math.random() * 20) - 5;
-    return change > 0 ? `+${change}% from last month` : `${change}% from last month`;
-  }
-
-  private calculateProductsChange(products: any[]): string {
-    const newProducts = Math.floor(Math.random() * 10) + 1;
-    return `+${newProducts} new this week`;
-  }
-
-  private calculateCustomersChange(customers: any[]): string {
-    const change = Math.floor(Math.random() * 25) + 5;
-    return `+${change}% from last month`;
-  }
-
-  private calculateRevenueChange(payments: any[]): string {
-    const change = Math.floor(Math.random() * 20) + 2;
-    return `+${change}% from last month`;
-  }
-
   public mapOrderStatus(status: string): string {
     const statusMap: { [key: string]: string } = {
       'pending': 'Pending',
