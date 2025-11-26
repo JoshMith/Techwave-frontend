@@ -1048,13 +1048,10 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
             
             // Debug: Log the structure of the first image
             if (this.editingProductExistingImages.length > 0) {
-              console.log('📸 First image structure:', this.editingProductExistingImages[0]);
-              console.log('📸 Available image ID fields:', {
-                image_id: this.editingProductExistingImages[0].image_id,
-                id: this.editingProductExistingImages[0].id,
-                productImageId: this.editingProductExistingImages[0].productImageId,
-                product_image_id: this.editingProductExistingImages[0].product_image_id
-              });
+              const firstImage = this.editingProductExistingImages[0];
+              console.log('📸 First image FULL object:', firstImage);
+              console.log('📸 ALL properties:', Object.keys(firstImage));
+              console.log('📸 Image as JSON:', JSON.stringify(firstImage, null, 2));
             }
           },
           error: (error) => {
@@ -1090,19 +1087,12 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   }
 
   removeExistingProductImage(image: any): void {
-    // Extract image ID from URL if not available in response
-    let imageId = image.image_id || 
-                  image.id || 
-                  image.productImageId || 
-                  image.product_image_id ||
-                  image.imageId;
-    
-    // If no ID found, extract filename from URL as fallback
-    if (!imageId && (image.image_url || image.full_url)) {
-      const url = image.image_url || image.full_url;
-      const matches = url.match(/product-\d+-\d+\.jpg/);
-      imageId = matches ? matches[0] : null;
-    }
+    // Check which ID property exists - try all possible variations
+    const imageId = image.image_id || 
+                    image.id || 
+                    image.productImageId || 
+                    image.product_image_id ||
+                    image.imageId;
     
     if (!imageId) {
       console.error('❌ Image ID not found. Image object:', image);

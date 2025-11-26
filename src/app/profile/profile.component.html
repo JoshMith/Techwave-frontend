@@ -295,33 +295,181 @@
             </div>
 
             <!-- Addresses Section -->
-            <!-- Addresses Section -->
             <div *ngIf="activeSection === 'addresses'" class="section-content">
                 <div class="section-header">
                     <h2 class="section-title">Saved Addresses</h2>
+                    <button (click)="toggleAddAddressForm()" class="add-address-btn">
+                        <svg *ngIf="!showAddAddressForm" width="16" height="16" viewBox="0 0 24 24" fill="none" style="margin-right: 0.5rem;">
+                            <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        {{ showAddAddressForm ? 'Cancel' : 'Add New Address' }}
+                    </button>
                 </div>
 
+                <!-- Success/Error Messages -->
+                <div *ngIf="addressSuccess" class="alert alert-success">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="margin-right: 0.5rem;">
+                        <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    {{ addressSuccess }}
+                </div>
+
+                <div *ngIf="addressError" class="alert alert-error">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="margin-right: 0.5rem;">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                        <path d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    {{ addressError }}
+                </div>
+
+                <!-- Add New Address Form -->
+                <div *ngIf="showAddAddressForm" class="address-card add-address-card" style="animation: slideDown 0.3s ease;">
+                    <div class="add-address-header">
+                        <h3>✨ Add New Address</h3>
+                        <p class="add-address-subtitle">Fill in your delivery information</p>
+                    </div>
+                    
+                    <form class="address-edit-form" (ngSubmit)="addNewAddress()">
+                        <div class="form-group">
+                            <label>Full Name *</label>
+                            <input type="text" [(ngModel)]="newAddress.full_name" name="fullName" class="form-input"
+                                placeholder="Your full name" required />
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Phone Number *</label>
+                            <input type="tel" [(ngModel)]="newAddress.phone" name="phone" class="form-input"
+                                placeholder="+254712345678" required />
+                            <small class="form-hint">Format: +254XXXXXXXXX</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Street Address *</label>
+                            <input type="text" [(ngModel)]="newAddress.street" name="street" class="form-input"
+                                placeholder="e.g., Kenyatta Avenue" required />
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Building/Apartment (Optional)</label>
+                            <input type="text" [(ngModel)]="newAddress.building" name="building" class="form-input"
+                                placeholder="Apartment number, suite, unit, etc." />
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>City *</label>
+                                <input type="text" [(ngModel)]="newAddress.city" name="city" class="form-input"
+                                    placeholder="Nairobi" required />
+                            </div>
+                            <div class="form-group">
+                                <label>County *</label>
+                                <input type="text" [(ngModel)]="newAddress.county" name="county" class="form-input"
+                                    placeholder="Nairobi County" required />
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>State (Optional)</label>
+                                <input type="text" [(ngModel)]="newAddress.state" name="state" class="form-input"
+                                    placeholder="State/Region" />
+                            </div>
+                            <div class="form-group">
+                                <label>Postal Code *</label>
+                                <input type="text" [(ngModel)]="newAddress.postal_code" name="postalCode"
+                                    class="form-input" placeholder="00100" required />
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Country</label>
+                            <input type="text" [(ngModel)]="newAddress.country" name="country" class="form-input"
+                                value="Kenya" readonly />
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="add-btn" [disabled]="isAddingAddress">
+                                <svg *ngIf="!isAddingAddress" width="16" height="16" viewBox="0 0 24 24" fill="none" style="margin-right: 0.5rem;">
+                                    <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <span *ngIf="isAddingAddress" class="spinner-small"></span>
+                                {{ isAddingAddress ? 'Adding...' : 'Add Address' }}
+                            </button>
+                            <button type="button" (click)="toggleAddAddressForm()" class="cancel-btn">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Existing Addresses Grid -->
                 <div *ngIf="addresses.length > 0" class="addresses-grid">
                     <div *ngFor="let address of addresses" class="address-card">
                         <div class="address-header">
-                            <h3>Address #{{ address.address_id }}</h3>
-                            <span *ngIf="address.is_default" class="default-badge">Default</span>
+                            <h3>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="margin-right: 0.5rem; vertical-align: text-bottom;">
+                                    <path d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z"
+                                        stroke="currentColor" stroke-width="2" />
+                                    <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2" />
+                                </svg>
+                                {{ user.name }}'s Address
+                            </h3>
+                            <span *ngIf="address.is_default" class="default-badge">✓ Default</span>
                         </div>
 
                         <!-- View Mode -->
                         <div *ngIf="editingAddressId !== address.address_id" class="address-content">
-                            <p><strong>{{ address.full_name }}</strong></p>
-                            <p>{{ address.phone }}</p>
-                            <p>{{ address.street }}</p>
-                            <p *ngIf="address.building">{{ address.building }}</p>
-                            <p>{{ address.city }}, {{ address.county }} {{ address.postal_code }}</p>
-                            <p>{{ address.country }}</p>
+                            <div class="address-info-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                    <path d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="currentColor" stroke-width="2"/>
+                                    <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z" stroke="currentColor" stroke-width="2"/>
+                                </svg>
+                                <strong>{{ user.email }}</strong>
+                            </div>
+                            
+                            <div class="address-info-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                    <path d="M3 5C3 3.89543 3.89543 3 5 3H8.27924C8.70967 3 9.09181 3.27543 9.22792 3.68377L10.7257 8.17721C10.8831 8.64932 10.6694 9.16531 10.2243 9.38787L7.96701 10.5165C9.06925 12.9612 11.0388 14.9308 13.4835 16.033L14.6121 13.7757C14.8347 13.3306 15.3507 13.1169 15.8228 13.2743L20.3162 14.7721C20.7246 14.9082 21 15.2903 21 15.7208V19C21 20.1046 20.1046 21 19 21H18C9.71573 21 3 14.2843 3 6V5Z" stroke="currentColor" stroke-width="2"/>
+                                </svg>
+                                {{ user.phone }}
+                            </div>
+                            
+                            <div class="address-info-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                    <path d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z"
+                                        stroke="currentColor" stroke-width="2" />
+                                    <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2" />
+                                </svg>
+                                <div>
+                                    {{ address.street }}
+                                    <span *ngIf="address.building">, {{ address.building }}</span><br>
+                                    {{ address.city }}, {{ address.county }} {{ address.postal_code }}<br>
+                                    {{ address.country }}
+                                </div>
+                            </div>
 
                             <div class="address-actions">
-                                <button (click)="startEditAddress(address)" class="edit-btn">Edit</button>
+                                <button (click)="startEditAddress(address)" class="edit-btn">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="margin-right: 0.25rem;">
+                                        <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M18.5 2.5C18.8978 2.1021 19.4374 1.8787 20 1.8787C20.5626 1.8787 21.1022 2.1021 21.5 2.5C21.8978 2.89789 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10211 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                    Edit
+                                </button>
                                 <button *ngIf="!address.is_default" (click)="setDefaultAddress(address.address_id)"
-                                    class="default-btn">Set as Default</button>
-                                <button (click)="deleteAddress(address.address_id)" class="delete-btn">Delete</button>
+                                    class="default-btn">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="margin-right: 0.25rem;">
+                                        <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                    Set Default
+                                </button>
+                                <button (click)="deleteAddress(address.address_id)" class="delete-btn">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="margin-right: 0.25rem;">
+                                        <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                    Delete
+                                </button>
                             </div>
                         </div>
 
@@ -378,69 +526,15 @@
                             </div>
 
                             <div class="form-actions">
-                                <button (click)="saveAddress(address.address_id)" class="save-btn">Save</button>
+                                <button (click)="saveAddress(address.address_id)" class="save-btn">Save Changes</button>
                                 <button (click)="cancelEditAddress()" class="cancel-btn">Cancel</button>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Add New Address Card -->
-                    <div class="address-card add-address-card">
-                        <h3>Add New Address</h3>
-                        <div class="form-group">
-                            <label>Full Name *</label>
-                            <input type="text" [(ngModel)]="newAddress.full_name" class="form-input"
-                                placeholder="Your full name" required />
-                        </div>
-                        <div class="form-group">
-                            <label>Phone Number *</label>
-                            <input type="tel" [(ngModel)]="newAddress.phone" class="form-input" placeholder="+254..."
-                                required />
-                        </div>
-                        <div class="form-group">
-                            <label>Street Address *</label>
-                            <input type="text" [(ngModel)]="newAddress.street" class="form-input"
-                                placeholder="Street address" required />
-                        </div>
-                        <div class="form-group">
-                            <label>Building/Apartment (Optional)</label>
-                            <input type="text" [(ngModel)]="newAddress.building" class="form-input"
-                                placeholder="Apartment, suite, etc." />
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>City *</label>
-                                <input type="text" [(ngModel)]="newAddress.city" class="form-input"
-                                    placeholder="Nairobi" required />
-                            </div>
-                            <div class="form-group">
-                                <label>County *</label>
-                                <input type="text" [(ngModel)]="newAddress.county" class="form-input"
-                                    placeholder="Nairobi County" required />
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>State</label>
-                                <input type="text" [(ngModel)]="newAddress.state" class="form-input"
-                                    placeholder="State (optional)" />
-                            </div>
-                            <div class="form-group">
-                                <label>Postal Code *</label>
-                                <input type="text" [(ngModel)]="newAddress.postal_code" class="form-input"
-                                    placeholder="00100" required />
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Country</label>
-                            <input type="text" [(ngModel)]="newAddress.country" class="form-input" value="Kenya"
-                                readonly />
-                        </div>
-                        <button (click)="addNewAddress()" class="add-btn">Add Address</button>
-                    </div>
                 </div>
 
-                <div *ngIf="addresses.length === 0" class="empty-state">
+                <!-- Empty State -->
+                <div *ngIf="addresses.length === 0 && !showAddAddressForm" class="empty-state">
                     <svg width="80" height="80" viewBox="0 0 24 24" fill="none">
                         <path
                             d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z"
@@ -448,7 +542,13 @@
                         <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2" />
                     </svg>
                     <h3>No saved addresses</h3>
-                    <p>Add your first delivery address!</p>
+                    <p>Add your first delivery address to get started!</p>
+                    <button (click)="toggleAddAddressForm()" class="shop-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="margin-right: 0.5rem;">
+                            <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Add Address
+                    </button>
                 </div>
             </div>
 

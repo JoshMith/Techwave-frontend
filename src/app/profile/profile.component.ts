@@ -20,6 +20,7 @@ interface Address {
   address_id: number;
   user_id: number;
   full_name: string;
+  email: string,
   phone: string;
   street: string;
   building?: string;
@@ -35,14 +36,13 @@ interface Order {
   order_id: number;
   user_id: number;
   total_amount: number;
-  status: string; // Changed from order_status to status
+  status: string;
   notes?: string;
   created_at: string;
   order_items?: OrderItem[];
   name?: string;
   email?: string;
   phone?: string;
-
   isExpanded?: boolean
 }
 
@@ -60,14 +60,13 @@ interface OrderItem {
 interface Payment {
   payment_id: number;
   order_id: number;
-  method: string; // Changed from payment_method to method
+  method: string;
   amount: number;
   mpesa_code?: string;
   mpesa_phone?: string;
-  transaction_reference?: string; // Changed from transaction_id to transaction_reference
+  transaction_reference?: string;
   is_confirmed: boolean;
   confirmed_at?: string;
-  // Additional fields from API
   total_amount?: number;
   status?: string;
   created_at: string;
@@ -107,6 +106,8 @@ export class ProfileComponent implements OnInit {
   isEditingProfile = false;
   isEditingAddress = false;
   editingAddressId: number | null = null;
+  showAddAddressForm = false;
+  isAddingAddress = false;
 
   // Form data
   editUserData: Partial<User> = {};
@@ -114,7 +115,13 @@ export class ProfileComponent implements OnInit {
   newAddress: Partial<Address> = {
     country: 'Kenya',
     full_name: '',
-    phone: ''
+    phone: '',
+    street: '',
+    building: '',
+    city: '',
+    county: '',
+    state: '',
+    postal_code: ''
   };
 
   // Account stats
@@ -135,6 +142,10 @@ export class ProfileComponent implements OnInit {
 
   // Active section
   activeSection: 'overview' | 'orders' | 'addresses' | 'payments' | 'settings' | 'seller' = 'overview';
+
+  // Success/Error messages for addresses
+  addressSuccess: string | null = null;
+  addressError: string | null = null;
 
   constructor(
     private router: Router,
@@ -160,6 +171,20 @@ export class ProfileComponent implements OnInit {
           this.user = response.user;
           this.editUserData = { ...this.user };
 
+          // Initialize newAddress with user data
+          this.newAddress = {
+            country: 'Kenya',
+            user_id: this.user?.user_id,
+            full_name: this.user?.name,
+            phone: this.user?.phone || '',
+            street: '',
+            building: '',
+            city: '',
+            county: '',
+            state: '',
+            postal_code: ''
+          };
+
           // Load user-specific data
           this.loadOrders();
           this.loadAddresses();
@@ -167,7 +192,6 @@ export class ProfileComponent implements OnInit {
           this.loadRecommendedProducts();
           
           // Load seller profile ONLY if user role is 'seller'
-          // Admin role does NOT have access to seller features
           if (this.user?.role === 'seller') {
             this.loadSellerProfile();
           }
@@ -188,8 +212,30 @@ export class ProfileComponent implements OnInit {
   }
 
   /**
+   * Toggle add address form visibility
+   */
+  toggleAddAddressForm(): void {
+    this.showAddAddressForm = !this.showAddAddressForm;
+    if (this.showAddAddressForm) {
+      // Reset form when opening
+      this.newAddress = {
+        country: 'Kenya',
+        full_name: this.user?.name || '',
+        phone: this.user?.phone || '',
+        street: '',
+        building: '',
+        city: '',
+        county: '',
+        state: '',
+        postal_code: ''
+      };
+      this.addressError = null;
+      this.addressSuccess = null;
+    }
+  }
+
+  /**
    * Load seller profile
-   * Only called for users with 'seller' role
    */
   loadSellerProfile(): void {
     if (!this.user) return;
@@ -197,7 +243,6 @@ export class ProfileComponent implements OnInit {
     this.isLoadingSeller = true;
     this.sellerError = null;
 
-    // Get all sellers and find the one for this user
     this.apiService.getSellers().subscribe({
       next: (response) => {
         const sellers = Array.isArray(response) ? response : [response];
@@ -227,7 +272,6 @@ export class ProfileComponent implements OnInit {
       if (this.sellerProfile) {
         this.editSellerData = { ...this.sellerProfile };
       } else {
-        // Initialize new seller data with user_id
         this.editSellerData = {
           user_id: this.user?.user_id,
           business_name: '',
@@ -236,18 +280,16 @@ export class ProfileComponent implements OnInit {
         };
       }
     }
-    // Clear messages when toggling
     this.sellerError = null;
     this.sellerSuccess = null;
   }
 
   /**
-   * Save seller profile (create or update)
+   * Save seller profile
    */
   saveSeller(): void {
     if (!this.user || !this.editSellerData) return;
 
-    // Validate required fields
     if (!this.editSellerData.business_name || !this.editSellerData.business_license || !this.editSellerData.tax_id) {
       this.sellerError = 'Please fill in all required fields.';
       return;
@@ -265,7 +307,6 @@ export class ProfileComponent implements OnInit {
     };
 
     if (this.sellerProfile) {
-      // Update existing seller profile
       this.apiService.updateSeller(this.sellerProfile.seller_id.toString(), sellerData).subscribe({
         next: (response) => {
           this.sellerProfile = response.seller || response;
@@ -273,7 +314,6 @@ export class ProfileComponent implements OnInit {
           this.sellerSuccess = 'Seller profile updated successfully!';
           this.isLoadingSeller = false;
           
-          // Clear success message after 3 seconds
           setTimeout(() => {
             this.sellerSuccess = null;
           }, 3000);
@@ -285,7 +325,6 @@ export class ProfileComponent implements OnInit {
         }
       });
     } else {
-      // Create new seller profile
       this.apiService.createSeller(sellerData).subscribe({
         next: (response) => {
           this.sellerProfile = response.seller || response;
@@ -293,7 +332,6 @@ export class ProfileComponent implements OnInit {
           this.sellerSuccess = 'Seller profile created successfully!';
           this.isLoadingSeller = false;
           
-          // Clear success message after 3 seconds
           setTimeout(() => {
             this.sellerSuccess = null;
           }, 3000);
@@ -323,24 +361,20 @@ export class ProfileComponent implements OnInit {
 
   /**
    * Check if user is a seller
-   * Note: Only users with 'seller' role can access seller features
-   * Admin role does NOT have seller access
    */
   isSeller(): boolean {
     return this.user?.role === 'seller';
   }
 
   /**
-   * Load user orders using new API
+   * Load user orders
    */
   loadOrders(): void {
     if (!this.user) return;
 
     this.apiService.getOrdersByUserId().subscribe({
       next: (response) => {
-        // Transform the API response to match our interface
         this.orders = this.transformOrdersResponse(response);
-
         this.stats.orders = this.orders.filter(o =>
           o.status === 'pending' || o.status === 'processing'
         ).length;
@@ -353,92 +387,24 @@ export class ProfileComponent implements OnInit {
   }
 
   /**
- * Get count of active orders
- * Active orders are those that are not completed, cancelled, or delivered
- */
+   * Get count of active orders
+   */
   getActiveOrdersCount(): number {
     if (!this.orders || this.orders.length === 0) return 0;
-
     const activeStatuses = ['pending', 'processing', 'shipped', 'confirmed', 'accepted'];
-
     return this.orders.filter(order =>
       activeStatuses.includes(order.status?.toLowerCase())
     ).length;
   }
 
   /**
-   * Get active orders
-   */
-  getActiveOrders(): Order[] {
-    if (!this.orders || this.orders.length === 0) return [];
-
-    const activeStatuses = ['pending', 'processing', 'shipped', 'confirmed', 'accepted'];
-
-    return this.orders.filter(order =>
-      activeStatuses.includes(order.status?.toLowerCase())
-    );
-  }
-
-  /**
-   * Get completed orders
-   */
-  getCompletedOrders(): Order[] {
-    if (!this.orders || this.orders.length === 0) return [];
-
-    const completedStatuses = ['delivered', 'completed'];
-
-    return this.orders.filter(order =>
-      completedStatuses.includes(order.status?.toLowerCase())
-    );
-  }
-
-  /**
-   * Get cancelled orders
-   */
-  getCancelledOrders(): Order[] {
-    if (!this.orders || this.orders.length === 0) return [];
-
-    const cancelledStatuses = ['cancelled', 'refunded', 'failed'];
-
-    return this.orders.filter(order =>
-      cancelledStatuses.includes(order.status?.toLowerCase())
-    );
-  }
-
-  /**
-   * Check if an order is active
-   */
-  isOrderActive(order: Order): boolean {
-    const activeStatuses = ['pending', 'processing', 'shipped', 'confirmed', 'accepted'];
-    return activeStatuses.includes(order.status?.toLowerCase());
-  }
-
-  /**
-   * Check if an order is completed
-   */
-  isOrderCompleted(order: Order): boolean {
-    const completedStatuses = ['delivered', 'completed'];
-    return completedStatuses.includes(order.status?.toLowerCase());
-  }
-
-  /**
-   * Check if an order is cancelled
-   */
-  isOrderCancelled(order: Order): boolean {
-    const cancelledStatuses = ['cancelled', 'refunded', 'failed'];
-    return cancelledStatuses.includes(order.status?.toLowerCase());
-  }
-
-  /**
-   * Transform orders API response to match our Order interface
+   * Transform orders API response
    */
   private transformOrdersResponse(apiResponse: any[]): Order[] {
-    // Group by order_id since API returns multiple rows per order (one per order item)
     const ordersMap = new Map<number, Order>();
 
     apiResponse.forEach((row: any) => {
       if (!ordersMap.has(row.order_id)) {
-        // Create new order entry
         ordersMap.set(row.order_id, {
           order_id: row.order_id,
           user_id: row.user_id,
@@ -453,7 +419,6 @@ export class ProfileComponent implements OnInit {
         });
       }
 
-      // Add order item to the order
       const order = ordersMap.get(row.order_id);
       if (order && row.order_item_id) {
         order.order_items!.push({
@@ -482,7 +447,6 @@ export class ProfileComponent implements OnInit {
 
     this.apiService.getAddressByUserId(this.user.user_id.toString()).subscribe({
       next: (response) => {
-        // Handle different response formats
         if (!response) {
           this.addresses = [];
         } else if (Array.isArray(response)) {
@@ -497,7 +461,6 @@ export class ProfileComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to load addresses:', err);
-        // Don't show error if it's just a 404 (no addresses found)
         if (err.status !== 404) {
           console.error('Error loading addresses:', err.message);
         }
@@ -507,14 +470,13 @@ export class ProfileComponent implements OnInit {
   }
 
   /**
-   * Load user payments using new API
+   * Load user payments
    */
   loadPayments(): void {
     if (!this.user) return;
 
     this.apiService.getPaymentByUserId().subscribe({
       next: (response) => {
-        // Transform the API response to match our Payment interface
         this.payments = this.transformPaymentsResponse(response);
       },
       error: (err) => {
@@ -525,7 +487,7 @@ export class ProfileComponent implements OnInit {
   }
 
   /**
-   * Transform payments API response to match our Payment interface
+   * Transform payments API response
    */
   private transformPaymentsResponse(apiResponse: any[]): Payment[] {
     return apiResponse.map((row: any) => ({
@@ -552,7 +514,6 @@ export class ProfileComponent implements OnInit {
   loadRecommendedProducts(): void {
     this.apiService.getProducts().subscribe({
       next: (response) => {
-        // Get random 4 products
         const shuffled = response.sort(() => 0.5 - Math.random());
         this.recommendedProducts = shuffled.slice(0, 4);
       },
@@ -589,11 +550,7 @@ export class ProfileComponent implements OnInit {
 
     this.apiService.updateUser(this.user.user_id.toString(), this.editUserData).subscribe({
       next: (response) => {
-        // current user is non-null because of the guard above
         const current = this.user as User;
-
-        // API may return either the updated user directly or an object with a `user` property.
-        // Treat response as a partial user and merge with existing required fields to produce a full User.
         const apiUser = (response && (response.user ?? response)) as Partial<User> | undefined;
 
         this.user = {
@@ -629,6 +586,8 @@ export class ProfileComponent implements OnInit {
   startEditAddress(address: Address): void {
     this.editingAddressId = address.address_id;
     this.editAddressData = { ...address };
+    this.addressError = null;
+    this.addressSuccess = null;
   }
 
   /**
@@ -636,18 +595,17 @@ export class ProfileComponent implements OnInit {
    */
   saveAddress(addressId: number): void {
     if (!this.editAddressData || Object.keys(this.editAddressData).length === 0) {
-      alert('No changes to save.');
+      this.addressError = 'No changes to save.';
+      setTimeout(() => this.addressError = null, 3000);
       return;
     }
 
     this.apiService.updateAddress(addressId.toString(), this.editAddressData).subscribe({
       next: (response) => {
-        // Handle different response formats
         const updatedAddress = response.address || response;
         
         const index = this.addresses.findIndex(a => a.address_id === addressId);
         if (index !== -1) {
-          // Merge the updated data with existing address
           this.addresses[index] = {
             ...this.addresses[index],
             ...updatedAddress
@@ -656,11 +614,13 @@ export class ProfileComponent implements OnInit {
         
         this.editingAddressId = null;
         this.editAddressData = {};
-        alert('Address updated successfully!');
+        this.addressSuccess = 'Address updated successfully!';
+        setTimeout(() => this.addressSuccess = null, 3000);
       },
       error: (err) => {
         console.error('Failed to update address:', err);
-        alert(err.error?.message || 'Failed to update address. Please try again.');
+        this.addressError = err.error?.message || 'Failed to update address. Please try again.';
+        setTimeout(() => this.addressError = null, 3000);
       }
     });
   }
@@ -671,53 +631,93 @@ export class ProfileComponent implements OnInit {
   cancelEditAddress(): void {
     this.editingAddressId = null;
     this.editAddressData = {};
+    this.addressError = null;
+    this.addressSuccess = null;
   }
 
   /**
-   * Add new address
+   * Add new address - Enhanced version
    */
   addNewAddress(): void {
     if (!this.user) return;
 
     // Validate required fields
-    if (!this.newAddress.street || !this.newAddress.city || !this.newAddress.postal_code) {
-      alert('Please fill in all required fields: Street, City, and Postal Code.');
+    if (!this.newAddress.full_name?.trim()) {
+      this.addressError = 'Full name is required.';
+      setTimeout(() => this.addressError = null, 3000);
       return;
     }
 
-    // Prepare address data with all required fields
+    if (!this.newAddress.phone?.trim()) {
+      this.addressError = 'Phone number is required.';
+      setTimeout(() => this.addressError = null, 3000);
+      return;
+    }
+
+    if (!this.newAddress.street?.trim()) {
+      this.addressError = 'Street address is required.';
+      setTimeout(() => this.addressError = null, 3000);
+      return;
+    }
+
+    if (!this.newAddress.city?.trim()) {
+      this.addressError = 'City is required.';
+      setTimeout(() => this.addressError = null, 3000);
+      return;
+    }
+
+    if (!this.newAddress.postal_code?.trim()) {
+      this.addressError = 'Postal code is required.';
+      setTimeout(() => this.addressError = null, 3000);
+      return;
+    }
+
+    this.isAddingAddress = true;
+    this.addressError = null;
+
+    // Prepare address data
     const addressData: any = {
       user_id: this.user.user_id,
-      full_name: this.newAddress.full_name || this.user.name,
-      phone: this.newAddress.phone || this.user.phone || '',
-      street: this.newAddress.street,
-      building: this.newAddress.building || '',
-      city: this.newAddress.city,
-      state: this.newAddress.state || this.newAddress.city, // Default state to city if not provided
-      county: this.newAddress.county || this.newAddress.city, // Default county to city if not provided
-      postal_code: this.newAddress.postal_code,
+      full_name: this.newAddress.full_name.trim(),
+      phone: this.newAddress.phone.trim(),
+      street: this.newAddress.street.trim(),
+      building: this.newAddress.building?.trim() || '',
+      city: this.newAddress.city.trim(),
+      state: this.newAddress.state?.trim() || this.newAddress.city.trim(),
+      county: this.newAddress.county?.trim() || this.newAddress.city.trim(),
+      postal_code: this.newAddress.postal_code.trim(),
       country: this.newAddress.country || 'Kenya',
-      is_default: this.addresses.length === 0
+      is_default: this.addresses.length === 0 // First address is default
     };
 
     this.apiService.createAddress(addressData).subscribe({
       next: (response) => {
-        // Handle different response formats
         const newAddress = response.address || response;
         this.addresses.push(newAddress);
         
         // Reset form
         this.newAddress = { 
           country: 'Kenya',
-          full_name: this.user?.name,
-          phone: this.user?.phone
+          full_name: this.user?.name || '',
+          phone: this.user?.phone || '',
+          street: '',
+          building: '',
+          city: '',
+          county: '',
+          state: '',
+          postal_code: ''
         };
         
-        alert('Address added successfully!');
+        this.showAddAddressForm = false;
+        this.isAddingAddress = false;
+        this.addressSuccess = 'Address added successfully!';
+        setTimeout(() => this.addressSuccess = null, 3000);
       },
       error: (err) => {
         console.error('Failed to add address:', err);
-        alert(err.error?.message || 'Failed to add address. Please try again.');
+        this.addressError = err.error?.message || 'Failed to add address. Please try again.';
+        this.isAddingAddress = false;
+        setTimeout(() => this.addressError = null, 3000);
       }
     });
   }
@@ -731,11 +731,13 @@ export class ProfileComponent implements OnInit {
     this.apiService.deleteAddress(addressId.toString()).subscribe({
       next: () => {
         this.addresses = this.addresses.filter(a => a.address_id !== addressId);
-        alert('Address deleted successfully!');
+        this.addressSuccess = 'Address deleted successfully!';
+        setTimeout(() => this.addressSuccess = null, 3000);
       },
       error: (err) => {
         console.error('Failed to delete address:', err);
-        alert('Failed to delete address. Please try again.');
+        this.addressError = 'Failed to delete address. Please try again.';
+        setTimeout(() => this.addressError = null, 3000);
       }
     });
   }
@@ -744,12 +746,13 @@ export class ProfileComponent implements OnInit {
    * Set default address
    */
   setDefaultAddress(addressId: number): void {
-    // First, update all addresses to not default
     this.addresses.forEach(addr => {
       if (addr.address_id === addressId) {
         this.apiService.updateAddress(addr.address_id.toString(), { is_default: true }).subscribe({
           next: () => {
             addr.is_default = true;
+            this.addressSuccess = 'Default address updated successfully!';
+            setTimeout(() => this.addressSuccess = null, 3000);
           }
         });
       } else if (addr.is_default) {
@@ -763,10 +766,9 @@ export class ProfileComponent implements OnInit {
   }
 
   /**
-   * View order details - toggle expanded view
+   * View order details
    */
   viewOrderDetails(orderId: number): void {
-    // Toggle the expanded state for the clicked order
     this.orders = this.orders.map(order => {
       if (order.order_id === orderId) {
         return {
@@ -774,7 +776,6 @@ export class ProfileComponent implements OnInit {
           isExpanded: !order.isExpanded
         };
       }
-      // Optionally collapse other orders when one is expanded
       return {
         ...order,
         isExpanded: false
@@ -790,7 +791,7 @@ export class ProfileComponent implements OnInit {
   }
 
   /**
-   * Get order subtotal (sum of all items)
+   * Get order subtotal
    */
   getOrderSubtotal(order: Order): number {
     if (!order.order_items) return 0;
@@ -806,7 +807,7 @@ export class ProfileComponent implements OnInit {
   }
 
   /**
-   * Get order status class - updated for new status field
+   * Get order status class
    */
   getOrderStatusClass(status: string): string {
     const statusMap: { [key: string]: string } = {
@@ -819,10 +820,9 @@ export class ProfileComponent implements OnInit {
     return statusMap[status.toLowerCase()] || '';
   }
 
-
   /**
- * Get payment status class - updated for new structure
- */
+   * Get payment status class
+   */
   getPaymentStatusClass(payment: Payment): string {
     if (payment.is_confirmed) {
       return 'status-completed';
@@ -833,18 +833,6 @@ export class ProfileComponent implements OnInit {
     }
   }
 
-  /**
-   * Get payment status text
-   */
-  getPaymentStatusText(payment: Payment): string {
-    if (payment.is_confirmed) {
-      return 'completed';
-    } else if (payment.method === 'mpesa' && !payment.is_confirmed) {
-      return 'pending';
-    } else {
-      return 'failed';
-    }
-  }
   /**
    * Format date
    */
@@ -906,7 +894,6 @@ export class ProfileComponent implements OnInit {
       },
       error: (err) => {
         console.error('Logout failed:', err);
-        // Still navigate to login even if API fails
         this.cartService.logout();
         localStorage.removeItem('currentUser');
         sessionStorage.removeItem('sellerData');
@@ -920,5 +907,13 @@ export class ProfileComponent implements OnInit {
    */
   setActiveSection(section: 'overview' | 'orders' | 'addresses' | 'payments' | 'settings' | 'seller'): void {
     this.activeSection = section;
+    
+    // Reset form states when switching sections
+    if (section === 'addresses') {
+      this.showAddAddressForm = false;
+      this.editingAddressId = null;
+      this.addressError = null;
+      this.addressSuccess = null;
+    }
   }
 }
