@@ -199,6 +199,8 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
   uploadedImages: { file: File, url: string, name: string }[] = [];
 
   editingProduct: Product | null = null;
+  editingProductImages: { file: File, url: string, name: string }[] = [];
+  editingProductExistingImages: any[] = [];
   productError: string | null = null;
   productSuccess: string | null = null;
 
@@ -365,7 +367,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
         this.currentSellerId = seller.seller_id.toString();
         console.log('✅ Seller ID:', this.currentSellerId);
 
-        // ✅ Load seller-specific data
+        // Load platform-wide data for any seller
         this.loadSellerData();
       },
       error: (err) => {
@@ -386,7 +388,7 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // ✅ Load dashboard stats from the new endpoint
+    // Load platform-wide dashboard stats (not seller-specific)
     this.apiService.getSellerDashboardStats(this.currentSellerId).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
@@ -707,40 +709,17 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     return true;
   }
 
-  // ✅ FIX 1: Products management - Filter by seller_id properly
+  // ✅ MODIFIED: Load ALL products (not filtered by seller)
   private loadProducts(): void {
-    if (!this.currentSellerId) {
-      console.warn('No seller ID available for loading products');
-      this.products = [];
-      this.filteredProductsList = [];
-      return;
-    }
-
-    console.log('🔍 Loading products for seller:', this.currentSellerId);
+    console.log('🔍 Loading all products for seller dashboard');
 
     this.apiService.getProducts()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          const allProducts = response || [];
-          console.log('📦 All products loaded:', allProducts.length);
-
-          // ✅ Filter for current seller - handle both string and number IDs
-          this.products = allProducts.filter((p: any) => {
-            const productSellerId = p.seller_id?.toString();
-            const matches = productSellerId === this.currentSellerId;
-            if (matches) {
-              console.log('✅ Product matches seller:', p.title, 'Seller ID:', productSellerId);
-            }
-            return matches;
-          });
-
-          console.log(`✅ Filtered ${this.products.length} products for seller ${this.currentSellerId}`);
+          this.products = response || [];
+          console.log('📦 All products loaded:', this.products.length);
           this.filteredProductsList = [...this.products];
-
-          if (this.products.length === 0) {
-            console.warn('⚠️ No products found for seller', this.currentSellerId);
-          }
         },
         error: (error) => {
           console.error('❌ Error loading products:', error);
@@ -1055,6 +1034,69 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
 
   onEditProduct(product: any): void {
     this.editingProduct = { ...product };
+    this.editingProductImages = [];
+    this.editingProductExistingImages = [];
+    
+    // Load existing product images
+    if (product.product_id) {
+      this.apiService.serveProductImagesSafe(product.product_id.toString())
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (images) => {
+            this.editingProductExistingImages = images || [];
+            console.log('Loaded existing images:', this.editingProductExistingImages);
+          },
+          error: (error) => {
+            console.warn('No existing images found:', error);
+            this.editingProductExistingImages = [];
+          }
+        });
+    }
+  }
+
+  onEditProductFileSelected(event: any): void {
+    const files: FileList = event.target.files;
+    if (files && files.length > 0) {
+      Array.from(files).forEach(file => {
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = (e: any) => {
+            this.editingProductImages.push({
+              file: file,
+              url: e.target.result,
+              name: file.name
+            });
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+      event.target.value = '';
+    }
+  }
+
+  removeEditingProductImage(index: number): void {
+    this.editingProductImages.splice(index, 1);
+  }
+
+  removeExistingProductImage(imageId: string): void {
+    if (confirm('Are you sure you want to delete this image?')) {
+      this.apiService.deleteProductImage(imageId)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.editingProductExistingImages = this.editingProductExistingImages.filter(
+              img => img.image_id !== imageId
+            );
+            this.productSuccess = 'Image deleted successfully!';
+            setTimeout(() => this.productSuccess = null, 3000);
+          },
+          error: (error) => {
+            console.error('Error deleting image:', error);
+            this.productError = 'Failed to delete image. Please try again.';
+            setTimeout(() => this.productError = null, 3000);
+          }
+        });
+    }
   }
 
   onUpdateProduct(): void {
@@ -1063,16 +1105,60 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (response) => {
-            this.productSuccess = 'Product updated successfully!';
-            this.editingProduct = null;
-            this.loadProducts();
+            // If there are new images to upload
+            if (this.editingProductImages.length > 0) {
+              this.uploadEditingProductImages(this.editingProduct!.product_id!);
+            } else {
+              this.productSuccess = 'Product updated successfully!';
+              this.editingProduct = null;
+              this.editingProductImages = [];
+              this.editingProductExistingImages = [];
+              this.loadProducts();
+              setTimeout(() => this.productSuccess = null, 3000);
+            }
           },
           error: (error) => {
             console.error('Error updating product:', error);
             this.productError = 'Failed to update product. Please try again.';
+            setTimeout(() => this.productError = null, 3000);
           }
         });
     }
+  }
+
+  private uploadEditingProductImages(productId: string): void {
+    const formData = new FormData();
+
+    this.editingProductImages.forEach((image) => {
+      formData.append('images', image.file);
+    });
+
+    formData.append('altText', this.editingProduct?.title || 'Product image');
+
+    console.log('Uploading new images for product:', productId);
+
+    this.apiService.uploadProductImages(productId.toString(), formData)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          console.log('New images uploaded successfully:', response);
+          this.productSuccess = 'Product and images updated successfully!';
+          this.editingProduct = null;
+          this.editingProductImages = [];
+          this.editingProductExistingImages = [];
+          this.loadProducts();
+          setTimeout(() => this.productSuccess = null, 3000);
+        },
+        error: (error) => {
+          console.error('Error uploading new images:', error);
+          this.productError = 'Product updated but failed to upload new images.';
+          this.editingProduct = null;
+          this.editingProductImages = [];
+          this.editingProductExistingImages = [];
+          this.loadProducts();
+          setTimeout(() => this.productError = null, 3000);
+        }
+      });
   }
 
   onDeleteProduct(productId: string): void {
@@ -1093,64 +1179,17 @@ export class SellerDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ✅ FIX 2: Orders management - Filter by seller's products
+  // ✅ MODIFIED: Load ALL orders (not filtered by seller)
   private loadAllOrders(): void {
-    if (!this.currentSellerId) {
-      console.warn('No seller ID available for loading orders');
-      this.allOrders = [];
-      this.filteredOrders = [];
-      return;
-    }
+    console.log('🔍 Loading all orders for seller dashboard');
 
-    console.log('🔍 Loading orders for seller:', this.currentSellerId);
-
-    // First get all products to know which ones belong to this seller
-    this.apiService.getProducts()
-      .pipe(
-        switchMap((products) => {
-          const sellerProductIds = products
-            .filter((p: any) => p.seller_id?.toString() === this.currentSellerId)
-            .map((p: any) => p.product_id?.toString());
-
-          console.log('📦 Seller product IDs:', sellerProductIds);
-
-          if (sellerProductIds.length === 0) {
-            console.warn('⚠️ No products found for seller');
-            return of([]);
-          }
-
-          // Get all orders
-          return this.apiService.getOrders().pipe(
-            map((orders) => {
-              // Get order items to match with seller products
-              return this.apiService.getOrderItems().pipe(
-                map((orderItems: any) => {
-                  const itemsData = orderItems.data || orderItems || [];
-
-                  // Filter orders that contain seller's products
-                  const sellerOrders = orders.filter((order: any) => {
-                    const orderHasSellerProduct = itemsData.some((item: any) =>
-                      item.order_id === order.order_id &&
-                      sellerProductIds.includes(item.product_id?.toString())
-                    );
-                    return orderHasSellerProduct;
-                  });
-
-                  console.log(`✅ Found ${sellerOrders.length} orders for seller`);
-                  return sellerOrders;
-                })
-              );
-            }),
-            switchMap(ordersObservable => ordersObservable)
-          );
-        }),
-        takeUntil(this.destroy$)
-      )
+    this.apiService.getOrders()
+      .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (sellerOrders: any[]) => {
-          this.allOrders = sellerOrders || [];
+        next: (orders: any[]) => {
+          this.allOrders = orders || [];
           this.filteredOrders = [...this.allOrders];
-          console.log('📊 Loaded seller orders:', this.allOrders.length);
+          console.log('📊 All orders loaded:', this.allOrders.length);
         },
         error: (error) => {
           console.error('❌ Error loading orders:', error);

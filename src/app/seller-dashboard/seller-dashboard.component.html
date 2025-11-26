@@ -438,13 +438,21 @@
       </div>
 
       <!-- Edit Product Modal -->
-      <div *ngIf="editingProduct" class="modal-overlay" (click)="editingProduct = null">
-        <div class="modal" (click)="$event.stopPropagation()">
+      <div *ngIf="editingProduct" class="modal-overlay" (click)="editingProduct = null; editingProductImages = []; editingProductExistingImages = []">
+        <div class="modal modal-large" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <h3>Edit Product</h3>
-            <button class="modal-close" (click)="editingProduct = null">×</button>
+            <button class="modal-close" (click)="editingProduct = null; editingProductImages = []; editingProductExistingImages = []">×</button>
           </div>
           <div class="modal-content">
+            <!-- Success/Error Messages -->
+            <div *ngIf="productSuccess" class="alert alert-success" style="margin-bottom: 1rem;">
+              {{productSuccess}}
+            </div>
+            <div *ngIf="productError" class="alert alert-error" style="margin-bottom: 1rem;">
+              {{productError}}
+            </div>
+
             <form class="product-form">
               <div class="form-group">
                 <label>Product Name</label>
@@ -464,10 +472,48 @@
                   <label>Stock</label>
                   <input type="number" [(ngModel)]="editingProduct.stock" name="editStock" class="form-input">
                 </div>
-
               </div>
+
+              <!-- Product Images Section -->
+              <div class="form-section">
+                <h3 class="section-title">Product Images</h3>
+
+                <!-- Existing Images -->
+                <div class="form-group" *ngIf="editingProductExistingImages.length > 0">
+                  <label class="form-label">Current Images</label>
+                  <div class="image-preview">
+                    <div *ngFor="let image of editingProductExistingImages" class="image-preview-item">
+                      <img [src]="image.image_url" [alt]="image.alt_text" class="preview-image">
+                      <button type="button" class="remove-image" (click)="removeExistingProductImage(image.image_id)">×</button>
+                      <span *ngIf="image.is_primary" class="primary-badge">Primary</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Upload New Images -->
+                <div class="form-group">
+                  <label class="form-label">Add New Images</label>
+                  <div class="image-upload-area" (click)="editFileInput.click()">
+                    <div class="upload-icon">📷</div>
+                    <div class="upload-text">Click to upload new images</div>
+                    <div class="upload-subtext">PNG, JPG up to 5MB each</div>
+                    <input #editFileInput type="file" class="file-input" multiple accept="image/*"
+                      (change)="onEditProductFileSelected($event)">
+                  </div>
+
+                  <!-- New Images Preview -->
+                  <div class="image-preview" *ngIf="editingProductImages.length > 0">
+                    <div *ngFor="let image of editingProductImages; let i = index" class="image-preview-item">
+                      <img [src]="image.url" [alt]="image.name" class="preview-image">
+                      <button type="button" class="remove-image" (click)="removeEditingProductImage(i)">×</button>
+                      <span class="new-badge">New</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div class="form-actions">
-                <button type="button" class="btn btn-secondary" (click)="editingProduct = null">Cancel</button>
+                <button type="button" class="btn btn-secondary" (click)="editingProduct = null; editingProductImages = []; editingProductExistingImages = []">Cancel</button>
                 <button type="button" class="btn btn-primary" (click)="onUpdateProduct()">Update</button>
               </div>
             </form>

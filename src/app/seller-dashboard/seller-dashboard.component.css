@@ -442,6 +442,31 @@ logo, img {
   transform: scale(1.1);
 }
 
+/* Image Badge Styles */
+.primary-badge,
+.new-badge {
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+  background: rgba(59, 130, 246, 0.9);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  z-index: 10;
+}
+
+.new-badge {
+  background: rgba(16, 185, 129, 0.9);
+}
+
+.primary-badge {
+  background: rgba(245, 158, 11, 0.9);
+}
+
 /* Specifications Container Styles */
 .specs-container {
   border: 1px solid #e5e7eb;
@@ -2030,6 +2055,10 @@ body {
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-large {
+  max-width: 900px;
 }
 
 .modal-header {

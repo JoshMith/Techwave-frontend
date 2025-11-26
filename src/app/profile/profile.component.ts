@@ -85,7 +85,7 @@ interface Seller {
 
 @Component({
   selector: 'app-profile',
-  imports: [CommonModule, FormsModule, HeaderComponent, FooterComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, FooterComponent, RouterLink],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.css'
 })
