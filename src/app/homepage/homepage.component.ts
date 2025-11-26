@@ -41,8 +41,8 @@ export class HomepageComponent implements OnInit {
   featuredCategories: Category[] = [];
   isLoading = true;
   error: string | null = null;
+  isAdmin = false;
 
-  
 
   heroImages: string[] = [
     'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500&h=500&fit=crop',
@@ -61,6 +61,7 @@ export class HomepageComponent implements OnInit {
     if (this.isBrowser) {
       this.startHeroImageRotation();
     }
+    this.checkIfAdmin()
   }
 
   ngOnDestroy(): void {
@@ -69,7 +70,20 @@ export class HomepageComponent implements OnInit {
     }
   }
 
-  
+  checkIfAdmin(): void {
+    if (this.isBrowser) {
+      const currentUser = localStorage.getItem('currentUser');
+      if (currentUser) {
+        try {
+          const user = JSON.parse(currentUser);
+          this.isAdmin = user.role === 'admin' || user.is_admin === true;
+        } catch (e) {
+          console.error('Failed to parse currentUser from localStorage:', e);
+          this.isAdmin = false;
+        }
+      }
+    }
+  }
 
   /**
    * Load categories from API
@@ -200,7 +214,16 @@ export class HomepageComponent implements OnInit {
     this.router.navigate(['/seller-dashboard']);
   }
 
-  
+  adminPortal(): void {
+    if (!this.isAdmin) {
+      alert('Access denied. Only admins can access the admin portal.');
+    }
+    else {
+      this.router.navigate(['/admin']);
+    }
+  }
+
+
   /**
  * Start rotating hero images
  */

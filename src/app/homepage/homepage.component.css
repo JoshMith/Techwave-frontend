@@ -143,6 +143,20 @@
   border-color: #16a34a;
 }
 
+.cta-button.tertiary {
+  background: transparent;
+  color: white;
+  border: 2px solid white;
+  box-shadow: none;
+}
+
+.cta-button.tertiary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(255, 255, 255, 0.2);
+  border-color: white;
+}
+
 /* Hero Navigation */
 .hero-navigation {
   display: flex;
