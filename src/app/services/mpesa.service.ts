@@ -51,7 +51,7 @@ export class MpesaService {
       orderId,
       accountReference: 'TechWave'
     },
-    this.httpOptions() 
+    this.httpOptions
   );
   }
 
@@ -60,7 +60,7 @@ export class MpesaService {
    */
   queryPaymentStatus(checkoutRequestID: string): Observable<MPesaStatusResponse> {
     return this.http.post<MPesaStatusResponse>(`${this.apiUrl}/mpesa/query`, {checkoutRequestID},
-      this.httpOptions()
+      this.httpOptions
   );
   }
 
