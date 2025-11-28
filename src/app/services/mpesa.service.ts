@@ -2,7 +2,7 @@
 // M-PESA SERVICE (Angular)
 // ============================================
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, interval, switchMap, takeWhile, of } from 'rxjs';
 import { ApiService } from './api.service';
 
@@ -34,12 +34,12 @@ export class MpesaService {
     this.apiUrl = this.apiService.apiUrl;
   }
 
-  private getHttpOptions() {
-    return {
-      headers: this.getHeaders(),
-      withCredentials: true // ⚠️ CRITICAL: This sends cookies with the request
-    };
-  }
+  private httpOptions = {
+    headers: new HttpHeaders({
+      'Content-Type': 'application/json'
+    }),
+    withCredentials: true // This enables sending cookies with requests
+  };
 
   /**
    * Initiate M-Pesa STK Push
@@ -51,7 +51,7 @@ export class MpesaService {
       orderId,
       accountReference: 'TechWave'
     },
-    this.getHttpOptions() 
+    this.httpOptions() 
   );
   }
 
@@ -60,7 +60,7 @@ export class MpesaService {
    */
   queryPaymentStatus(checkoutRequestID: string): Observable<MPesaStatusResponse> {
     return this.http.post<MPesaStatusResponse>(`${this.apiUrl}/mpesa/query`, {checkoutRequestID},
-      this.getHttpOptions()
+      this.httpOptions()
   );
   }
 
