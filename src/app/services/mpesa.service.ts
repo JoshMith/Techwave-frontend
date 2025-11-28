@@ -34,6 +34,12 @@ export class MpesaService {
     this.apiUrl = this.apiService.apiUrl;
   }
 
+  private getHttpOptions() {
+    return {
+      headers: this.getHeaders(),
+      withCredentials: true // ⚠️ CRITICAL: This sends cookies with the request
+    };
+  }
 
   /**
    * Initiate M-Pesa STK Push
@@ -44,16 +50,18 @@ export class MpesaService {
       amount,
       orderId,
       accountReference: 'TechWave'
-    });
+    },
+    this.getHttpOptions() 
+  );
   }
 
   /**
    * Query M-Pesa payment status
    */
   queryPaymentStatus(checkoutRequestID: string): Observable<MPesaStatusResponse> {
-    return this.http.post<MPesaStatusResponse>(`${this.apiUrl}/mpesa/query`, {
-      checkoutRequestID
-    });
+    return this.http.post<MPesaStatusResponse>(`${this.apiUrl}/mpesa/query`, {checkoutRequestID},
+      this.getHttpOptions()
+  );
   }
 
   /**

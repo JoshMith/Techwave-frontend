@@ -6,10 +6,7 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class AdminService {
-  // Use the same base URL as ApiService
-  // public apiUrl = 'http://localhost:3000'; // Development URL
-  // public apiUrl = 'https://miffiest-tom-pyramidally.ngrok-free.dev'; // Ngrok Production Testing URL
-  public apiUrl = 'https://techwave-backend-lepy.onrender.com'; // Production URL
+  apiUrl: string = ''
   
   private httpOptions = {
     headers: new HttpHeaders({
@@ -18,7 +15,12 @@ export class AdminService {
     withCredentials: true // This enables sending cookies with requests
   };
 
-  constructor(private http: HttpClient) { }
+  constructor(
+    private http: HttpClient,
+    private apiService:  ApiService
+  ) { 
+    this.apiUrl = this.apiService.apiUrl
+  }
 
   // ========================================
   // DASHBOARD STATISTICS ENDPOINTS
